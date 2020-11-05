@@ -1,0 +1,8 @@
+## Interface: 11302
+## Title: Lynx
+## Notes: The best WoW addon!
+
+Libs\!LibDraw\LibDraw.lua
+Libs\LibStub\LibStub.lua
+
+Lynx.lua
