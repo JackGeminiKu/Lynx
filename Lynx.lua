@@ -1,3 +1,59 @@
+-- Unlock functions
+do
+    lb = lb
+    WriteFile = function(path, contents, overwrite)
+        return lb.WriteFile(path, contents, not overwrite)
+    end
+
+    RunMacroText = function(marco)
+        lb.Unlock(RunMacroText, marco)
+    end
+
+    GetTime = function()
+        return lb.GetClockTime
+    end
+
+    UnitIsDeadOrGhost = function(unit)
+        return lb.Unlock(UnitIsDeadOrGhost, unit)
+    end
+
+    IsMounted = function()
+        return lb.Unlock(IsMounted)
+    end
+
+    GetObjectCount = function()
+        -- TBD: use luabox to implement
+    end
+
+    GetObjectWithIndex = function(index)
+        -- TBD: use luabox to implement
+    end
+
+    IsIndoors = function()
+        return lb.Unlock(IsIndoors)
+    end
+
+    UnitIsCorpse = function(unit)
+        return lb.Unlock(UnitIsCorpse, unit)
+    end
+
+    ObjectName = function(object)
+        -- TBD: use luabox to implement
+    end
+
+    GetDistanceBetweenObjects = function(object1, object2)
+        -- TBD: use luabox to implement
+    end
+
+    GetCorpseRecoveryDelay = function()
+        return lb.Unlock(GetCorpseRecoveryDelay)
+    end
+
+    RetrieveCorpse = function()
+        return lb.Unlock(RetrieveCorpse)
+    end 
+end
+
 -- CHECK FOR --REMOVE for other zones
 --------------------FILE STUFF--------------------
 local scriptName = 'felwood_54' -- IMP ADD FOLDER NAME FOR RESURRECT
@@ -29,7 +85,7 @@ local forcedToSell = {"Citrine"}
 local openInBags = {"Thick-shelled Clam"}
 local toKeep = {"Brown Horse Bridle", "Skinning Knife", "Strong Fishing Pole", "Fishing Pole", "Rune of Teleportation", "Rune of Portals"}
 
-local waypoints = { --
+local _waypoints = { --
     [1] = {3900.4057617188, -878.15447998047, 277.8918762207},
     [2] = {3897.9526367188, -873.376953125, 278.96032714844},
     [3] = {3894.9252929688, -868.85729980469, 280.11065673828},
@@ -226,14 +282,14 @@ local waypoints = { --
     [194] = {3902.6186523438, -874.2392578125, 278.45492553711}
 }
 
-local waypointsCount = table.getn(waypoints)
+local _waypointsCount = table.getn(_waypoints)
 
 --------------------VENDOR--------------------
 
 local vendorName = "Bale"
 local repairVendor = "Altsoba Ragetotem"
 
-local vendorPoints = {
+local _vendorPoints = {
     [1] = {3902.3605957031, -873.16461181641, 278.65951538086},
     [2] = {3907.5671386719, -877.05712890625, 277.98184204102},
     [3] = {3913.1359863281, -880.20715332031, 277.36434936523},
@@ -561,7 +617,7 @@ local vendorPoints = {
     [325] = {5094.9970703125, -357.65872192383, 357.26419067383, "Repair"}
 }
 
-local vendorPointsCount = table.getn(vendorPoints)
+local _vendorPointsCount = table.getn(_vendorPoints)
 
 local deleteItems = {[1] = {"OOX-09/HL Distress Beacon"}, [2] = {"Patch of Tainted Skin"}}
 
@@ -578,7 +634,7 @@ local _proximalTolerance = proximalTolerance
 local bIgnoreLOS = true
 local _bStrictFollow = true
 local bSkipFarPoints = false
-local bReLoop = true
+local _bReLoop = true
 
 -- local bStartClosestPt = true
 
@@ -612,23 +668,23 @@ local recoverTillPercent = 88 -- once needs to drink/eat will do so till this HP
 
 local _bKite = true -- Kite when possible
 
-local minBagSlots = 1
-local bPrint = false
-local bDraw = true
-local bDrawWP = true
-local bDrawText = true
+local _minBagSlots = 1
+local _bPrint = false
+local _bDraw = true
+local _bDrawWP = true
+local _bDrawText = true
 
 local _bDrawOnly = false -- to visualize path ONLY for configuring vendor paths
 
 --------------------ALGORITHM--------------------
 
-local bAtEnd = false -- do not touch
+local _bAtEnd = false -- do not touch
 
 local _lastPulse = GetTime() + startDelay
 local _canPulseAt = _lastPulse + PULSE_DELAY
 
-local lastDrawPulse = GetTime() + startDelay
-local canDrawAt = _lastPulse + 0.05
+local _lastDrawPulse = GetTime() + startDelay
+local _canDrawAt = _lastPulse + 0.05
 
 local frame = CreateFrame("Frame")
 frame.elapsed = 1
@@ -639,10 +695,10 @@ local _stuckTime = 0
 local bCanMail = false -- DO NOT TOUCH
 
 -- Draw Shit
-local start = waypoints[1]
-local dX = start[1]
-local dY = start[2]
-local dZ = start[3]
+local _start = _waypoints[1]
+local _dX = _start[1]
+local _dY = _start[2]
+local _dZ = _start[3]
 
 local _statusStr = "WP"
 
@@ -650,14 +706,14 @@ local _isHunter = UnitClass("player") == "Hunter"
 local _isMage = UnitClass("player") == "Mage"
 
 local function DebugPrint(str)
-    if bPrint == true then
+    if _bPrint == true then
         print(str)
-        WriteFile('_Kkona/Debug.txt', str .. '\n', true)
+        WriteFile('_Lynx/Debug.txt', str .. '\n', true)
     end
 end
 
 local function Exit(caller)
-    -- WriteFile("/_Kkona/Status.txt", endReportMsg, false)
+    -- WriteFile("/_Lynx/Status.txt", endReportMsg, false)
     DebugPrint('Exit called by: ' .. caller .. '()')
     frame:SetScript("OnUpdate", nil)
 end
@@ -741,9 +797,9 @@ end
 
 local function CanDraw()
     local timeNow = GetTime()
-    if timeNow >= canDrawAt then
-        lastDrawPulse = timeNow
-        canDrawAt = lastDrawPulse + 0.05
+    if timeNow >= _canDrawAt then
+        _lastDrawPulse = timeNow
+        _canDrawAt = _lastDrawPulse + 0.05
         return true
     end
     return false
@@ -832,23 +888,18 @@ end
 
 local function PositionAggroCount()
     local count = 0
-    local playerLevel = UnitLevel("player")
-
-    local objCount = GetObjectCount()
-    for i = 1, objCount do
+    for i = 1, GetObjectCount() do
         local obj = GetObjectWithIndex(i)
-        if obj ~= nil then -- and UnitIsEnemy("player", obj) == true  then
+        if obj ~= nil then
             if UnitIsEnemy("player", obj) and UnitIsDead(obj) == false then
-                local unitLevel = UnitLevel(obj)
                 local dist = GetDistanceBetweenObjects("player", obj)
-                local aggroRad = (unitLevel - playerLevel) + 20 + 3 -- suppost +20 imma to be safe +5
+                local aggroRad = UnitLevel(obj) - UnitLevel("player") + 20 + 3 -- suppost +20 imma to be safe +5
                 if dist < aggroRad then
                     count = count + 1
                 end
             end
         end
     end
-
     return count
 end
 
@@ -860,15 +911,15 @@ local function FindNextBestPoint()
     local moveToDist = 9999999
     local foundSomething = false
 
-    for i = pathIdx, waypointsCount, 1 do
-        local xyz = waypoints[i]
+    for i = pathIdx, _waypointsCount, 1 do
+        local xyz = _waypoints[i]
         if xyz ~= nil then
             local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
 
             if dist <= moveToDist then
                 if dist > proximalTolerance then
-                    if i == waypointsCount then
-                        bAtEnd = true
+                    if i == _waypointsCount then
+                        _bAtEnd = true
                     end
                     -- local groundZ = GetGroundZ(xyz[1], xyz[2], losFlags)+2.5
                     if bIgnoreLOS == true or TraceLine(px, py, pz + 2.5, xyz[1], xyz[2], xyz[3] + 2.5, losFlags) == nil then
@@ -893,7 +944,7 @@ local function FindNextBestPoint()
         SendKey(' ')
     end
 
-    local moveToXYZ = waypoints[moveToIdx]
+    local moveToXYZ = _waypoints[moveToIdx]
     -- DbgPrint('Moving to idx {'..moveToIdx..'/'..waypointsCount..'} at '..moveToDist..'y')
     MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
 end
@@ -920,7 +971,7 @@ local function SetIDXToClosest(bWPOnly, limit)
     local foundSomething = false
 
     local closestIsVendor = false
-    local endWPCount = waypointsCount
+    local endWPCount = _waypointsCount
     local start = 1
     if limit ~= nil then
         start = pathIdx - limit
@@ -929,13 +980,13 @@ local function SetIDXToClosest(bWPOnly, limit)
         if start < 1 then
             start = 1
         end
-        if endWPCount > waypointsCount then
-            endWPCount = waypointsCount
+        if endWPCount > _waypointsCount then
+            endWPCount = _waypointsCount
         end
     end
 
     for i = start, endWPCount, 1 do
-        local xyz = waypoints[i]
+        local xyz = _waypoints[i]
         if xyz ~= nil then
             local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
 
@@ -958,8 +1009,8 @@ local function SetIDXToClosest(bWPOnly, limit)
         return
     end
 
-    for i = 1, vendorPointsCount, 1 do
-        local xyz = vendorPoints[i]
+    for i = 1, _vendorPointsCount, 1 do
+        local xyz = _vendorPoints[i]
         if xyz ~= nil then
             local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
 
@@ -1035,7 +1086,7 @@ local function StrictPathFollow()
     end
 
     local px, py, pz = ObjectPosition("player")
-    local xyz = waypoints[pathIdx] -- return is imp to always assign next xyz correctly
+    local xyz = _waypoints[pathIdx] -- return is imp to always assign next xyz correctly
 
     if UnitIsDeadOrGhost("player") then
         -- Get Distance from Corpse
@@ -1052,13 +1103,13 @@ local function StrictPathFollow()
         local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
         -- print(' = DIST: '..dist)
         if dist <= proximalTolerance then
-            if pathIdx < waypointsCount then
+            if pathIdx < _waypointsCount then
                 pathIdx = pathIdx + 1
                 -- print('Moving to idx {'..pathIdx..'/'..waypointsCount..'}')
-                DebugPrint('Moving to idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
+                DebugPrint('Moving to idx {' .. pathIdx .. '/' .. _waypointsCount .. '}')
                 return
             else
-                bAtEnd = true
+                _bAtEnd = true
             end
         end
     end
@@ -1074,33 +1125,33 @@ local function StrictPathFollow()
 
     -- Skip if stuck (forced) but never skip last post so as to trigger the appropriate fail safes
     -- using counter in the form of lastIdxCount is mehhh coz doesnt give indication of time stuck (we vary pulseDelay all the time)
-    if lastIdxCount > 20 and (pathIdx < waypointsCount - 2) then
+    if lastIdxCount > 20 and (pathIdx < _waypointsCount - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. pathIdx
         print(stuckStr)
-        WriteFile('/_Kkona/Stuck.txt', stuckStr .. '\n', true)
+        WriteFile('/_Lynx/Stuck.txt', stuckStr .. '\n', true)
         -- local prevIdx = pathIdx
         -- pathIdx = 1
         -- FindNextBestPoint()
         SendKey(' ')
         pathIdx = pathIdx + 1
-        bAtEnd = pathIdx > waypointsCount
+        _bAtEnd = pathIdx > _waypointsCount
         return
     end
 
     if pathIdx < 1 then
         pathIdx = 1
-    elseif pathIdx > waypointsCount then
-        pathIdx = waypointsCount
-        bAtEnd = true
+    elseif pathIdx > _waypointsCount then
+        pathIdx = _waypointsCount
+        _bAtEnd = true
     end
 
     -- Move
     local rnd = (math.random(-rndMax, rndMax) / 100)
-    local moveToXYZ = waypoints[pathIdx]
+    local moveToXYZ = _waypoints[pathIdx]
     if moveToXYZ ~= nil then
-        dX = moveToXYZ[1] + rnd
-        dY = moveToXYZ[2] + rnd
-        dZ = moveToXYZ[3] + rnd
+        _dX = moveToXYZ[1] + rnd
+        _dY = moveToXYZ[2] + rnd
+        _dZ = moveToXYZ[3] + rnd
     end
 
     _statusStr = "WP"
@@ -1111,9 +1162,9 @@ local function StrictPathFollow()
         end
     else
         if bSkipFarPoints then
-            DebugPrint('*Skipping* to idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
+            DebugPrint('*Skipping* to idx {' .. pathIdx .. '/' .. _waypointsCount .. '}')
             pathIdx = pathIdx + 1
-            bAtEnd = pathIdx > waypointsCount
+            _bAtEnd = pathIdx > _waypointsCount
             return
         else
             DebugPrint('*Waiting* for player to be close to path...')
@@ -1125,22 +1176,22 @@ end
 
 -- Processes path relooping and Exit()
 local function PathEndCheck()
-    if bAtEnd == true then
-        if bReLoop == true then
-            local startXYZ = waypoints[1]
+    if _bAtEnd then
+        if _bReLoop then
+            local startXYZ = _waypoints[1]
             if bIgnoreLOS or TraceLine(px, py, pz + 2.5, startXYZ[1], startXYZ[2], startXYZ[3] + 2.5) == nil then
                 -- is start is in not in LOS
-                bAtEnd = false
+                _bAtEnd = false
 
-                local p1 = waypoints[1]
-                local p2 = waypoints[waypointsCount]
+                local p1 = _waypoints[1]
+                local p2 = _waypoints[_waypointsCount]
                 local distBetween = CalculateDistance(p1[1], p1[2], p1[3], p2[1], p2[2], p2[3])
 
                 if distBetween > 50 then
                     DebugPrint('Reversing Path!!!')
-                    local i, j = 1, #waypoints
+                    local i, j = 1, #_waypoints
                     while i < j do
-                        waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
+                        _waypoints[i], _waypoints[j] = _waypoints[j], _waypoints[i]
                         i = i + 1
                         j = j - 1
                     end
@@ -1211,7 +1262,7 @@ end
 
 local function VendorPath(bToVendor)
     local px, py, pz = ObjectPosition("player")
-    local xyz = vendorPoints[vendorPathIdx] -- return is imp to always assign next xyz correctly
+    local xyz = _vendorPoints[vendorPathIdx] -- return is imp to always assign next xyz correctly
 
     if _isHunter and hunterBuff ~= "Aspect of the Cheetah" and HasMount() == false then
         hunterBuff = "Aspect of the Cheetah"
@@ -1220,12 +1271,12 @@ local function VendorPath(bToVendor)
     if xyz ~= nil then
         local dist = math.abs(CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3]))
         if dist <= proximalTolerance then
-            if bToVendor and vendorPathIdx <= vendorPointsCount then
+            if bToVendor and vendorPathIdx <= _vendorPointsCount then
                 vendorPathIdx = vendorPathIdx + 1
             elseif vendorPathIdx > 1 then
                 vendorPathIdx = vendorPathIdx - 1
             end
-            DebugPrint('Moving to vendor idx {' .. vendorPathIdx .. '/' .. vendorPointsCount .. '}')
+            DebugPrint('Moving to vendor idx {' .. vendorPathIdx .. '/' .. _vendorPointsCount .. '}')
         end
 
         local action = xyz[4]
@@ -1236,7 +1287,7 @@ local function VendorPath(bToVendor)
                     InteractUnit(repairVendor)
                     Sleepy(10)
 
-                    if bToVendor and vendorPathIdx <= vendorPointsCount then
+                    if bToVendor and vendorPathIdx <= _vendorPointsCount then
                         vendorPathIdx = vendorPathIdx + 1
                     elseif vendorPathIdx > 1 then
                         vendorPathIdx = vendorPathIdx - 1
@@ -1247,7 +1298,7 @@ local function VendorPath(bToVendor)
                     SendKey(83, 123)
                     Sleepy(3)
 
-                    if bToVendor and vendorPathIdx <= vendorPointsCount then
+                    if bToVendor and vendorPathIdx <= _vendorPointsCount then
                         vendorPathIdx = vendorPathIdx + 1
                     elseif vendorPathIdx > 1 then
                         vendorPathIdx = vendorPathIdx - 1
@@ -1259,21 +1310,21 @@ local function VendorPath(bToVendor)
     end
 
     local rnd = math.random(-rndMax, rndMax) / 100
-    local moveToXYZ = vendorPoints[vendorPathIdx]
+    local moveToXYZ = _vendorPoints[vendorPathIdx]
     if moveToXYZ ~= nil then
-        dX = moveToXYZ[1] + rnd
-        dY = moveToXYZ[2] + rnd
-        dZ = moveToXYZ[3] + rnd
+        _dX = moveToXYZ[1] + rnd
+        _dY = moveToXYZ[2] + rnd
+        _dZ = moveToXYZ[3] + rnd
         _statusStr = "VENDOR"
 
-        if vendorPathIdx == vendorPointsCount then
+        if vendorPathIdx == _vendorPointsCount then
             MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3]) -- don't want random fuck ups
         else
             MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
         end
     end
 
-    if bToVendor and vendorPathIdx >= vendorPointsCount then
+    if bToVendor and vendorPathIdx >= _vendorPointsCount then
         _bAtVendor = true
     elseif bToVendor == false and vendorPathIdx <= 1 then
         _bAtStartAfterVendor = true
@@ -1286,18 +1337,18 @@ local _bGoingToVendor = false
 local function EmptyBagsSetup()
     -- Check Drinks + Food
     -- Check Arrows +/ if equipped too
-    if vendorPointsCount <= 1 then -- no vendor path
+    if _vendorPointsCount <= 1 then -- no vendor path
         return false
     end
 
-    local criticalAmmoCount = (vendorPointsCount + (waypointsCount - pathIdx)) * 1.5
+    local criticalAmmoCount = (_vendorPointsCount + (_waypointsCount - pathIdx)) * 1.5
     local freeSlots = GetFreeSlots()
-    if freeSlots <= minBagSlots or (_isHunter and GetItemCount(ammoName) <= criticalAmmoCount) then
+    if freeSlots <= _minBagSlots or (_isHunter and GetItemCount(ammoName) <= criticalAmmoCount) then
         local px, py, pz = ObjectPosition("player")
 
         local closestDist = 99999
-        for i = 1, vendorPointsCount do
-            local xyz = vendorPoints[i]
+        for i = 1, _vendorPointsCount do
+            local xyz = _vendorPoints[i]
             if xyz ~= nil then
                 local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
                 if dist < closestDist then
@@ -1329,7 +1380,6 @@ local function PulseMovement()
         Sleepy(1)
         return
     end
-    -- print('.')
     if _bStrictFollow == true then
         StrictPathFollow()
     else
@@ -1390,15 +1440,15 @@ local function GetUnitMana(unit)
     return 100 * UnitPower(unit) / UnitPowerMax(unit)
 end
 
-local enemyNPCs = {}
-local enemyPlayers = {}
+local _enemyNPCs = {}
+local _enemyPlayers = {}
 
 local function ClearTargetDrawTables()
-    for k in pairs(enemyPlayers) do
-        enemyPlayers[k] = nil
+    for k in pairs(_enemyPlayers) do
+        _enemyPlayers[k] = nil
     end
-    for k in pairs(enemyNPCs) do
-        enemyNPCs[k] = nil
+    for k in pairs(_enemyNPCs) do
+        _enemyNPCs[k] = nil
     end
 end
 
@@ -1828,7 +1878,7 @@ local function CheckVitals()
     -- if IsInCombat("player") then 
     -- if hp < 7.5 then
     -- --RunMacroText(".dc")
-    -- WriteFile("/_Kkona/Terminate.txt", 'Forced DC', false)
+    -- WriteFile("/_Lynx/Terminate.txt", 'Forced DC', false)
     -- end
     -- return true
     -- end
@@ -1876,7 +1926,7 @@ local function EnemyNearby(obj)
             return
         end
 
-        WriteFile("/_Kkona/ReLog.txt", '600', false)
+        WriteFile("/_Lynx/ReLog.txt", '600', false)
         RunMacroText(".dc")
     end
 end
@@ -2009,9 +2059,9 @@ local function FindAttackableUnit()
             local arr = {ex, ey, ez, UnitLevel(obj), ObjectName(obj)}
             if UnitIsPlayer(obj) then
                 EnemyNearby(obj)
-                table.insert(enemyPlayers, arr)
+                table.insert(_enemyPlayers, arr)
             else
-                table.insert(enemyNPCs, arr)
+                table.insert(_enemyNPCs, arr)
             end
         end
 
@@ -2195,9 +2245,9 @@ local function HunterRotation()
     _stopMovingBeforeAttack = true
     local px, py, pz = ObjectPosition("player")
     local xx, yy, zz = ObjectPosition("target")
-    dX = xx
-    dY = yy
-    dZ = zz
+    _dX = xx
+    _dY = yy
+    _dZ = zz
     _statusStr = "ATTACK"
 
     local dist = GetDistanceBetweenObjects("player", "target")
@@ -2437,9 +2487,9 @@ local function MageRotation()
         _forceStopNextMove = false
         SendKey(83, 123)
     end
-    dX = tX
-    dY = tY
-    dZ = tZ
+    _dX = tX
+    _dY = tY
+    _dZ = tZ
     _spell = ""
     _statusStr = "ATTACK"
 
@@ -2524,7 +2574,7 @@ local function MageRotation()
             end
         end
 
-		-- Evocation
+        -- Evocation
         if isPolyied and mana < 35 and isCastable("Evocation") then
             CastSpellByName("Evocation")
             Sleepy(4.2)
@@ -2723,13 +2773,13 @@ local function Attack(obj)
         TargetUnit(obj)
     end
     if UnitIsDead("target") then
-        return 
+        return
     elseif AggrodToAnotherPlayer("target") then
         DebugPrint(ObjectName("target") .. " at " .. GetUnitHP("target") .. " is tapped by another player...")
         DebugPrint(" ==> FORCING MOVEMENT");
         PulseMovement()
         PathEndCheck()
-        return 
+        return
     end
 
     if isMoving("player") and _stopMovingBeforeAttack then -- Stop Movement
@@ -2737,7 +2787,7 @@ local function Attack(obj)
     end
 
     if UnitExists("target") == false then
-        return 
+        return
     end
 
     if IsMounted() then
@@ -3161,7 +3211,7 @@ local function SellAndBuyShit()
         end
 
         BuyStuff()
-        vendorPathIdx = vendorPointsCount - 1
+        vendorPathIdx = _vendorPointsCount - 1
         sellTick = sellTick + 1
 
         if CanMerchantRepair() then
@@ -3217,98 +3267,96 @@ frame:SetScript("OnEvent", function(self, event)
     -- print(event)
 end)
 
-local _strDbg = ""
+local _debugMessage = ""
 local function Draw()
-    if bDraw and CanDraw() then
+    if _bDraw and CanDraw() then
         LibDraw.clearCanvas()
-        local px, py, pz = ObjectPosition("player")
+        local pX, pY, pZ = ObjectPosition("player")
 
         -- Draw Status String
-        if bDrawText then
-            if _strDbg ~= "" then
-                local dbgPrint = _strDbg
+        if _bDrawText then
+            -- Debug message
+            if _debugMessage ~= "" then
+                local debugMessage = _debugMessage
                 if _spell ~= "" and _statusStr == "ATTACK" or _statusStr == "SKINNING" then
-                    dbgPrint = dbgPrint .. " [" .. _spell .. "]"
+                    debugMessage = debugMessage .. " [" .. _spell .. "]"
                 end
                 LibDraw.SetColorRaw(0, 0, 1, 1)
-                LibDraw.Text(dbgPrint, "GameFontRedSmall", px, py, pz + 4)
+                LibDraw.Text(debugMessage, "GameFontRedSmall", pX, pY, pZ + 4)
             end
 
+            -- 各种状态
             LibDraw.SetColorRaw(1, 1, 1, 1)
-            if _statusStr == "ATTACK" then
+            if _statusStr == "ATTACK" then -- Attacking
                 local str = 'Attacking...'
                 if _attackObj ~= nil then
                     local odist = GetDistanceBetweenObjects("player", _attackObj)
                     odist = math.ceil(odist)
                     str = ObjectName(_attackObj) .. ' [' .. GetUnitHP(_attackObj) .. '%] {' .. odist .. 'y}'
                 end
-                LibDraw.Text(str, "GameFontNormal", px, py, pz + 3)
-            elseif _statusStr == "WP" then
-                LibDraw.Text('Searching Mobs...', "GameFontNormal", px, py, pz + 3)
-            elseif _statusStr == "RECOVERING" then
-                LibDraw.Text('Recovering...', "GameFontNormal", px, py, pz + 3)
-            elseif _statusStr == "LOOTING" then
-                LibDraw.Text('Looting...', "GameFontNormal", px, py, pz + 3)
-            elseif _statusStr == "SKINNING" then
-                LibDraw.Text('Skinning...', "GameFontNormal", px, py, pz + 3)
-            elseif _statusStr == "CORPSE_RUN" then
-                LibDraw.Text('Corpse Run...', "GameFontNormal", px, py, pz + 3)
-            elseif _statusStr == "VENDOR" then
+                LibDraw.Text(str, "GameFontNormal", pX, pY, pZ + 3)
+            elseif _statusStr == "WP" then -- Searching mobs
+                LibDraw.Text('Searching Mobs...', "GameFontNormal", pX, pY, pZ + 3)
+            elseif _statusStr == "RECOVERING" then -- Recovering
+                LibDraw.Text('Recovering...', "GameFontNormal", pX, pY, pZ + 3)
+            elseif _statusStr == "LOOTING" then -- Looting
+                LibDraw.Text('Looting...', "GameFontNormal", pX, pY, pZ + 3)
+            elseif _statusStr == "SKINNING" then -- Skinning
+                LibDraw.Text('Skinning...', "GameFontNormal", pX, pY, pZ + 3)
+            elseif _statusStr == "CORPSE_RUN" then -- Corpse run
+                LibDraw.Text('Corpse Run...', "GameFontNormal", pX, pY, pZ + 3)
+            elseif _statusStr == "VENDOR" then -- Vender
                 if _bSellComplete then
-                    LibDraw.Text('Going to Start...', "GameFontNormal", px, py, pz + 3)
+                    LibDraw.Text('Going to Start...', "GameFontNormal", pX, pY, pZ + 3)
                 else
-                    LibDraw.Text('Going to Sell...', "GameFontNormal", px, py, pz + 3)
+                    LibDraw.Text('Going to Sell...', "GameFontNormal", pX, pY, pZ + 3)
                 end
-            elseif _statusStr == "DEAD" then
+            elseif _statusStr == "DEAD" then -- Dead
                 LibDraw.SetColorRaw(1, 0, 0, 1)
-                LibDraw.Text('DEAD', "GameFontNormal", px, py, pz + 3)
-            elseif _statusStr == "KITING_DANGER" then
+                LibDraw.Text('DEAD', "GameFontNormal", pX, pY, pZ + 3)
+            elseif _statusStr == "KITING_DANGER" then -- Avoiding dangerous NPC
                 LibDraw.SetColorRaw(1, 0, 0, 1)
-                LibDraw.Text('Avoiding Dangerous NPC', "GameFontNormal", px, py, pz + 3)
+                LibDraw.Text('Avoiding Dangerous NPC', "GameFontNormal", pX, pY, pZ + 3)
             end
         end
 
         -- Main Line Draw
-        if bDrawWP and dX ~= nil and dY ~= nil and dZ ~= nil then
+        if _bDrawWP and _dX ~= nil and _dY ~= nil and _dZ ~= nil then
             LibDraw.SetColorRaw(0, 0, 1, 1)
-            local xx, yy, zz = ObjectPosition("player")
-            LibDraw.Line(xx, yy, zz + 0.2, dX, dY, dZ + 0.2)
+            LibDraw.Line(pX, pY, pZ + 0.2, _dX, _dY, _dZ + 0.2)
         end
 
-        -- if bDrawEnemies then
-        local hordeCount = table.getn(enemyPlayers)
-        local npcCount = table.getn(enemyNPCs)
-        for i = 1, hordeCount, 1 do
-            local pt = enemyPlayers[i]
-            -- local pname = ObjectName(enemyPlayers[i])
-            local enemyLvl = pt[4]
-            if enemyLvl == nil then
-                enemyLvl = 60
+        -- 敌对玩家
+        for i = 1, table.getn(_enemyPlayers), 1 do
+            local pt = _enemyPlayers[i]
+            local enemyLevel = pt[4]
+            if enemyLevel == nil then
+                enemyLevel = 60
             end
-            local lvlDiff = enemyLvl - UnitLevel("player")
+            local levelDiff = enemyLevel - UnitLevel("player")
 
-            if lvlDiff > 0 then
+            if levelDiff > 0 then
                 LibDraw.SetColorRaw(1, 0, 0, 1)
-                LibDraw.Text('ENEMY {+' .. lvlDiff .. '}', "GameFontNormal", pt[1], pt[2], pt[3] + 2)
+                LibDraw.Text('ENEMY {+' .. levelDiff .. '}', "GameFontNormal", pt[1], pt[2], pt[3] + 2)
             else
                 LibDraw.SetColorRaw(1, 0.65, 0, 1)
-                LibDraw.Text('ENEMY {' .. lvlDiff .. '}', "GameFontNormal", pt[1], pt[2], pt[3] + 2)
+                LibDraw.Text('ENEMY {' .. levelDiff .. '}', "GameFontNormal", pt[1], pt[2], pt[3] + 2)
             end
         end
 
+        -- 敌对NPC
         LibDraw.SetColorRaw(1, 1, 1, 1)
-        for i = 1, npcCount, 1 do
-            local pt = enemyNPCs[i]
+        for i = 1, table.getn(_enemyNPCs), 1 do
+            local pt = _enemyNPCs[i]
             LibDraw.Text('[' .. pt[4] .. ']', "GameFontRedSmall", pt[1], pt[2], pt[3] + 2)
         end
-        -- end
 
         -- Draw Main Route
-        if bDrawWP then
+        if _bDrawWP then
             LibDraw.SetColorRaw(0, 1, 0, 1)
             local beforePT = nil
-            for i = 1, waypointsCount, 1 do
-                local newPT = waypoints[i]
+            for i = 1, _waypointsCount, 1 do
+                local newPT = _waypoints[i]
                 if newPT ~= nil then
                     if beforePT ~= nil then
                         LibDraw.Line(beforePT[1], beforePT[2], beforePT[3], newPT[1], newPT[2], newPT[3])
@@ -3318,20 +3366,19 @@ local function Draw()
             end
 
             -- Draw Vendor Route
-            if vendorPointsCount > 1 then
-                local startVendorPT = vendorPoints[1]
-                local endVendorPT = vendorPoints[vendorPointsCount]
+            if _vendorPointsCount > 1 then
+                local startVendorPT = _vendorPoints[1]
+                local endVendorPT = _vendorPoints[_vendorPointsCount]
                 if startVendorPT ~= nil then
                     LibDraw.SetColorRaw(0.25, 0.5, 0.75, 1)
                     LibDraw.Circle(startVendorPT[1], startVendorPT[2], startVendorPT[3], 2)
                     LibDraw.Text('Vendor Route', "GameFontRedSmall", startVendorPT[1], startVendorPT[2], startVendorPT[3] + 1)
-                    -- LibDraw.Circle(endVendorPT[1], endVendorPT[2], endVendorPT[3], 3)
                     LibDraw.Text('Vendor', "GameFontRedSmall", endVendorPT[1], endVendorPT[2], endVendorPT[3] + 1)
 
                     beforePT = nil
                     LibDraw.SetColorRaw(1, 1, 1, 1)
-                    for i = 1, vendorPointsCount, 1 do
-                        local newPT = vendorPoints[i]
+                    for i = 1, _vendorPointsCount, 1 do
+                        local newPT = _vendorPoints[i]
                         if newPT ~= nil then
                             if beforePT ~= nil then
                                 LibDraw.Line(beforePT[1], beforePT[2], beforePT[3], newPT[1], newPT[2], newPT[3])
@@ -3347,7 +3394,7 @@ end
 
 local function Resurrect()
     if UnitIsDeadOrGhost("player") and bResurrect then
-        local exitMacro = '.loadfile _Kkona\\' .. scriptName .. '\\Resurrect.lua'
+        local exitMacro = '.loadfile _Lynx\\' .. scriptName .. '\\Resurrect.lua'
         DebugPrint("Running Resurrect(): " .. exitMacro)
         RunMacroText(exitMacro)
         Exit('Resurrect')
@@ -3356,7 +3403,7 @@ end
 
 local function DeadCheck()
     if UnitIsDead("player") then
-        WriteFile("_Kkona/Dead.txt", 'Dead at time: ' .. GetTime(), false)
+        WriteFile("_Lynx/Dead.txt", 'Dead at time: ' .. GetTime(), false)
         Resurrect()
         -- RunMacroText(".dc")
     end
@@ -3457,26 +3504,20 @@ local function IsNotVendorPathing()
 end
 
 local function ResurrectPulse()
-    local name = ObjectName("player")
-    local objCount = GetObjectCount()
-    for i = 1, objCount do
-        local obj = GetObjectWithIndex(i)
-        if UnitIsCorpse(obj) then
-            local oname = ObjectName(obj)
-            if name == oname then
-                local dist = GetDistanceBetweenObjects("player", obj)
-                if dist < 35 then
-                    if GetCorpseRecoveryDelay() <= 0 then
-                        if PositionAggroCount() >= 1 then
-                            Sleepy(5)
-                            return false
-                        end
-                        RetrieveCorpse()
-                        return true
-                    else
+    for i = 1, GetObjectCount() do
+        local object = GetObjectWithIndex(i)
+        if UnitIsCorpse(object) and ObjectName(object) == ObjectName("player") then
+            if GetDistanceBetweenObjects("player", object) < 35 then
+                if GetCorpseRecoveryDelay() <= 0 then
+                    if PositionAggroCount() >= 1 then
                         Sleepy(5)
-                        return true
+                        return false
                     end
+                    RetrieveCorpse()
+                    return true
+                else
+                    Sleepy(5)
+                    return true
                 end
             end
         end
@@ -3493,14 +3534,14 @@ frame:SetScript("OnUpdate", function(self, elapsed)
     -- 还没到pulse时间
     if CanPulse() == false then
         return
-    end 
+    end
 
     DeadCheck() -- Call First Res Path
 
     -- Resurrect
     if UnitIsDeadOrGhost("player") then
         if _deadTime > 600 then
-            WriteFile("_Kkona/Terminate.txt", 'Stuck Dead!', false)
+            WriteFile("_Lynx/Terminate.txt", 'Stuck Dead!', false)
             RunMacroText(".dc")
         end
         -- AcceptResurrect()
@@ -3517,7 +3558,7 @@ frame:SetScript("OnUpdate", function(self, elapsed)
 
     -- Main
     if CheckVitals() then
-        _strDbg = "VITALS_OK"
+        _debugMessage = "VITALS_OK"
         if IsMounted() then
             proximalTolerance = _proximalTolerance * 2
         else
@@ -3527,7 +3568,7 @@ frame:SetScript("OnUpdate", function(self, elapsed)
         local inCombat = IsInCombat("player")
         if inCombat and _combatTime < 90 and (_bClearVendorPath or (_bClearVendorPath == false and IsMounted() == false and IsNotVendorPathing())) then
             if AmIFoccussed() or (_isMage and IsPolymorphUsed()) then -- Without this it will go too HAM because of InCombat remains a bit after fight ends w/o time to recover			
-                _strDbg = "ATTACK_1"
+                _debugMessage = "ATTACK_1"
                 FindAttackableUnit()
                 Attack(_attackObj)
             end
@@ -3536,10 +3577,10 @@ frame:SetScript("OnUpdate", function(self, elapsed)
             -- ::Resume::
             if GetTime() - _ttt > _tttTick then
                 if bDCOnItemBreak and GetLowestDurability() <= 1 then
-                    WriteFile("_Kkona/Terminate.txt", 'Item Break...', false)
+                    WriteFile("_Lynx/Terminate.txt", 'Item Break...', false)
                     RunMacroText(".dc")
                 end
-                _strDbg = "10s_TIMER_TICK"
+                _debugMessage = "10s_TIMER_TICK"
                 OpenShit()
 
                 if _bAtVendor == false and _bSellComplete == false and _bTalkedToVendor == false and _bAtStartAfterVendor == false then
@@ -3557,12 +3598,12 @@ frame:SetScript("OnUpdate", function(self, elapsed)
 
             if _bGoingToVendor and _bAtVendor == false then
                 if _bClearVendorPath and FindAttackableUnit() then
-                    _strDbg = "TO_VENDOR_ATTACKING"
+                    _debugMessage = "TO_VENDOR_ATTACKING"
                     Attack(_attackObj)
                 else
                     -- MountUp just checks if it needs to Mount, if not (walking or already mounted) WILL RETURN FALSE
                     if MountUp() == false then
-                        _strDbg = "VENDOR_PATH"
+                        _debugMessage = "VENDOR_PATH"
                         if bLootOnVendorPath == false then
                             VendorPath(true)
                         else
@@ -3573,22 +3614,22 @@ frame:SetScript("OnUpdate", function(self, elapsed)
                     end
                 end
             elseif _bAtVendor and _bSellComplete == false then
-                _strDbg = "SELLING"
+                _debugMessage = "SELLING"
                 SellAndBuyShit()
             elseif _bSellComplete and _bAtStartAfterVendor == false then
                 if _bMail and _bCanMail then
-                    local exitMacro = '.loadfile _Kkona\\' .. scriptName .. '\\Mail.lua'
+                    local exitMacro = '.loadfile _Lynx\\' .. scriptName .. '\\Mail.lua'
                     DebugPrint("Running Mail(): " .. exitMacro)
                     RunMacroText(exitMacro)
                     Exit('Mail')
                 end
 
                 if _bClearVendorPath and FindAttackableUnit() then
-                    _strDbg = "TO_START_ATTACKING"
+                    _debugMessage = "TO_START_ATTACKING"
                     Attack(_attackObj)
                 else
                     if MountUp() == false then
-                        _strDbg = "START_PATH"
+                        _debugMessage = "START_PATH"
                         if bLootOnVendorPath == false then
                             VendorPath(false)
                         else
@@ -3602,29 +3643,29 @@ frame:SetScript("OnUpdate", function(self, elapsed)
                 ResetVars()
             else
                 if Skinning() == false and Looting() == false then
-                    _strDbg = "NOT_SKIN/LOOT-ING"
+                    _debugMessage = "NOT_SKIN/LOOT-ING"
                     if FindAttackableUnit() then
-                        _strDbg = "ATTACK_2"
+                        _debugMessage = "ATTACK_2"
                         Attack(_attackObj)
                     else
                         local castingID = UnitCastID("player")
                         if castingID ~= 0 and inCombat == false then -- Mage problem
-                            _strDbg = "PREVENTING_MAGE_CAST_INTERR"
+                            _debugMessage = "PREVENTING_MAGE_CAST_INTERR"
                         else
                             if _bTargetIsFar and bMountWhileGrinding and IsIndoors() == false and IsMounted() == false and HasMount() then
                                 if MountUp() then
-                                    _strDbg = "MOUNTING_TO_NEXT_TARGET"
+                                    _debugMessage = "MOUNTING_TO_NEXT_TARGET"
                                     DebugPrint('Target is far away... Mounting!')
                                 end
                             else
-                                _strDbg = "MOVEMENT_LAST"
+                                _debugMessage = "MOVEMENT_LAST"
                                 PulseMovement()
                                 PathEndCheck()
                             end
                         end
                     end
                 else
-                    _strDbg = "LOOTING_SKINNING"
+                    _debugMessage = "LOOTING_SKINNING"
                     SetIDXToClosest(true, 10)
                 end
             end
@@ -3633,13 +3674,13 @@ frame:SetScript("OnUpdate", function(self, elapsed)
         if table.getn(avoidNPCs) > 0 then
             FindAttackableUnit() -- still need to avoid dangerous NPCs
         end
-        _strDbg = "VITALS_FAILED"
+        _debugMessage = "VITALS_FAILED"
     end
 
     -- 卡住了
     if _stuckTime > 90 or _combatTime > 120 then -- waypointsCount is good number of seconds :)
-        WriteFile("_Kkona/Status.txt", 'Bot is stuck at idx ' .. pathIdx, false)
-        WriteFile("_Kkona/Terminate.txt", 'Stuck at idx: ' .. pathIdx, false)
+        WriteFile("_Lynx/Status.txt", 'Bot is stuck at idx ' .. pathIdx, false)
+        WriteFile("_Lynx/Terminate.txt", 'Stuck at idx: ' .. pathIdx, false)
         RunMacroText(".dc")
         -- local xx,yy,zz = ObjectPosition("player")
         -- MoveTo(xx,yy,zz)

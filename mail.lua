@@ -89,7 +89,7 @@ end
 local function DbgPrint(str)
 	if bPrint == true then
 		print(str)
-		WriteFile('_Kkona/Debug.txt', str..'\n', true)
+		WriteFile('_Lynx/Debug.txt', str..'\n', true)
 	end
 end
 
@@ -220,7 +220,7 @@ local function ShouldExit()
 	end
 	
 	if bRun == false then
-		local exitMacro = '.loadfile _Kkona\\'..scriptName..'\\main.lua'
+		local exitMacro = '.loadfile _Lynx\\'..scriptName..'\\main.lua'
 		DbgPrint("Starting main.lua from mail.lua")
 		RunMacroText(exitMacro)
 		frame:SetScript("OnUpdate", nil)
@@ -311,7 +311,7 @@ local function StrictPathFollow()
 	if lastIdxCount > 35 and (pathIdx < waypointsCount-2) then
 		local stuckStr  = 'Appears to be STUCK: at idx='..pathIdx
 		print(stuckStr)
-		WriteFile('_Kkona/Stuck.txt', stuckStr..'\n', true)
+		WriteFile('_Lynx/Stuck.txt', stuckStr..'\n', true)
 		--local prevIdx = pathIdx
 		--pathIdx = 1
 		--FindNextBestPoint()
