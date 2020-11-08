@@ -5,4 +5,7 @@
 Libs\!LibDraw\LibDraw.lua
 Libs\LibStub\LibStub.lua
 
+Wow.lua
+Hunter.lua
+Mage.lua
 Lynx.lua
