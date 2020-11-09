@@ -1,9 +1,42 @@
-print("WoW")
+print("Loading WoW")
 
 Wow = {}
 
 -- 魔兽世界API
 do
+    Wow.HasDebuff = function(name, obj)
+        for i = 1, 40 do
+            local debuff = Wow.UnitDebuff(obj, i)
+            if debuff == nil then
+                return false
+            elseif debuff == name then
+                return true
+            end
+        end
+        return false
+    end
+
+    Wow.HasAura =  function(object, aura)
+        for i = 1, 40 do
+            local name = Wow.UnitAura(object, i)
+            if name then
+                if name == aura then
+                    return true
+                end
+            else
+                return false
+            end
+        end
+    end
+
+    Wow.IsHunter = function()
+        return Wow.UnitClass("player") == "Hunter"
+    end
+
+    Wow.IsMage = function()
+        return Wow.UnitClass("player") == "Mage"
+    end
+
     Wow.RepopMe = function()
         RepopMe()
     end
@@ -82,14 +115,6 @@ do
 
     Wow.GetPetActionInfo = function(index)
         return GetPetActionInfo(index)
-    end
-
-    Wow.CastSpellByName = function(spellName)
-        return CastSpellByName(spellName)
-    end
-
-    Wow.UnitCastID = function(unit)
-        return UnitCastID(unit)
     end
 
     Wow.UnitExists = function(unit)
@@ -179,7 +204,7 @@ do
     end
 
     Wow.ObjectName = function(object)
-        return UnitName(object)[1]
+        return UnitName(object)
     end
 
     Wow.GetCorpseRecoveryDelay = function()
@@ -242,8 +267,8 @@ do
         return GetMerchantItemInfo(index)
     end
 
-    Wow.UnitIsEnemy = function(unit)
-        return UnitIsEnemy(unit)
+    Wow.UnitIsEnemy = function(unit, otherUnit)
+        return UnitIsEnemy(unit, otherUnit)
     end
 
     Wow.UnitIsDead = function(unit)
@@ -298,15 +323,24 @@ do
     end
 
     Wow.GetObjectWithGUID = function(guid)
-        // TBD
+        -- TBD
     end
 
     Wow.UnitCanBeSkinned = function(unit)
-        // TBD
+        -- TBD
     end
 
     Wow.UnitCanBeLooted = function(unit)
         return lb.UnitIsLootable(unit)
+    end
+
+    Wow.CastSpellByName = function(spellName)
+        lb.Unlock(CastSpellByName, spellName)
+    end
+
+    Wow.UnitCastID = function(unit)
+        local spellId = lb.UnitCastingInfo(unit)
+        return spellId
     end
 end
 
@@ -315,5 +349,16 @@ do
     Wow.bit = {}
     Wow.bit.bor = function(b1, b2, ...)
         return bit.bor(b1, b2, ...)
+    end
+end
+
+-- Debug
+do
+    DEBUG_PRINT_ENABLED = false
+    Wow.DebugPrint = function (message)
+        if DEBUG_PRINT_ENABLED == true then
+            print(message)
+            Wow.WriteFile('/Log/Debug.txt', message .. '\n', true)
+        end
     end
 end

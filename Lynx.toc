@@ -8,5 +8,4 @@ Libs\LibStub\LibStub.lua
 Wow.lua
 Hunter.lua
 Mage.lua
-Mail.lua
 Lynx.lua

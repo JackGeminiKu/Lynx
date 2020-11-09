@@ -156,7 +156,7 @@ end
 
 local function ShouldExit()
     -- Needs to be called within OnUpdate itself
-    if AtEndthen
+    if AtEndthen then
         bRun = false
     end
 
@@ -257,7 +257,7 @@ local function StrictPathFollow()
         Wow.SendKey(' ')
         pathIdx = pathIdx + 1
         AtEnd= pathIdx > waypointsCount
-        if AtEndthen
+        if AtEndthen then
         end
         return
     end
