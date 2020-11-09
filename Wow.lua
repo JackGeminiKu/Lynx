@@ -4,6 +4,138 @@ Wow = {}
 
 -- 魔兽世界API
 do
+    Wow.RepopMe = function()
+        RepopMe()
+    end
+
+    Wow.GetSendMailItem = function(index)
+        return GetSendMailItem(index)
+    end
+
+    Wow.RepairAllItems = function()
+        RepairAllItems()
+    end
+
+    Wow.CanMerchantRepair = function()
+        return CanMerchantRepair()
+    end
+
+    Wow.DeleteCursorItem = function()
+        DeleteCursorItem()
+    end
+
+    Wow.PickupContainerItem = function(bagId, slot)
+        PickupContainerItem(bagId, slot)
+    end
+
+    Wow.TargetUnit = function(unit)
+        TargetUnit(unit)
+    end
+
+    Wow.UnitCreatureType = function(unit)
+        return UnitCreatureType(unit)
+    end
+
+    Wow.IsSpellInRange = function(spellName)
+        return IsSpellInRange(spellName)
+    end
+
+    Wow.rad = function(x)
+        return math.rad(x)
+    end
+
+    Wow.atan2 = function(y, x)
+        return math.atan2(y, x)
+    end
+
+    Wow.UnitCanAttack = function(attacker, attacked)
+        return UnitCanAttack(attacker, attacked)
+    end
+
+    Wow.UnitIsPlayer = function(unit)
+        return UnitIsPlayer(unit)
+    end
+
+    Wow.IsSwimming = function()
+        return IsSwimming()
+    end
+
+    Wow.SpellStopCasting = function()
+        SpellStopCasting()
+    end
+
+    Wow.GetContainerItemCooldown = function(bagId, slot)
+        return GetContainerItemCooldown(bagId, slot)
+    end
+
+    Wow.IsUsableItem = function(item)
+        return IsUsableItem(item)
+    end
+
+    Wow.GetPetHappiness = function()
+        return GetPetHappiness()
+    end
+
+    Wow.CastPetAction = function(index)
+        return CastPetAction(index)
+    end
+
+    Wow.GetPetActionInfo = function(index)
+        return GetPetActionInfo(index)
+    end
+
+    Wow.CastSpellByName = function(spellName)
+        return CastSpellByName(spellName)
+    end
+
+    Wow.UnitCastID = function(unit)
+        return UnitCastID(unit)
+    end
+
+    Wow.UnitExists = function(unit)
+        return UnitExists(unit)
+    end
+
+    Wow.IsUsableSpell = function(spellName)
+        return IsUsableSpell(spellName)
+    end
+
+    Wow.GetSpellCooldown = function(spellName)
+        return GetSpellCooldown(spellName)
+    end
+
+    Wow.UseContainerItem = function(bagId, slot)
+        return UseContainerItem(bagId, slot)
+    end
+
+    Wow.UnitPowerMax = function(unit)
+        return UnitPowerMax(unit)
+    end
+
+    Wow.UnitPower = function(unit)
+        return UnitPower(unit)
+    end
+
+    Wow.UnitHealthMax = function(unit)
+        return UnitHealthMax(unit)
+    end
+
+    Wow.UnitHealth = function(unit)
+        return UnitHealth(unit)
+    end
+
+    Wow.UnitGUID = function(unit)
+        return UnitGUID(unit)
+    end
+
+    Wow.UnitTarget = function(unit)
+        return UnitTarget(unit)
+    end
+
+    Wow.UnitAffectingCombat = function(unit)
+        return UnitAffectingCombat(unit)
+    end
+
     Wow.UnitLevel = function(unit)
         return UnitLevel(unit)
     end
@@ -58,8 +190,8 @@ do
         RetrieveCorpse()
     end
 
-    Wow.GetItemCount = function()
-        return GetItemCount()
+    Wow.GetItemCount = function(itemName)
+        return GetItemCount(itemName)
     end
 
     Wow.BuyMerchantItem = function(index)
@@ -94,6 +226,10 @@ do
         return GetContainerNumSlots(bagId)
     end
 
+    Wow.GetContainerNumFreeSlots = function(bagId)
+        return GetContainerNumFreeSlots(bagId)
+    end
+
     Wow.GetContainerItemLink = function(bagId, slot)
         return GetContainerItemLink(bagId, slot)
     end
@@ -121,6 +257,14 @@ end
 
 -- Unlocker
 do
+    Wow.ObjectID = function(object)
+        return lb.ObjectId(object)
+    end
+
+    Wow.InteractUnit = function(unit)
+        return lb.ObjectInteract(unit)
+    end
+
     Wow.WriteFile = function(path, contents, overwrite)
         return lb.WriteFile(path, contents, not overwrite)
     end 
@@ -147,6 +291,22 @@ do
 
     Wow.SendKey = function(key, released)
         -- TBD: luabox貌似不支持按键功能!
+    end
+
+    Wow.FaceDirection = function(facing)
+        lb.SetPlayerAngles(facing)
+    end
+
+    Wow.GetObjectWithGUID = function(guid)
+        // TBD
+    end
+
+    Wow.UnitCanBeSkinned = function(unit)
+        // TBD
+    end
+
+    Wow.UnitCanBeLooted = function(unit)
+        return lb.UnitIsLootable(unit)
     end
 end
 

@@ -171,10 +171,10 @@ local waypoints = {
 local waypointsCount = table.getn(waypoints)
 
 local function DetermineResTime()
-    local objCount = GetObjectCount()
+    local objCount = Wow.GetObjectCount()
     for i = 1, objCount do
-        local obj = GetObjectWithIndex(i)
-        if UnitIsEnemy("player", obj) and UnitIsPlayer(obj) and UnitIsDead(obj) == false and GetDistanceBetweenObjects("player", obj) < 50 then
+        local obj = Wow.GetObjectWithIndex(i)
+        if Wow.UnitIsEnemy("player", obj) and Wow.UnitIsPlayer(obj) and Wow.UnitIsDead(obj) == false and Wow.GetDistanceBetweenObjects("player", obj) < 50 then
             waitBeforeRevive = waitBeforeReviveIfPVPDeath
             return
         end
@@ -187,12 +187,12 @@ local pulseDelay = 0.2
 local startDelay = waitBeforeRevive
 local bPrint = false
 
-local frame = CreateFrame("Frame")
+local frame = Wow.CreateFrame("Frame")
 local bRun = true
-local canPulseAt = (GetTime() + startDelay) + pulseDelay
+local canPulseAt = (Wow.GetTime() + startDelay) + pulseDelay
 
 local pathIdx = 1
-local losFlags = bit.bor(0x10, 0x100)
+local losFlags = Wow.bit.bor(0x10, 0x100)
 local proximalTolerance = 4
 
 local bSkipFarPoints = false
@@ -203,13 +203,13 @@ local rndMax = 50
 local function DbgPrint(str)
     if bPrint == true then
         print(str)
-        WriteFile('_Kkona/Debug.txt', str .. '\n', true)
+        Wow.WriteFile('_Kkona/Debug.txt', str .. '\n', true)
     end
 end
 
 local function ShouldExit()
     -- Needs to be called within OnUpdate itself
-    if bAtEnd then
+    if AtEnd then
         bRun = false
         DbgPrint("Setting bRun to FALSE")
     end
@@ -217,7 +217,7 @@ local function ShouldExit()
     if bRun == false then
         local exitMacro = '.loadfile _Kkona\\' .. scriptName .. '\\main.lua'
         DbgPrint("Starting main.lua from resurrect.lua")
-        RunMacroText(exitMacro)
+        Wow.RunMacroText(exitMacro)
         frame:SetScript("OnUpdate", nil)
     end
 end
@@ -227,7 +227,7 @@ local function CalculateDistance(x1, y1, z1, x2, y2, z2)
 end
 
 local function SetIDXToClosest()
-    local px, py, pz = ObjectPosition("player")
+    local px, py, pz = Wow.ObjectPosition("player")
     local moveToIdx = 1
     local moveToDist = 9999999
     local foundSomething = false
@@ -261,7 +261,7 @@ local function StrictPathFollow()
         SetIDXToClosest()
     end
 
-    local px, py, pz = ObjectPosition("player")
+    local px, py, pz = Wow.ObjectPosition("player")
     local xyz = waypoints[pathIdx] -- return is imp to always assign next xyz correctly
 
     if xyz ~= nil then
@@ -279,33 +279,33 @@ local function StrictPathFollow()
                 DbgPrint('Moving to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
                 return
             else
-                bAtEnd = true
+                AtEnd = true
             end
         end
     end
 
     -- Check if Stuck
-    if pathIdx == lastIdx then
-        lastIdxCount = lastIdxCount + 1
-        stuckTime = stuckTime + pulseDelay
+    if pathIdx == LastIdx then
+        LastIdxCount = LastIdxCount + 1
+        StuckTime = StuckTime + pulseDelay
     else
-        stuckTime = 0
-        lastIdxCount = 0
+        StuckTime = 0
+        LastIdxCount = 0
     end
 
     -- Skip if stuck (forced) but never skip last post so as to trigger the appropriate fail safes
     -- using counter in the form of lastIdxCount is mehhh coz doesnt give indication of time stuck (we vary pulseDelay all the time)
-    if lastIdxCount > 35 and (pathIdx < waypointsCount - 2) then
+    if LastIdxCount > 35 and (pathIdx < waypointsCount - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. pathIdx
         print(stuckStr)
-        WriteFile('_Kkona/Stuck.txt', stuckStr .. '\n', true)
+        Wow.WriteFile('_Kkona/Stuck.txt', stuckStr .. '\n', true)
         -- local prevIdx = pathIdx
         -- pathIdx = 1
         -- FindNextBestPoint()
-        SendKey(' ')
+        Wow.SendKey(' ')
         pathIdx = pathIdx + 1
-        bAtEnd = pathIdx > waypointsCount
-        if bAtEnd then
+        AtEnd = pathIdx > waypointsCount
+        if AtEnd then
         end
         return
     end
@@ -314,7 +314,7 @@ local function StrictPathFollow()
         pathIdx = 1
     elseif pathIdx > waypointsCount then
         pathIdx = waypointsCount
-        bAtEnd = true
+        AtEnd = true
     end
 
     -- Move
@@ -328,43 +328,43 @@ local function StrictPathFollow()
 
     local distToNext = CalculateDistance(px, py, pz, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
     if bSkipFarPoints == false or (bSkipFarPoints and distToNext < 50) then
-        if bIgnoreLOS == true or TraceLine(px, py, pz + 2.5, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3] + 2.5, losFlags) == nil then
-            MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
+        if IgnoreLOS == true or TraceLine(px, py, pz + 2.5, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3] + 2.5, losFlags) == nil then
+            Wow.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
         end
     else
         if bSkipFarPoints then
             DbgPrint('*Skipping* to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
             pathIdx = pathIdx + 1
-            bAtEnd = pathIdx > waypointsCount
+            AtEnd = pathIdx > waypointsCount
             return
         else
             DbgPrint('*Waiting* for player to be close to path...')
         end
     end
 
-    lastIdx = pathIdx
+    LastIdx = pathIdx
 end
 
 local function ResurrectPulse()
-    local name = ObjectName("player")
-    local objCount = GetObjectCount()
-    local px, py, pz = ObjectPosition("player")
+    local name = Wow.ObjectName("player")
+    local objCount = Wow.GetObjectCount()
+    local px, py, pz = Wow.ObjectPosition("player")
 
     for i = 1, objCount do
-        local obj = GetObjectWithIndex(i)
-        if UnitIsCorpse(obj) then
-            local oname = ObjectName(obj)
+        local obj = Wow.GetObjectWithIndex(i)
+        if Wow.UnitIsCorpse(obj) then
+            local oname = Wow.ObjectName(obj)
             if name == oname then
-                local dist = GetDistanceBetweenObjects("player", obj)
-                local cx, cy, cz = ObjectPosition(obj)
+                local dist = Wow.GetDistanceBetweenObjects("player", obj)
+                local cx, cy, cz = Wow.ObjectPosition(obj)
                 -- if dist < 80 and TraceLine(px, py, pz+2.5, cx,cy,cz+2.5,losFlags) == nil then
                 -- MoveTo(cx,cy,cz)
                 -- return true
                 -- end
                 if dist < 35 then
-                    if GetCorpseRecoveryDelay() <= 0 then
-                        RetrieveCorpse()
-                        bAtEnd = true
+                    if Wow.GetCorpseRecoveryDelay() <= 0 then
+                        Wow.RetrieveCorpse()
+                        AtEnd = true
                         return true
                     else
                         Sleepy(5)
@@ -379,15 +379,15 @@ local function ResurrectPulse()
 end
 
 local function Pulse()
-    if UnitIsDeadOrGhost("player") and ResurrectPulse() == false then
+    if Wow.UnitIsDeadOrGhost("player") and ResurrectPulse() == false then
         StrictPathFollow()
     else
-        bAtEnd = true
+        AtEnd = true
     end
 end
 
 local function CanPulse()
-    local timeNow = GetTime()
+    local timeNow = Wow.GetTime()
     if timeNow >= canPulseAt then
         canPulseAt = timeNow + pulseDelay
         return true
@@ -397,7 +397,7 @@ local function CanPulse()
 end
 
 local function Sleepy(secs)
-    local timeNow = GetTime()
+    local timeNow = Wow.GetTime()
 
     if canPulseAt > timeNow then -- since this func may be used several times in 1 cycle
         local overheadWait = canPulseAt - timeNow;
@@ -407,20 +407,20 @@ local function Sleepy(secs)
     end
 end
 
-local _popMeTime = GetTime() + (startDelay / 10)
+local _popMeTime = Wow.GetTime() + (startDelay / 10)
 local _releasedSpirit = false
 
 DbgPrint('Starting Corpse Run in ' .. startDelay .. ' seconds...')
 DbgPrint('Popping Spirit in in ' .. (startDelay / 10) .. ' seconds...')
 
 frame:SetScript("OnUpdate", function(self, elapsed)
-    if _releasedSpirit == false and (GetTime() > _popMeTime) then
+    if _releasedSpirit == false and (Wow.GetTime() > _popMeTime) then
         LibDraw.clearCanvas()
         _releasedSpirit = true
-        RepopMe()
+        Wow.RepopMe()
         DbgPrint("Popping Spirit!")
         bRun = true
-        bAtEnd = false
+        AtEnd = false
     end
     if CanPulse() == true then
         Pulse()
