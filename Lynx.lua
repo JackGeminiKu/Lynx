@@ -44,7 +44,6 @@ function Hunter:BuyAmmo()
     Sleep(1) -- ammo takes a ton of time to appear
 end
 
-
 -- CHECK FOR --REMOVE for other zones
 --------------------FILE STUFF--------------------
 RESURRECT_ENABLED = true -- MAKE SURE YOU WRITE MAIL.LUA
@@ -56,7 +55,7 @@ Food = {"Conjured Sourdough", "Wild Hog Shank", "Mutton Chop", "Cured Ham Steak"
 
 --------------------CLASS SPECIFIC--------------------
 PET_FOOD = {"Haunch of Meat", "Big Bear Meat", "Turtle Meat", "Mutton Chop", "Wild Hog Shank", "Red Wolf Meat"}
-PET_MEND_HP = 25    -- Heal pet at this HP
+PET_MEND_HP = 25 -- Heal pet at this HP
 PetMendHP = PET_MEND_HP
 HunterBuff = "Aspect of the Hawk"
 AGGRO_WITH_PET = false -- Hunter tags and pet only goes in if in melee range
@@ -68,9 +67,7 @@ CS_DELAY = math.random(0.9, 1.2)
 --------------------GENERAL--------------------
 MOUNT_NAME = "Brown Horse Bridle"
 
-AvoidNPCs = {
-    "Scorched Guardian", "Teremus the Devourer", "Servant of Grol", "Boss Tho'gun", "Anathemus", "Dustbelcher Mystic", "Dustbelcher Shaman", "Dustbelcher Wyrmhunter", "Dustbelcher Mauler"
-}
+AvoidNPCs = {"Scorched Guardian", "Teremus the Devourer", "Servant of Grol", "Boss Tho'gun", "Anathemus", "Dustbelcher Mystic", "Dustbelcher Shaman", "Dustbelcher Wyrmhunter", "Dustbelcher Mauler"}
 ToMail = {"Mageweave Cloth", "Runecloth", "Silk Cloth", "Wool Cloth", "Rugged Leather", "Thick Leather", "Felcloth", "Mageweave Cloth", "Demonic Rune"} -- Can leave empty if mailing
 ForcedToSell = {"Citrine"}
 OpenInBags = {"Thick-shelled Clam"}
@@ -746,17 +743,17 @@ function CanPulse()
         return false
     end
     local timeNow = Wow.GetTime()
-    if timeNow >= CanPulseAt then
-        LastPulse = timeNow
-        CanPulseAt = LastPulse + PULSE_DELAY
-        return true
+    if timeNow < CanPulseAt then
+        return false
     end
-    return false
+
+    LastPulse = timeNow
+    CanPulseAt = LastPulse + PULSE_DELAY
+    return true
 end
 
 function ArrayContains(arr, search)
-    local count = table.getn(arr)
-    for i = 1, count, 1 do
+    for i = 1, #arr, 1 do
         if arr[i] == search then
             return true
         end
@@ -765,14 +762,13 @@ function ArrayContains(arr, search)
 end
 
 function Sleep(secs)
-    local timeNow = Wow.GetTime()
-
     -- i forgot why this function is so scuffed but leave it as it is UNLESS you rewrite the whole codebase
+    local timeNow = Wow.GetTime()
     if CanPulseAt > timeNow then -- since this func may be used several times in 1 cycle
         local overheadWait = CanPulseAt - timeNow;
         CanPulseAt = timeNow + overheadWait + secs
     else
-        CanPulseAt = overheadWait + secs
+        CanPulseAt = timeNow + secs
     end
 end
 
@@ -1293,12 +1289,12 @@ function IsTargeting(obj, tar)
     if obj == nil or tar == nil then
         return false
     end
-    local unitTar = Wow.UnitTarget(obj)
-    if unitTar == nil then
+    local unitTarget = Wow.UnitTarget(obj)
+    if unitTarget == nil then
         return false
     end
 
-    return Wow.UnitGUID(unitTar) == Wow.UnitGUID(tar)
+    return Wow.UnitGUID(unitTarget) == Wow.UnitGUID(tar)
 end
 
 function GetUnitHP(unit)
@@ -1429,7 +1425,8 @@ function MendingPet()
             local _, castChannelID, _, _ = Wow.UnitCastID("player") -- ??might be first var but idk
 
             if castChannelID == 136 then -- If already casting mend
-                Wow.DebugPrint('Pet is being Healed!') Sleep(1)
+                Wow.DebugPrint('Pet is being Healed!')
+                Sleep(1)
             else -- If not casting mend
                 Wow.DebugPrint('Healing Pet!!!')
                 if IsTargeting("target", "pet") then
@@ -1777,9 +1774,7 @@ function EnemyNearby(obj)
             return
         end
 
-        local myLvl = Wow.UnitLevel("player")
-        local enemyLvl = Wow.UnitLevel(obj)
-        if myLvl - enemyLvl > 10 then -- Harmless Enemy
+        if Wow.UnitLevel("player") - Wow.UnitLevel(obj) > 10 then -- Harmless Enemy
             return
         end
 
@@ -1810,49 +1805,45 @@ function AggrodToAnotherPlayer(obj)
     return false
 end
 
-function MoveFacingNPC(obj, div, into)
+function MoveFacingObject(obj, div, into)
     local px, py, pz = Wow.ObjectPosition("player")
-    local xx, yy, zz = Wow.ObjectPosition(obj)
-    local ddx = math.abs(xx - px)
-    local ddy = math.abs(yy - py)
-    local ddz = math.abs(yy - pz)
-
-    local ddx = (px - xx) / div
-    local ddy = (py - yy) / div
-    local ddz = (pz - zz) / div
+    local ox, oy, oz = Wow.ObjectPosition(obj)
+    local dx = (px - ox) / div
+    local dy = (py - oy) / div
+    local dz = (pz - oz) / div
     local mx, my, mz
 
     if into then
-        if ddx < 0 then
-            mx = px + math.abs(ddx)
+        if dx < 0 then
+            mx = px + math.abs(dx)
         else
-            mx = px - math.abs(ddx)
+            mx = px - math.abs(dx)
         end
-        if ddy < 0 then
-            my = py + math.abs(ddy)
+        if dy < 0 then
+            my = py + math.abs(dy)
         else
-            my = py - math.abs(ddy)
+            my = py - math.abs(dy)
         end
-        if ddz < 0 then
-            mz = pz + math.abs(ddz)
+        if dz < 0 then
+            mz = pz + math.abs(dz)
         else
-            mz = pz - math.abs(ddz)
+            mz = pz - math.abs(dz)
         end
     else
-        if ddx < 0 then
-            mx = px - math.abs(ddx)
+        if dx < 0 then
+            mx = px - math.abs(dx)
         else
-            mx = px + math.abs(ddx)
+            mx = px + math.abs(dx)
         end
-        if ddy < 0 then
-            my = py - math.abs(ddy)
+        if dy < 0 then
+            my = py - math.abs(dy)
         else
-            my = py + math.abs(ddy)
+            my = py + math.abs(dy)
         end
-        if ddz < 0 then
-            mz = pz - math.abs(ddz)
+        if dz < 0 then
+            mz = pz - math.abs(dz)
         else
-            mz = pz + math.abs(ddz)
+            mz = pz + math.abs(dz)
         end
     end
 
@@ -1876,11 +1867,10 @@ function FindAttackableUnit()
         end
     end
     local px, py, pz = Wow.ObjectPosition("player")
-    local objCount = Wow.GetObjectCount()
 
-    local playaLvl = Wow.UnitLevel("player")
-    local minAttLvl = playaLvl - LEVEL_MINUS
-    local maxAttLvl = playaLvl + LEVEL_PLUS
+    local playerLvl = Wow.UnitLevel("player")
+    local minAttLvl = playerLvl - LEVEL_MINUS
+    local maxAttLvl = playerLvl + LEVEL_PLUS
 
     -- CLEAR Tables to choose from
     local targetTable = {}
@@ -1894,12 +1884,9 @@ function FindAttackableUnit()
     PvpTargeted = false
 
     -- Fill target tables
-    for i = 1, objCount do
+    for i = 1, Wow.GetObjectCount() do
         local obj = Wow.GetObjectWithIndex(i)
-
         local name = Wow.ObjectName(obj)
-        local id = Wow.ObjectID(obj)
-        local lowestHP = 9999
 
         -- Enemy Player/NPC Check for Drawing
         if Wow.UnitIsEnemy("player", obj) and Wow.UnitIsDead(obj) == false then
@@ -1915,8 +1902,7 @@ function FindAttackableUnit()
 
         if string.find(name, "Totem") == nil and Wow.UnitCanAttack("player", obj) then
             local unitLvl = Wow.UnitLevel(obj)
-
-            local hp = GetUnitHP(obj)
+            local unitHp = GetUnitHP(obj)
             local targettingMe = IsTargeting(obj, "player")
             if Wow.HasDebuff("Frost Nova", obj) then
                 targettingMe = true
@@ -1925,13 +1911,11 @@ function FindAttackableUnit()
                 targettingMe = true
             end
 
-            if targettingMe or (unitLvl >= minAttLvl and unitLvl <= maxAttLvl) and hp > 0 and Wow.UnitIsDead(obj) == false then
+            if targettingMe or (unitLvl >= minAttLvl and unitLvl <= maxAttLvl) and unitHp > 0 and Wow.UnitIsDead(obj) == false then
                 local ox, oy, oz = Wow.ObjectPosition(obj)
-                -- local dist = Wow.GetDistanceBetweenObjects(obj, "player")
-
+                -- Stop Pet Auto-Aggro Player
                 if Wow.IsHunter() and Wow.UnitIsPlayer(obj) then
                     if IsTargeting("pet", obj) then
-                        -- Stop Pet Auto-Aggro Player
                         for i = 1, 10, 1 do
                             local name, _, _, _, _, _, _ = Wow.GetPetActionInfo(i);
                             if (name == "PET_ACTION_FOLLOW") then
@@ -1943,13 +1927,12 @@ function FindAttackableUnit()
 
                 local isPlayer = Wow.UnitIsPlayer(obj)
                 if isPlayer == false and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and AggrodToAnotherPlayer(obj) == false then
-                    if IsInCombat(obj) and targettingMe then -- Targetting me so auto fook him up
+                    if IsInCombat(obj) and targettingMe then    -- Targetting me so auto fook him up
                         table.insert(AggroTable, obj)
-                    elseif ArrayContains(AvoidNPCs, name) == false then
+                    elseif ArrayContains(AvoidNPCs, name) == false then    -- 不是敌对NPC
                         local guid = Wow.UnitGUID(obj)
-                        -- print(guid)
                         if string.find(guid, "Pet") == nil then -- make sure target is not a pet of horde
-                            if hp <= 10 and hp > 0 then
+                            if unitHp <= 10 and unitHp > 0 then
                                 table.insert(AggroTable, obj) -- add to aggro list for priority in killing blow
                             else
                                 table.insert(targetTable, obj)
@@ -1960,11 +1943,9 @@ function FindAttackableUnit()
                         if isInDangerRange then
                             StatusStr = "KITING_DANGER"
                             Wow.DebugPrint('Kiting Dangerous NPC - ' .. Wow.ObjectName(obj))
-                            MoveFacingNPC(obj, 1, false) -- 0.2 so to set move far away
+                            MoveFacingObject(obj, 1, false) -- 0.2 so to set move far away
                             Sleep(3)
-                            -- if pauseWPMovTil < Wow.GetTime() then
                             PauseWPMovTil = Wow.GetTime() + 10
-                            -- end
                         end
                     end
                 else
@@ -1973,29 +1954,25 @@ function FindAttackableUnit()
                     end
                 end
             end
-
         end
     end
 
     -- Iterate thru table containing all targets AT ALL DISTANCE (not just within pullrange)
     local found = false
     local lowestDist = 99999
-
-    local aggrCnt = table.getn(AggroTable)
-    -- print('AGGRO:  '..aggrCnt)
-    if aggrCnt > 0 then
+    if #AggroTable > 0 then
         local lowestHP = 99999
-        for i = 1, aggrCnt, 1 do
+        for i = 1, #AggroTable, 1 do
             local tar = AggroTable[i]
-            local hp = GetUnitHP(tar)
+            local unitHp = GetUnitHP(tar)
             local dist = Wow.GetDistanceBetweenObjects(tar, "player")
             if dist < lowestDist then
                 lowestDist = dist
             end
-            if hp < lowestHP and hp > 0.0 then
+            if unitHp < lowestHP and unitHp > 0.0 then
                 -- Using pullrange*3 coz is aggrod (we don't want aggrod target which is far to go unchecked)
                 if dist <= (PULL_RANGE * 3) then -- tbh should remove this dist check
-                    lowestHP = hp
+                    lowestHP = unitHp
                     if keepAttObj == false then
                         AttackObj = tar
                     end
@@ -2005,13 +1982,11 @@ function FindAttackableUnit()
             end
         end
     else
-        local closestObj = nil
-        local cnt = table.getn(targetTable)
-        for i = 1, cnt, 1 do
+        for i = 1, #AggroTable, 1 do
             local tar = targetTable[i]
-            local hp = GetUnitHP(tar)
+            local unitHp = GetUnitHP(tar)
             local dist = Wow.GetDistanceBetweenObjects(tar, "player")
-            if dist < lowestDist and hp > 0.0 then
+            if dist < lowestDist and unitHp > 0.0 then
                 lowestDist = dist
                 if dist <= PULL_RANGE then -- -5 to test stutter step bug
                     if keepAttObj == false then
@@ -2123,7 +2098,7 @@ function HunterRotation()
                 Spell = "0 Ammo Move"
                 div = 1.5
             end
-            MoveFacingNPC("target", div, true)
+            MoveFacingObject("target", div, true)
             if ammo == 0 then
                 Sleep(1)
             else
@@ -2132,7 +2107,7 @@ function HunterRotation()
             return
         elseif KITE and targettingPet and dist < 13 and Wow.GetItemCount(Hunter:GetAmmoName()) > 0 then -- Move away to fire 
             Wow.DebugPrint('Moving away into kiting range [Dist:' .. dist .. ']') -- ??confirm
-            MoveFacingNPC("target", 0.02, false) -- 0.2 so to set move far away
+            MoveFacingObject("target", 0.02, false) -- 0.2 so to set move far away
             local slp = 0.5 + ((13 - dist) / 10);
             Sleep(slp)
             return
@@ -2333,7 +2308,7 @@ function MageRotation()
     local dist = Wow.GetDistanceBetweenObjects("player", "target")
     if dist > PULL_RANGE + 1 or (inCombat and dist > PULL_RANGE) then
         Wow.DebugPrint('Cast Distance = TOOLARGE @' .. dist)
-        MoveFacingNPC("target", 2, true)
+        MoveFacingObject("target", 2, true)
         Spell = "Moving Within Range"
         Sleep(0.5)
         return
@@ -2374,7 +2349,7 @@ function MageRotation()
 
             if closestTar ~= nil and closest > 30 then
                 Wow.DebugPrint('Moving into polymorph range as closest is' .. math.ceil(closest) .. 'y away!')
-                MoveFacingNPC(closestTar, 2, true)
+                MoveFacingObject(closestTar, 2, true)
                 Sleep(0.5)
                 return
             end
@@ -2409,7 +2384,7 @@ function MageRotation()
 
         -- Kite/Blink
         if KITE and dist <= 7 and Wow.HasDebuff("Frost Nova", "target") then
-            MoveFacingNPC("target", 0.01, false) -- 0.01 div so as to set move marker far in case tar is close
+            MoveFacingObject("target", 0.01, false) -- 0.01 div so as to set move marker far in case tar is close
             ForceStopNextMove = true
             Spell = "Kiting"
             -- if isCastable("Blink") then
@@ -2508,7 +2483,7 @@ function MageRotation()
             if dist > 29 then
                 Spell = "Moving to Wand LOW"
                 Wow.DebugPrint('Moving into Wanding Distance')
-                MoveFacingNPC("target", 8, true)
+                MoveFacingObject("target", 8, true)
                 Sleep(0.25)
                 return
             end
@@ -2527,7 +2502,7 @@ function MageRotation()
             if dist > 29 then
                 Spell = "Moving to Wand OOM"
                 Wow.DebugPrint('Moving into Wanding Distance')
-                MoveFacingNPC("target", 8, true)
+                MoveFacingObject("target", 8, true)
                 Sleep(0.25)
                 return
             end
@@ -3194,10 +3169,8 @@ function OpenShit()
 end
 
 function AmIFoccussed()
-
     local bKawardCheck = true
-    local objCount = Wow.GetObjectCount()
-    for i = 1, objCount do
+    for i = 1, Wow.GetObjectCount() do
         local obj = Wow.GetObjectWithIndex(i)
         if Wow.UnitIsDead(obj) == false and Wow.UnitIsPlayer(obj) == false then
             local focussed = IsTargeting(obj, "player")
@@ -3216,7 +3189,6 @@ function AmIFoccussed()
                         end
                     end
                 end
-
             end
         end
     end
@@ -3443,12 +3415,10 @@ DoBotStuff = function(self, elapsed)
     end
 
     -- 卡住了
-    if StuckTime > 90 or CombatTime > 120 then -- #Waypoints is good number of seconds :)
+    if StuckTime > 90 or CombatTime > 120 then 
         Wow.WriteFile("/Log/Status.txt", 'Bot is stuck at idx ' .. PathIdx, false)
         Wow.WriteFile("/Log/Terminate.txt", 'Stuck at idx: ' .. PathIdx, false)
         Wow.RunMacroText(".dc")
-        -- local xx,yy,zz = Wow.ObjectPosition("player")
-        -- Wow.MoveTo(xx,yy,zz)
         Exit("Stuck")
     end
 end
