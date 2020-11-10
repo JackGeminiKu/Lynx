@@ -129,10 +129,6 @@ do
         return GetSpellCooldown(spellName)
     end
 
-    Wow.UseContainerItem = function(bagId, slot)
-        return UseContainerItem(bagId, slot)
-    end
-
     Wow.UnitPowerMax = function(unit)
         return UnitPowerMax(unit)
     end
@@ -291,7 +287,9 @@ do
     end
 
     Wow.WriteFile = function(path, contents, overwrite)
-        return lb.WriteFile(path, contents, not overwrite)
+        if lb ~= nil then
+            lb.WriteFile(path, contents, not overwrite)
+        end
     end 
 
     Wow.ReadFile = function(path)
@@ -342,6 +340,10 @@ do
         local spellId = lb.UnitCastingInfo(unit)
         return spellId
     end
+
+    Wow.UseContainerItem = function(bagId, slot)
+        return lb.Unlock(UseContainerItem, bagId, slot)
+    end
 end
 
 -- Bit opeartions
@@ -354,7 +356,7 @@ end
 
 -- Debug
 do
-    DEBUG_PRINT_ENABLED = false
+    DEBUG_PRINT_ENABLED = true
     Wow.DebugPrint = function (message)
         if DEBUG_PRINT_ENABLED == true then
             print(message)

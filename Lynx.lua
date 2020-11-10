@@ -50,8 +50,8 @@ RESURRECT_ENABLED = true -- MAKE SURE YOU WRITE MAIL.LUA
 MAIL_ENABLED = false -- NO MAIL!
 
 -- Keep drink 2 for hunter buy!
-Drinks = {"Conjured Sparkling Water", "Sweet Nectar", "Ice Cold Milk", "Melon Juice"}
-Food = {"Conjured Sourdough", "Wild Hog Shank", "Mutton Chop", "Cured Ham Steak"}
+Drinks = {"Conjured Fresh Water", "Conjured Sparkling Water", "Sweet Nectar", "Ice Cold Milk", "Melon Juice"}
+Food = {"Conjured Muffin", "Conjured Sourdough", "Wild Hog Shank", "Mutton Chop", "Cured Ham Steak"}
 
 --------------------CLASS SPECIFIC--------------------
 PET_FOOD = {"Haunch of Meat", "Big Bear Meat", "Turtle Meat", "Mutton Chop", "Wild Hog Shank", "Red Wolf Meat"}
@@ -1333,7 +1333,7 @@ function RecoverMana()
             local link = Wow.GetContainerItemLink(bag, slot)
             if link then
                 local sName, _, _, _, _, _, _, _ = Wow.GetItemInfo(link)
-                local count = table.getn(Drinks)
+                local count = #Drinks
                 for i = 1, count, 1 do
                     if sName == Drinks[i] then
                         Wow.DebugPrint("Recovering Mana...")
@@ -2987,7 +2987,6 @@ Frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Frame:RegisterEvent("MERCHANT_SHOW")
 
 Frame:SetScript("OnEvent", function(self, event)
-    Wow.DebugPrint(event)
     if event == "MERCHANT_SHOW" then
         TalkedToVendor = true
         Wow.DebugPrint("Vendor Window Open!!!")
@@ -3273,6 +3272,8 @@ DoBotStuff = function(self, elapsed)
         return
     end
 
+    print('[' .. Wow.GetTime() .. '] Do pulse stuff')
+
     DeadCheck() -- Call First Res Path
 
     -- Resurrect
@@ -3425,9 +3426,16 @@ end
 
 -- 插件命令
 do
-    SLASH_LYNX_TEST1 = "/lynx-test"
+    SLASH_LYNX_START1 = "/lynx-start"
+    SLASH_LYNX_STOP1 = "/lynx-stop"
 
-    SlashCmdList["LYNX_TEST"] = function()
+    SlashCmdList["LYNX_START"] = function()
+        Wow.DebugPrint("Lynx start!")
         Frame:SetScript("OnUpdate", DoBotStuff)
+    end
+
+    SlashCmdList["LYNX_STOP"] = function()
+        Wow.DebugPrint("Lynx stop!")
+        Frame:SetScript("OnUpdate", nil)
     end
 end
