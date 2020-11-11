@@ -1304,15 +1304,15 @@ function GetUnitMana(unit)
     return 100 * Wow.UnitPower(unit) / Wow.UnitPowerMax(unit)
 end
 
-EnemyNPCs = {}
+EnemyNpcs = {}
 EnemyPlayers = {}
 
 function ClearTargetDrawTables()
     for k in pairs(EnemyPlayers) do
         EnemyPlayers[k] = nil
     end
-    for k in pairs(EnemyNPCs) do
-        EnemyNPCs[k] = nil
+    for k in pairs(EnemyNpcs) do
+        EnemyNpcs[k] = nil
     end
 end
 
@@ -1645,7 +1645,7 @@ function ApplyBuff(buff)
     if Wow.IsCastable(buff) == false or Wow.IsMounted() == true and Wow.UnitCastID("player") ~= 0 and Wow.GetTime() < StallBuffUp then
         return
     end
-    Wow.ApplyBuff(buff)
+    Wow.ApplyBuff(buff, "player")
     Sleep(0.5)
 end
 
@@ -1854,7 +1854,7 @@ function FindAttackableUnit()
                 EnemyNearby(obj)
                 table.insert(EnemyPlayers, arr)
             else
-                table.insert(EnemyNPCs, arr)
+                table.insert(EnemyNpcs, arr)
             end
         end
 
@@ -2950,8 +2950,6 @@ Frame:SetScript("OnEvent", function(self, event)
         Wow.DebugPrint("Vendor Window Open!!!")
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and IsInCombat("player") then
         local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = Wow.CombatLogGetCurrentEventInfo()
-        Wow.DebugPrint(subevent)
-        Wow.DebugPrint(sourceGUID)
         if subevent == "SPELL_CAST_START" then
             local obj = Wow.GetObjectWithGUID(sourceGUID)
             if AggrodToAnotherPlayer(obj) == false then
@@ -2968,128 +2966,160 @@ end)
 DebugMessage = ""
 
 function Draw()
-    if DRAW_ENABLED and CanDraw() then
-        LibDraw.clearCanvas()
+    if DRAW_ENABLED == false or CanDraw() == false then
+        return
+    end
+
+    LibDraw.clearCanvas()
+
+    MarkEnemyPlayers()
+    MarkEnemyNpcs()
+
+    if DRAW_TEXT_ENABLED then
+        DrawDebugMessage()
+        DrawStatus()
+    end
+
+    if DRAW_WP_ENABLED then
+        DrawMainLine()
+        DrawWaypoints()
+        DrawVendorPoints()
+    end
+end
+
+function DrawMainLine()
+    if DestX ~= nil and DestY ~= nil and DestZ ~= nil then
         local pX, pY, pZ = Wow.ObjectPosition("player")
+        LibDraw.SetColorRaw(0, 0, 1, 1)
+        LibDraw.Line(pX, pY, pZ + 0.2, DestX, DestY, DestZ + 0.2)
+    end
+end
 
-        -- Draw Status String
-        if DRAW_TEXT_ENABLED then
-            -- Debug message
-            if DebugMessage ~= "" then
-                local debugMessage = DebugMessage
-                if Spell ~= "" and StatusStr == "ATTACK" or StatusStr == "SKINNING" then
-                    debugMessage = debugMessage .. " [" .. Spell .. "]"
-                end
-                LibDraw.SetColorRaw(0, 0, 1, 1)
-                LibDraw.Text(debugMessage, "GameFontRedSmall", pX, pY, pZ + 4)
-            end
+function MarkEnemyNpcs()
+    if #EnemyNpcs == 0 then
+        return
+    end
+    LibDraw.SetColorRaw(1, 1, 1, 1)
+    for i = 1, #EnemyNpcs, 1 do
+        local enemyNpc = EnemyNpcs[i]
+        LibDraw.Text('[' .. enemyNpc[4] .. ']', "GameFontRedSmall", enemyNpc[1], enemyNpc[2], enemyNpc[3] + 2)
+    end
+end
 
-            -- 各种状态
-            LibDraw.SetColorRaw(1, 1, 1, 1)
-            if StatusStr == "ATTACK" then -- Attacking
-                local str = 'Attacking...'
-                if AttackObj ~= nil then
-                    local odist = Wow.GetDistanceBetweenObjects("player", AttackObj)
-                    odist = math.ceil(odist)
-                    str = Wow.ObjectName(AttackObj) .. ' [' .. GetUnitHP(AttackObj) .. '%] {' .. odist .. 'y}'
-                end
-                LibDraw.Text(str, "GameFontNormal", pX, pY, pZ + 3)
-            elseif StatusStr == "WP" then -- Searching mobs
-                LibDraw.Text('Searching Mobs...', "GameFontNormal", pX, pY, pZ + 3)
-            elseif StatusStr == "RECOVERING" then -- Recovering
-                LibDraw.Text('Recovering...', "GameFontNormal", pX, pY, pZ + 3)
-            elseif StatusStr == "LOOTING" then -- Looting
-                LibDraw.Text('Looting...', "GameFontNormal", pX, pY, pZ + 3)
-            elseif StatusStr == "SKINNING" then -- Skinning
-                LibDraw.Text('Skinning...', "GameFontNormal", pX, pY, pZ + 3)
-            elseif StatusStr == "CORPSE_RUN" then -- Corpse run
-                LibDraw.Text('Corpse Run...', "GameFontNormal", pX, pY, pZ + 3)
-            elseif StatusStr == "VENDOR" then -- Vender
-                if SellComplete then
-                    LibDraw.Text('Going to Start...', "GameFontNormal", pX, pY, pZ + 3)
-                else
-                    LibDraw.Text('Going to Sell...', "GameFontNormal", pX, pY, pZ + 3)
-                end
-            elseif StatusStr == "DEAD" then -- Dead
-                LibDraw.SetColorRaw(1, 0, 0, 1)
-                LibDraw.Text('DEAD', "GameFontNormal", pX, pY, pZ + 3)
-            elseif StatusStr == "KITING_DANGER" then -- Avoiding dangerous NPC
-                LibDraw.SetColorRaw(1, 0, 0, 1)
-                LibDraw.Text('Avoiding Dangerous NPC', "GameFontNormal", pX, pY, pZ + 3)
-            end
+function MarkEnemyPlayers()
+    if #EnemyPlayers == 0 then
+        return
+    end
+    for i = 1, #EnemyPlayers, 1 do
+        local enemyPlayer = EnemyPlayers[i]
+        local enemyLevel = enemyPlayer[4]
+        if enemyLevel == nil then
+            enemyLevel = 60
         end
-
-        -- Main Line Draw
-        if DRAW_WP_ENABLED and DestX ~= nil and DestY ~= nil and DestZ ~= nil then
-            LibDraw.SetColorRaw(0, 0, 1, 1)
-            LibDraw.Line(pX, pY, pZ + 0.2, DestX, DestY, DestZ + 0.2)
+        local levelDiff = enemyLevel - Wow.UnitLevel("player")
+        if levelDiff > 0 then
+            LibDraw.SetColorRaw(1, 0, 0, 1)
+            LibDraw.Text('ENEMY {+' .. levelDiff .. '}', "GameFontNormal", enemyPlayer[1], enemyPlayer[2], enemyPlayer[3] + 2)
+        else
+            LibDraw.SetColorRaw(1, 0.65, 0, 1)
+            LibDraw.Text('ENEMY {' .. levelDiff .. '}', "GameFontNormal", enemyPlayer[1], enemyPlayer[2], enemyPlayer[3] + 2)
         end
+    end
+end
 
-        -- 敌对玩家
-        for i = 1, table.getn(EnemyPlayers), 1 do
-            local pt = EnemyPlayers[i]
-            local enemyLevel = pt[4]
-            if enemyLevel == nil then
-                enemyLevel = 60
-            end
-            local levelDiff = enemyLevel - Wow.UnitLevel("player")
-
-            if levelDiff > 0 then
-                LibDraw.SetColorRaw(1, 0, 0, 1)
-                LibDraw.Text('ENEMY {+' .. levelDiff .. '}', "GameFontNormal", pt[1], pt[2], pt[3] + 2)
-            else
-                LibDraw.SetColorRaw(1, 0.65, 0, 1)
-                LibDraw.Text('ENEMY {' .. levelDiff .. '}', "GameFontNormal", pt[1], pt[2], pt[3] + 2)
-            end
+function DrawDebugMessage()
+    if DebugMessage ~= "" then
+        local pX, pY, pZ = Wow.ObjectPosition("player")
+        local debugMessage = DebugMessage
+        if Spell ~= "" and StatusStr == "ATTACK" or StatusStr == "SKINNING" then
+            debugMessage = debugMessage .. " [" .. Spell .. "]"
         end
+        LibDraw.SetColorRaw(0, 0, 1, 1)
+        LibDraw.Text(debugMessage, "GameFontRedSmall", pX, pY, pZ + 4)
+    end
+end
 
-        -- 敌对NPC
+function DrawStatus()
+    LibDraw.SetColorRaw(1, 1, 1, 1)
+    local pX, pY, pZ = Wow.ObjectPosition("player")
+    if StatusStr == "ATTACK" then -- Attacking
+        local str = 'Attacking...'
+        if AttackObj ~= nil then
+            local odist = Wow.GetDistanceBetweenObjects("player", AttackObj)
+            odist = math.ceil(odist)
+            str = Wow.ObjectName(AttackObj) .. ' [' .. GetUnitHP(AttackObj) .. '%] {' .. odist .. 'y}'
+        end
+        LibDraw.Text(str, "GameFontNormal", pX, pY, pZ + 3)
+    elseif StatusStr == "WP" then -- Searching mobs
+        LibDraw.Text('Searching Mobs...', "GameFontNormal", pX, pY, pZ + 3)
+    elseif StatusStr == "RECOVERING" then -- Recovering
+        LibDraw.Text('Recovering...', "GameFontNormal", pX, pY, pZ + 3)
+    elseif StatusStr == "LOOTING" then -- Looting
+        LibDraw.Text('Looting...', "GameFontNormal", pX, pY, pZ + 3)
+    elseif StatusStr == "SKINNING" then -- Skinning
+        LibDraw.Text('Skinning...', "GameFontNormal", pX, pY, pZ + 3)
+    elseif StatusStr == "CORPSE_RUN" then -- Corpse run
+        LibDraw.Text('Corpse Run...', "GameFontNormal", pX, pY, pZ + 3)
+    elseif StatusStr == "VENDOR" then -- Vender
+        if SellComplete then
+            LibDraw.Text('Going to Start...', "GameFontNormal", pX, pY, pZ + 3)
+        else
+            LibDraw.Text('Going to Sell...', "GameFontNormal", pX, pY, pZ + 3)
+        end
+    elseif StatusStr == "DEAD" then -- Dead
+        LibDraw.SetColorRaw(1, 0, 0, 1)
+        LibDraw.Text('DEAD', "GameFontNormal", pX, pY, pZ + 3)
+    elseif StatusStr == "KITING_DANGER" then -- Avoiding dangerous NPC
+        LibDraw.SetColorRaw(1, 0, 0, 1)
+        LibDraw.Text('Avoiding Dangerous NPC', "GameFontNormal", pX, pY, pZ + 3)
+    end
+end
+
+function DrawWaypoints()
+    if #Waypoints == 0 then
+        return
+    end
+    LibDraw.SetColorRaw(0, 1, 0, 1)
+    local beforePoint = nil
+    for i = 1, #Waypoints, 1 do
+        local newPoint = Waypoints[i]
+        if newPoint ~= nil then
+            if beforePoint ~= nil then
+                LibDraw.Line(beforePoint[1], beforePoint[2], beforePoint[3], newPoint[1], newPoint[2], newPoint[3])
+            end
+            beforePoint = newPoint
+        end
+    end
+end
+
+function DrawVendorPoints()
+    if #VendorPoints == 0 then
+        return
+    end
+    local startVendorPoint = VendorPoints[1]
+    local endVendorPoint = VendorPoints[#VendorPoints]
+    if startVendorPoint ~= nil then
+        -- 标记起点和终点
+        LibDraw.SetColorRaw(0.25, 0.5, 0.75, 1)
+        LibDraw.Circle(startVendorPoint[1], startVendorPoint[2], startVendorPoint[3], 2)
+        LibDraw.Text('Vendor Route', "GameFontRedSmall", startVendorPoint[1], startVendorPoint[2], startVendorPoint[3] + 1)
+        LibDraw.Text('Vendor', "GameFontRedSmall", endVendorPoint[1], endVendorPoint[2], endVendorPoint[3] + 1)
+
+        -- 中间各点
+        local beforePoint = nil
         LibDraw.SetColorRaw(1, 1, 1, 1)
-        for i = 1, table.getn(EnemyNPCs), 1 do
-            local pt = EnemyNPCs[i]
-            LibDraw.Text('[' .. pt[4] .. ']', "GameFontRedSmall", pt[1], pt[2], pt[3] + 2)
-        end
-
-        -- Draw Main Route
-        if DRAW_WP_ENABLED then
-            LibDraw.SetColorRaw(0, 1, 0, 1)
-            local beforePT = nil
-            for i = 1, #Waypoints, 1 do
-                local newPT = Waypoints[i]
-                if newPT ~= nil then
-                    if beforePT ~= nil then
-                        LibDraw.Line(beforePT[1], beforePT[2], beforePT[3], newPT[1], newPT[2], newPT[3])
-                    end
-                    beforePT = newPT
+        for i = 1, #VendorPoints, 1 do
+            local newPoint = VendorPoints[i]
+            if newPoint ~= nil then
+                if beforePoint ~= nil then
+                    LibDraw.Line(beforePoint[1], beforePoint[2], beforePoint[3], newPoint[1], newPoint[2], newPoint[3])
                 end
-            end
-
-            -- Draw Vendor Route
-            if #VendorPoints > 1 then
-                local startVendorPT = VendorPoints[1]
-                local endVendorPT = VendorPoints[#VendorPoints]
-                if startVendorPT ~= nil then
-                    LibDraw.SetColorRaw(0.25, 0.5, 0.75, 1)
-                    LibDraw.Circle(startVendorPT[1], startVendorPT[2], startVendorPT[3], 2)
-                    LibDraw.Text('Vendor Route', "GameFontRedSmall", startVendorPT[1], startVendorPT[2], startVendorPT[3] + 1)
-                    LibDraw.Text('Vendor', "GameFontRedSmall", endVendorPT[1], endVendorPT[2], endVendorPT[3] + 1)
-
-                    beforePT = nil
-                    LibDraw.SetColorRaw(1, 1, 1, 1)
-                    for i = 1, #VendorPoints, 1 do
-                        local newPT = VendorPoints[i]
-                        if newPT ~= nil then
-                            if beforePT ~= nil then
-                                LibDraw.Line(beforePT[1], beforePT[2], beforePT[3], newPT[1], newPT[2], newPT[3])
-                            end
-                            beforePT = newPT
-                        end
-                    end
-                end
+                beforePoint = newPoint
             end
         end
     end
 end
+
 
 function DeadCheck()
     if Wow.UnitIsDead("player") then

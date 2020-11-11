@@ -4,20 +4,6 @@ Wow = {}
 
 -- 魔兽世界API
 do
-    Wow.ApplyBuff = function(buff, unit)
-        local onSelf = Wow.UnitGUID(unit) == Wow.UnitGUID("player")
-        for i = 1, 15 do
-            local name = Wow.UnitAura(unit, i)
-            if name == nil then -- when name is nil we looped thru all auras 
-                Wow.DebugPrint('Applying Buff: ' .. buff)
-                Wow.CastSpellByName(buff, onSelf)
-                return
-            elseif name == buff then
-                return
-            end
-        end
-    end
-
     Wow.IsCastable = function(spellName)
         local usable, nomana = Wow.IsUsableSpell(spellName)
         if usable == false or nomana then
@@ -183,7 +169,7 @@ do
     end
 
     Wow.UnitTarget = function(unit)
-        return UnitTarget(unit)
+        return lb.UnitTarget(unit)
     end
 
     Wow.UnitAffectingCombat = function(unit)
@@ -230,10 +216,6 @@ do
 
     Wow.UnitIsCorpse = function(unit)
         return UnitIsCorpse(unit)
-    end
-
-    Wow.ObjectName = function(object)
-        return UnitName(object)
     end
 
     Wow.GetCorpseRecoveryDelay = function()
@@ -377,6 +359,26 @@ do
 
     Wow.UseContainerItem = function(bagId, slot)
         return lb.Unlock(UseContainerItem, bagId, slot)
+    end
+
+    Wow.ObjectName = function(object)
+        if lb ~= nil then
+            return lb.ObjectName(object)
+        end
+    end
+
+    Wow.ApplyBuff = function(buff, unit)
+        local onSelf = Wow.UnitGUID(unit) == Wow.UnitGUID("player")
+        for i = 1, 15 do
+            local name = Wow.UnitAura(unit, i)
+            if name == nil then -- when name is nil we looped thru all auras 
+                Wow.DebugPrint('Applying Buff: ' .. buff)
+                Wow.CastSpellByName(buff, onSelf)
+                return
+            elseif name == buff then
+                return
+            end
+        end
     end
 end
 
