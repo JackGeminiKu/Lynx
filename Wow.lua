@@ -4,6 +4,39 @@ Wow = {}
 
 -- 魔兽世界API
 do
+    Wow.ApplyBuff = function(buff, unit)
+        local onSelf = Wow.UnitGUID(unit) == Wow.UnitGUID("player")
+        for i = 1, 15 do
+            local name = Wow.UnitAura(unit, i)
+            if name == nil then -- when name is nil we looped thru all auras 
+                Wow.DebugPrint('Applying Buff: ' .. buff)
+                Wow.CastSpellByName(buff, onSelf)
+                return
+            elseif name == buff then
+                return
+            end
+        end
+    end
+
+    Wow.IsCastable = function(spellName)
+        local usable, nomana = Wow.IsUsableSpell(spellName)
+        if usable == false or nomana then
+            return false
+        end
+        return not Wow.IsOnCD(spellName)
+    end
+
+    Wow.IsOnCD = function(spellName)
+        local start, duration, enabled = Wow.GetSpellCooldown(spellName);
+        if enabled == 0 then
+            return true
+        elseif (start > 0 and duration > 0) then
+            return true
+        else
+            return false
+        end
+    end
+
     Wow.HasDebuff = function(name, obj)
         for i = 1, 40 do
             local debuff = Wow.UnitDebuff(obj, i)
@@ -16,7 +49,7 @@ do
         return false
     end
 
-    Wow.HasAura =  function(object, aura)
+    Wow.HasAura = function(object, aura)
         for i = 1, 40 do
             local name = Wow.UnitAura(object, i)
             if name then
@@ -163,7 +196,7 @@ do
 
     Wow.CombatLogGetCurrentEventInfo = function()
         return CombatLogGetCurrentEventInfo()
-    end 
+    end
 
     Wow.UnitLevel = function(unit)
         return UnitLevel(unit)
@@ -181,9 +214,9 @@ do
         return IsMounted()
     end
 
-    Wow.GetObjectCount =  function()
-       local objects =  lb.GetObjects() 
-       return #objects
+    Wow.GetObjectCount = function()
+        local objects = lb.GetObjects()
+        return #objects
     end
 
     Wow.GetObjectWithIndex = function(index)
@@ -192,7 +225,7 @@ do
     end
 
     Wow.IsIndoors = function()
-       return IsIndoors() 
+        return IsIndoors()
     end
 
     Wow.UnitIsCorpse = function(unit)
@@ -236,7 +269,7 @@ do
     end
 
     Wow.Dismount = function()
-        Dismount() 
+        Dismount()
     end
 
     Wow.GetInventoryItemDurability = function(invSlot)
@@ -290,7 +323,7 @@ do
         if lb ~= nil then
             lb.WriteFile(path, contents, not overwrite)
         end
-    end 
+    end
 
     Wow.ReadFile = function(path)
         return lb.ReadFile(path)
@@ -332,8 +365,9 @@ do
         return lb.UnitIsLootable(unit)
     end
 
-    Wow.CastSpellByName = function(spellName)
-        lb.Unlock(CastSpellByName, spellName)
+    Wow.CastSpellByName = function(spellName, onSelf)
+        onSelf = onSelf or true
+        lb.Unlock(CastSpellByName, spellName, onSelf)
     end
 
     Wow.UnitCastID = function(unit)
@@ -357,7 +391,7 @@ end
 -- Debug
 do
     DEBUG_PRINT_ENABLED = true
-    Wow.DebugPrint = function (message)
+    Wow.DebugPrint = function(message)
         if DEBUG_PRINT_ENABLED == true then
             print(message)
             Wow.WriteFile('/Log/Debug.txt', message .. '\n', true)
