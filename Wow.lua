@@ -4,6 +4,22 @@ Wow = {}
 
 -- 魔兽世界API
 do
+    Wow.CalculateDistance = function(...)
+        local x1, y1, z1, x2, y2, z2
+        if select("#", ...) == 6 then
+           x1, y1, z1, x2, y2, z2 = ... 
+        else
+            local point1, point2 = ...
+            x1 = point1[1]
+            y1 = point1[2]
+            z1 = point1[3]
+            x2 = point2[1]
+            y2 = point2[2]
+            z2 = point2[3]
+        end
+        return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
+    end
+
     Wow.IsCastable = function(spellName)
         local usable, nomana = Wow.IsUsableSpell(spellName)
         if usable == false or nomana then
@@ -325,6 +341,10 @@ do
 
     Wow.MoveTo = function(x, y, z)
         lb.MoveTo(x, y, z)
+    end
+
+    Wow.MoveToPoint = function(point)
+        lb.MoveTo(point[1], point[2], point[3])
     end
 
     Wow.SendKey = function(key, released)

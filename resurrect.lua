@@ -285,17 +285,17 @@ local function StrictPathFollow()
     end
 
     -- Check if Stuck
-    if pathIdx == LastIdx then
-        LastIdxCount = LastIdxCount + 1
+    if pathIdx == LastIndex then
+        LastIndexCount = LastIndexCount + 1
         StuckTime = StuckTime + pulseDelay
     else
         StuckTime = 0
-        LastIdxCount = 0
+        LastIndexCount = 0
     end
 
     -- Skip if stuck (forced) but never skip last post so as to trigger the appropriate fail safes
     -- using counter in the form of lastIdxCount is mehhh coz doesnt give indication of time stuck (we vary pulseDelay all the time)
-    if LastIdxCount > 35 and (pathIdx < waypointsCount - 2) then
+    if LastIndexCount > 35 and (pathIdx < waypointsCount - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. pathIdx
         print(stuckStr)
         Wow.WriteFile('_Kkona/Stuck.txt', stuckStr .. '\n', true)
@@ -342,7 +342,7 @@ local function StrictPathFollow()
         end
     end
 
-    LastIdx = pathIdx
+    LastIndex = pathIdx
 end
 
 local function ResurrectPulse()

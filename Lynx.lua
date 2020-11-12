@@ -608,8 +608,14 @@ DeleteItems = {[1] = {"OOX-09/HL Distress Beacon"}, [2] = {"Patch of Tainted Ski
 PULSE_DELAY = 0.25
 START_DELAY = 0.0
 
-PROXIMAL_TOLERANCE = 4.4
-ProximalTolerance = ProximalTolerance
+function GetProximalTolerance()
+    local PROXIMAL_TOLERANCE = 4.4
+    if Wow.IsMounted() then
+        return PROXIMAL_TOLERANCE * 2
+    else
+        return PROXIMAL_TOLERANCE
+    end
+end
 
 IGNORE_LOS = true
 STRICT_FOLLOW = true
@@ -672,7 +678,7 @@ DestX = Waypoints[1][1]
 DestY = Waypoints[1][2]
 DestZ = Waypoints[1][3]
 
-StatusStr = "WP"
+PlayerStatus = "WAYPOINT"
 
 function Exit(caller)
     Wow.DebugPrint('Exit called by: ' .. caller .. '()')
@@ -783,23 +789,14 @@ function GetVendorSlot(itemName)
     end
 end
 
-PathIdx = 1
+PathIndex = 1
 LOST_FLAGS = Wow.bit.bor(0x10, 0x100)
 
-function CalculateDistance(x1, y1, z1, x2, y2, z2)
-    return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
-end
-
 function IsInAggroRange(obj, tol)
-    if tol == nil then
-        tol = 5
-    end
-
-    local playerLevel = Wow.UnitLevel("player")
+    tol = tol or 5
     if Wow.UnitIsEnemy("player", obj) and Wow.UnitIsDead(obj) == false then
-        local unitLevel = Wow.UnitLevel(obj)
         local dist = Wow.GetDistanceBetweenObjects("player", obj)
-        local aggroRad = (unitLevel - playerLevel) + 20 + tol -- suppost +20 imma to be safe +5
+        local aggroRad = (Wow.UnitLevel(obj) - Wow.UnitLevel("player")) + 20 + tol -- suppost +20 imma to be safe +5
         return dist < aggroRad
     end
 end
@@ -823,27 +820,26 @@ end
 
 -- Scan whole table and find closest point and always move to it (includes LOS checks)
 -- Doesnt support jumping YET
-function FindNextBestPoint()
+function MoveToClosestWaypoint()
     local px, py, pz = Wow.ObjectPosition("player")
-    local moveToIdx = 1
-    local moveToDist = 9999999
+    local closestIndex = 1
+    local closestDist = 9999999
     local foundSomething = false
 
-    for i = PathIdx, #Waypoints, 1 do
-        local xyz = Waypoints[i]
-        if xyz ~= nil then
-            local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
-
-            if dist <= moveToDist then
-                if dist > ProximalTolerance then
+    -- 遍历所有waypint, 查找最近的waypoint
+    for i = PathIndex, #Waypoints, 1 do
+        local waypoint = Waypoints[i]
+        if waypoint ~= nil then
+            local dist = Wow.CalculateDistance(px, py, pz, waypoint[1], waypoint[2], waypoint[3])
+            if dist <= closestDist then
+                if dist > GetProximalTolerance() then
                     if i == #Waypoints then
                         AtEnd = true
                     end
-                    -- local groundZ = GetGroundZ(xyz[1], xyz[2], losFlags)+2.5
-                    if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, xyz[1], xyz[2], xyz[3] + 2.5, LOST_FLAGS) == nil then
+                    if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, waypoint[1], waypoint[2], waypoint[3] + 2.5, LOST_FLAGS) == nil then
                         foundSomething = true
-                        moveToIdx = i
-                        moveToDist = dist
+                        closestIndex = i
+                        closestDist = dist
                     end
                 end
             end
@@ -851,15 +847,14 @@ function FindNextBestPoint()
     end
 
     if foundSomething == true then
-        PathIdx = moveToIdx
+        PathIndex = closestIndex
     else
         Wow.DebugPrint('Found No path in LOS!')
-        PathIdx = 1;
+        PathIndex = 1;
         Wow.SendKey(' ')
     end
 
-    local moveToXYZ = Waypoints[moveToIdx]
-    Wow.MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
+    Wow.MoveToPoint(Waypoints[closestIndex])
 end
 
 function IsMoving(Unit)
@@ -874,35 +869,34 @@ AtStartAfterVendor = false
 SellComplete = false
 TalkedToVendor = false
 
-VendorPathIdx = 1
+VendorPathIndex = 1
 
-FirstTick = true
-function SetIDXToClosest(bWPOnly, limit)
+function SetIndexToClosest(waypointOnly, limit)
     local px, py, pz = Wow.ObjectPosition("player")
     local moveToIdx = 1
     local moveToDist = 9999999
     local foundSomething = false
-
     local closestIsVendor = false
-    local endWPCount = #Waypoints
+    local endWaypointCount = #Waypoints
     local start = 1
+
     if limit ~= nil then
-        start = PathIdx - limit
-        endWPCount = PathIdx + limit
+        start = PathIndex - limit
+        endWaypointCount = PathIndex + limit
 
         if start < 1 then
             start = 1
         end
-        if endWPCount > #Waypoints then
-            endWPCount = #Waypoints
+        if endWaypointCount > #Waypoints then
+            endWaypointCount = #Waypoints
         end
     end
 
-    for i = start, endWPCount, 1 do
+    -- 寻找距离我最近的路径点
+    for i = start, endWaypointCount, 1 do
         local xyz = Waypoints[i]
         if xyz ~= nil then
-            local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
-
+            local dist = Wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
             if dist <= moveToDist then
                 if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, xyz[1], xyz[2], xyz[3] + 2.5, LOST_FLAGS) == nil then
                     foundSomething = true
@@ -914,18 +908,19 @@ function SetIDXToClosest(bWPOnly, limit)
         end
     end
 
-    if bWPOnly ~= nil and bWPOnly then
+    if waypointOnly ~= nil and waypointOnly then
         if foundSomething then
-            PathIdx = moveToIdx
-            Wow.DebugPrint("Starting at grind path at idx " .. PathIdx)
+            PathIndex = moveToIdx
+            Wow.DebugPrint("Starting at grind path at idx " .. PathIndex)
         end
         return
     end
 
+    -- 是否有更近的vendor point?
     for i = 1, #VendorPoints, 1 do
         local xyz = VendorPoints[i]
         if xyz ~= nil then
-            local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
+            local dist = Wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
 
             if dist <= moveToDist then
                 if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, xyz[1], xyz[2], xyz[3] + 2.5, LOST_FLAGS) == nil then
@@ -938,24 +933,23 @@ function SetIDXToClosest(bWPOnly, limit)
         end
     end
 
-    if foundSomething == true then
-        if closestIsVendor then
-            VendorPathIdx = moveToIdx
-            Wow.DebugPrint("Walking back to leveling path from vendor from idx " .. VendorPathIdx)
-            SellComplete = true
-            AtStartAfterVendor = false
-        else
-            PathIdx = moveToIdx
-            Wow.DebugPrint("Starting at grind path at idx " .. PathIdx)
-        end
-    else
+    if foundSomething == false then
         Wow.DebugPrint('WARNING: Could not find a close point in SetIDXToClosest()')
+        return
     end
-
+    if closestIsVendor then
+        VendorPathIndex = moveToIdx
+        Wow.DebugPrint("Walking back to leveling path from vendor from idx " .. VendorPathIndex)
+        SellComplete = true
+        AtStartAfterVendor = false
+    else
+        PathIndex = moveToIdx
+        Wow.DebugPrint("Starting at grind path at idx " .. PathIndex)
+    end
 end
 
-LastIdx = nil
-LastIdxCount = 0
+LastIndex = nil
+LastIndexCount = 0
 
 function FirstTickApply()
     if Wow.IsHunter() then
@@ -969,36 +963,24 @@ function FirstTickApply()
 end
 
 FirstTickApply()
+FirstTick = true
 -- Follow path from index 1 to end
 -- !THIS FUNCTION IS A MESS! RE-WRITE
-function StrictPathFollow()
-    if FirstTick == true then
+function MoveToNextWaypoint()
+    if FirstTick == true then   -- 只执行一次
         FirstTick = false
-        SetIDXToClosest()
+        SetIndexToClosest()
     end
 
+    -- 移动到某个点附近了?
     local px, py, pz = Wow.ObjectPosition("player")
-    local xyz = Waypoints[PathIdx] -- return is imp to always assign next xyz correctly
-
-    if Wow.UnitIsDeadOrGhost("player") then
-        -- Get Distance from Corpse
-        -- /script AcceptResurrect()
-    end
-
-    if xyz ~= nil then
-        -- Add Class Specific
-        -- !Move this to last (after movement!!!)
-        if xyz[4] ~= nil then
-            -- Define 4th Param Stuff
-        end
-
-        local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
-        -- print(' = DIST: '..dist)
-        if dist <= ProximalTolerance then
-            if PathIdx < #Waypoints then
-                PathIdx = PathIdx + 1
-                -- print('Moving to idx {'..pathIdx..'/'..#Waypoints..'}')
-                Wow.DebugPrint('Moving to idx {' .. PathIdx .. '/' .. #Waypoints .. '}')
+    local nextPoint = Waypoints[PathIndex] -- return is imp to always assign next xyz correctly
+    if nextPoint ~= nil then
+        local dist = Wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3])
+        if dist <= GetProximalTolerance() then
+            if PathIndex < #Waypoints then
+                PathIndex = PathIndex + 1
+                Wow.DebugPrint('Moving to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
                 return
             else
                 AtEnd = true
@@ -1006,100 +988,96 @@ function StrictPathFollow()
         end
     end
 
-    -- Check if Stuck
-    if PathIdx == LastIdx then
-        LastIdxCount = LastIdxCount + 1
+    -- 卡住了?
+    if PathIndex == LastIndex then
+        LastIndexCount = LastIndexCount + 1
         StuckTime = StuckTime + PULSE_DELAY
     else
+        LastIndexCount = 0
         StuckTime = 0
-        LastIdxCount = 0
     end
-
     -- Skip if stuck (forced) but never skip last post so as to trigger the appropriate fail safes
     -- using counter in the form of lastIdxCount is mehhh coz doesnt give indication of time stuck (we vary pulseDelay all the time)
-    if LastIdxCount > 20 and (PathIdx < #Waypoints - 2) then
-        local stuckStr = 'Appears to be STUCK: at idx=' .. PathIdx
+    if LastIndexCount > 20 and (PathIndex < #Waypoints - 2) then
+        local stuckStr = 'Appears to be STUCK: at idx=' .. PathIndex
         print(stuckStr)
         Wow.WriteFile('/Log/Stuck.txt', stuckStr .. '\n', true)
-        -- local prevIdx = pathIdx
-        -- pathIdx = 1
-        -- FindNextBestPoint()
         Wow.SendKey(' ')
-        PathIdx = PathIdx + 1
-        AtEnd = PathIdx > #Waypoints
+        PathIndex = PathIndex + 1
+        AtEnd = PathIndex > #Waypoints
         return
     end
-
-    if PathIdx < 1 then
-        PathIdx = 1
-    elseif PathIdx > #Waypoints then
-        PathIdx = #Waypoints
+    if PathIndex < 1 then
+        PathIndex = 1
+    elseif PathIndex > #Waypoints then
+        PathIndex = #Waypoints
         AtEnd = true
     end
 
     -- Move
     local rnd = (math.random(-RANDOM_MAX, RANDOM_MAX) / 100)
-    local moveToXYZ = Waypoints[PathIdx]
-    if moveToXYZ ~= nil then
-        DestX = moveToXYZ[1] + rnd
-        DestY = moveToXYZ[2] + rnd
-        DestZ = moveToXYZ[3] + rnd
+    if nextPoint ~= nil then
+        DestX = nextPoint[1] + rnd
+        DestY = nextPoint[2] + rnd
+        DestZ = nextPoint[3] + rnd
     end
-
-    StatusStr = "WP"
-    local distToNext = CalculateDistance(px, py, pz, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
+    PlayerStatus = "WAYPOINT"
+    local distToNext = Wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3])
     if SKIP_FAR_POINTS == false or (SKIP_FAR_POINTS and distToNext < 50) then
-        if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3] + 2.5, LOST_FLAGS) == nil then
-            Wow.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
+        if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, nextPoint[1], nextPoint[2], nextPoint[3] + 2.5, LOST_FLAGS) == nil then
+            Wow.MoveTo(DestX, DestY, DestZ)
         end
     else
         if SKIP_FAR_POINTS then
-            Wow.DebugPrint('*Skipping* to idx {' .. PathIdx .. '/' .. #Waypoints .. '}')
-            PathIdx = PathIdx + 1
-            AtEnd = PathIdx > #Waypoints
+            Wow.DebugPrint('*Skipping* to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
+            PathIndex = PathIndex + 1
+            AtEnd = PathIndex > #Waypoints
             return
         else
             Wow.DebugPrint('*Waiting* for player to be close to path...')
         end
     end
 
-    LastIdx = PathIdx
+    LastIndex = PathIndex
 end
 
 -- Processes path relooping and Exit()
-function PathEndCheck()
-    if AtEnd then
-        if RELOOP then
-            local startXYZ = Waypoints[1]
-            if IGNORE_LOS or TraceLine(px, py, pz + 2.5, startXYZ[1], startXYZ[2], startXYZ[3] + 2.5) == nil then
-                -- is start is in not in LOS
-                AtEnd = false
+function PathEndCheck(reloop)
+    if not AtEnd then
+        return
+    end
 
-                local p1 = Waypoints[1]
-                local p2 = Waypoints[#Waypoints]
-                local distBetween = CalculateDistance(p1[1], p1[2], p1[3], p2[1], p2[2], p2[3])
+    if reloop then
+        ReloopWaypoint(Waypoints)
+    else
+        Wow.DebugPrint('Finished Pathing!!!')
+        Exit('PathEndCheck')
+    end
+end
 
-                if distBetween > 50 then
-                    Wow.DebugPrint('Reversing Path!!!')
-                    local i, j = 1, #Waypoints
-                    while i < j do
-                        Waypoints[i], Waypoints[j] = Waypoints[j], Waypoints[i]
-                        i = i + 1
-                        j = j - 1
-                    end
-                else
-                    Wow.DebugPrint('ReLooping Path!!!')
-                end
-
-                PathIdx = 1
-            else
-                Wow.DebugPrint('Cannot ReLoop as Start is not in LOS!')
-                PathIdx = 1
+function ReloopWaypoint(waypoints)
+    local startWaypoint = waypoints[1]
+    local px, py, pz = Wow.ObjectPosition("player")
+    if IGNORE_LOS or TraceLine(px, py, pz + 2.5, startWaypoint[1], startWaypoint[2], startWaypoint[3] + 2.5) == nil then
+        AtEnd = false
+        local firstWaypoint = waypoints[1]
+        local lastWaypoint = waypoints[#waypoints]
+        if Wow.CalculateDistance(firstWaypoint, lastWaypoint) > 50 then
+            Wow.DebugPrint('Reversing Path!!!')
+            local i, j = 1, #waypoints
+            while i < j do
+                waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
+                i = i + 1
+                j = j - 1
             end
         else
-            Wow.DebugPrint('Finished Pathing!!!')
-            Exit('PathEndCheck')
+            Wow.DebugPrint('ReLooping Path!!!')
         end
+
+        PathIndex = 1
+    else
+        Wow.DebugPrint('Cannot ReLoop as Start is not in LOS!')
+        PathIndex = 1
     end
 end
 
@@ -1154,21 +1132,21 @@ end
 
 function VendorPath(bToVendor)
     local px, py, pz = Wow.ObjectPosition("player")
-    local xyz = VendorPoints[VendorPathIdx] -- return is imp to always assign next xyz correctly
+    local xyz = VendorPoints[VendorPathIndex] -- return is imp to always assign next xyz correctly
 
     if Wow.IsHunter() and HunterBuff ~= "Aspect of the Cheetah" and HasMount() == false then
         HunterBuff = "Aspect of the Cheetah"
     end
 
     if xyz ~= nil then
-        local dist = math.abs(CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3]))
-        if dist <= ProximalTolerance then
-            if bToVendor and VendorPathIdx <= #VendorPoints then
-                VendorPathIdx = VendorPathIdx + 1
-            elseif VendorPathIdx > 1 then
-                VendorPathIdx = VendorPathIdx - 1
+        local dist = math.abs(Wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3]))
+        if dist <= GetProximalTolerance() then
+            if bToVendor and VendorPathIndex <= #VendorPoints then
+                VendorPathIndex = VendorPathIndex + 1
+            elseif VendorPathIndex > 1 then
+                VendorPathIndex = VendorPathIndex - 1
             end
-            Wow.DebugPrint('Moving to vendor idx {' .. VendorPathIdx .. '/' .. #VendorPoints .. '}')
+            Wow.DebugPrint('Moving to vendor idx {' .. VendorPathIndex .. '/' .. #VendorPoints .. '}')
         end
 
         local action = xyz[4]
@@ -1179,10 +1157,10 @@ function VendorPath(bToVendor)
                     Wow.InteractUnit(RepairVendor)
                     Sleep(10)
 
-                    if bToVendor and VendorPathIdx <= #VendorPoints then
-                        VendorPathIdx = VendorPathIdx + 1
-                    elseif VendorPathIdx > 1 then
-                        VendorPathIdx = VendorPathIdx - 1
+                    if bToVendor and VendorPathIndex <= #VendorPoints then
+                        VendorPathIndex = VendorPathIndex + 1
+                    elseif VendorPathIndex > 1 then
+                        VendorPathIndex = VendorPathIndex - 1
                     end
                     return
                 elseif action == "Stop" then
@@ -1190,10 +1168,10 @@ function VendorPath(bToVendor)
                     Wow.SendKey(83, 123)
                     Sleep(3)
 
-                    if bToVendor and VendorPathIdx <= #VendorPoints then
-                        VendorPathIdx = VendorPathIdx + 1
-                    elseif VendorPathIdx > 1 then
-                        VendorPathIdx = VendorPathIdx - 1
+                    if bToVendor and VendorPathIndex <= #VendorPoints then
+                        VendorPathIndex = VendorPathIndex + 1
+                    elseif VendorPathIndex > 1 then
+                        VendorPathIndex = VendorPathIndex - 1
                     end
                     return
                 end
@@ -1202,25 +1180,25 @@ function VendorPath(bToVendor)
     end
 
     local rnd = math.random(-RANDOM_MAX, RANDOM_MAX) / 100
-    local moveToXYZ = VendorPoints[VendorPathIdx]
+    local moveToXYZ = VendorPoints[VendorPathIndex]
     if moveToXYZ ~= nil then
         DestX = moveToXYZ[1] + rnd
         DestY = moveToXYZ[2] + rnd
         DestZ = moveToXYZ[3] + rnd
-        StatusStr = "VENDOR"
+        PlayerStatus = "VENDOR"
 
-        if VendorPathIdx == #VendorPoints then
+        if VendorPathIndex == #VendorPoints then
             Wow.MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3]) -- don't want random fuck ups
         else
             Wow.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
         end
     end
 
-    if bToVendor and VendorPathIdx >= #VendorPoints then
+    if bToVendor and VendorPathIndex >= #VendorPoints then
         AtVendor = true
-    elseif bToVendor == false and VendorPathIdx <= 1 then
+    elseif bToVendor == false and VendorPathIndex <= 1 then
         AtStartAfterVendor = true
-        SetIDXToClosest(true)
+        SetIndexToClosest(true)
     end
 end
 
@@ -1233,7 +1211,7 @@ function EmptyBagsSetup()
         return false
     end
 
-    local criticalAmmoCount = (#VendorPoints + (#Waypoints - PathIdx)) * 1.5
+    local criticalAmmoCount = (#VendorPoints + (#Waypoints - PathIndex)) * 1.5
     local freeSlots = GetFreeSlots()
     if freeSlots <= MIN_BAG_SLOTS or (Wow.IsHunter() and Wow.GetItemCount(Hunter:GetAmmoName()) <= criticalAmmoCount) then
         local px, py, pz = Wow.ObjectPosition("player")
@@ -1241,10 +1219,10 @@ function EmptyBagsSetup()
         for i = 1, #VendorPoints do
             local xyz = VendorPoints[i]
             if xyz ~= nil then
-                local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
+                local dist = Wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
                 if dist < closestDist then
                     closestDist = dist
-                    VendorPathIdx = i
+                    VendorPathIndex = i
                 end
             end
         end
@@ -1272,9 +1250,9 @@ function PulseMovement()
         return
     end
     if STRICT_FOLLOW == true then
-        StrictPathFollow()
+        MoveToNextWaypoint()
     else
-        FindNextBestPoint()
+        MoveToClosestWaypoint()
     end
 end
 
@@ -1335,7 +1313,7 @@ function RecoverMana()
                         Wow.DebugPrint("Recovering Mana...")
                         DismountCheck()
                         Wow.UseContainerItem(bag, slot)
-                        StatusStr = "RECOVERING"
+                        PlayerStatus = "RECOVERING"
                         ClearTargetDrawTables()
                         Sleep(2.1)
                         return true
@@ -1369,7 +1347,7 @@ function RecoverHP()
                         Wow.DebugPrint("Recovering Health...")
                         DismountCheck()
                         Wow.UseContainerItem(bag, slot)
-                        StatusStr = "RECOVERING"
+                        PlayerStatus = "RECOVERING"
                         ClearTargetDrawTables()
                         Sleep(2.1)
                         return true
@@ -1665,7 +1643,7 @@ end
 
 function CheckVitals()
     if Wow.UnitIsDeadOrGhost("player") then
-        StatusStr = "DEAD"
+        PlayerStatus = "DEAD"
         return false
     end
 
@@ -1844,7 +1822,7 @@ function FindAttackableUnit()
     -- Fill target tables
     for i = 1, Wow.GetObjectCount() do
         local obj = Wow.GetObjectWithIndex(i)
-        local name = Wow.ObjectName(obj)
+        local objectName = Wow.ObjectName(obj)
 
         -- Enemy Player/NPC Check for Drawing
         if Wow.UnitIsEnemy("player", obj) and Wow.UnitIsDead(obj) == false then
@@ -1858,7 +1836,7 @@ function FindAttackableUnit()
             end
         end
 
-        if string.find(name, "Totem") == nil and Wow.UnitCanAttack("player", obj) then
+        if string.find(objectName, "Totem") == nil and Wow.UnitCanAttack("player", obj) then
             local unitLvl = Wow.UnitLevel(obj)
             local unitHp = GetUnitHP(obj)
             local targettingMe = IsTargeting(obj, "player")
@@ -1887,7 +1865,7 @@ function FindAttackableUnit()
                 if isPlayer == false and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and AggrodToAnotherPlayer(obj) == false then
                     if IsInCombat(obj) and targettingMe then -- Targetting me so auto fook him up
                         table.insert(AggroTable, obj)
-                    elseif ArrayContains(AvoidNPCs, name) == false then -- 不是敌对NPC
+                    elseif ArrayContains(AvoidNPCs, objectName) == false then -- 不是要避开的NPC
                         local guid = Wow.UnitGUID(obj)
                         if string.find(guid, "Pet") == nil then -- make sure target is not a pet of horde
                             if unitHp <= 10 and unitHp > 0 then
@@ -1897,9 +1875,8 @@ function FindAttackableUnit()
                             end
                         end
                     else
-                        local isInDangerRange = IsInAggroRange(obj, 10)
-                        if isInDangerRange then
-                            StatusStr = "KITING_DANGER"
+                        if IsInAggroRange(obj, 10) then
+                            PlayerStatus = "KITING_DANGER"
                             Wow.DebugPrint('Kiting Dangerous NPC - ' .. Wow.ObjectName(obj))
                             MoveFacingObject(obj, 1, false) -- 0.2 so to set move far away
                             Sleep(3)
@@ -2029,7 +2006,7 @@ function HunterRotation()
     DestX = xx
     DestY = yy
     DestZ = zz
-    StatusStr = "ATTACK"
+    PlayerStatus = "ATTACK"
 
     local dist = Wow.GetDistanceBetweenObjects("player", "target")
     local isPlayerTakingAggro = IsTargeting("target", "player")
@@ -2257,7 +2234,7 @@ function MageRotation()
     DestY = tY
     DestZ = tZ
     Spell = ""
-    StatusStr = "ATTACK"
+    PlayerStatus = "ATTACK"
 
     if Decurse() then
         return
@@ -2516,7 +2493,7 @@ function Attack(obj)
         Wow.DebugPrint(Wow.ObjectName("target") .. " at " .. GetUnitHP("target") .. " is tapped by another player...")
         Wow.DebugPrint(" ==> FORCING MOVEMENT");
         PulseMovement()
-        PathEndCheck()
+        PathEndCheck(RELOOP)
         return
     end
 
@@ -2715,7 +2692,7 @@ function Skinning()
             Wow.InteractUnit(skinObj)
         end
 
-        StatusStr = "SKINNING"
+        PlayerStatus = "SKINNING"
         ClearTargetDrawTables()
         if closestDist <= 3 and IsMoving("player") == false then
             SkinningTime = SkinningTime + 1.1 + PULSE_DELAY
@@ -2789,7 +2766,7 @@ function Looting()
             Wow.InteractUnit(lootObj)
         end
 
-        StatusStr = "LOOTING"
+        PlayerStatus = "LOOTING"
         Sleep(1)
         LootingTime = LootingTime + 0.5 + PULSE_DELAY
         return true
@@ -2914,7 +2891,7 @@ function SellAndBuyShit()
         end
 
         BuyStuff()
-        VendorPathIdx = #VendorPoints - 1
+        VendorPathIndex = #VendorPoints - 1
         SellTick = SellTick + 1
 
         if Wow.CanMerchantRepair() then
@@ -2971,19 +2948,16 @@ function Draw()
     end
 
     LibDraw.clearCanvas()
-
     MarkEnemyPlayers()
     MarkEnemyNpcs()
-
-    if DRAW_TEXT_ENABLED then
-        DrawDebugMessage()
-        DrawStatus()
-    end
-
     if DRAW_WP_ENABLED then
         DrawMainLine()
         DrawWaypoints()
         DrawVendorPoints()
+    end
+    if DRAW_TEXT_ENABLED then
+        DrawDebugMessage()
+        DrawStatus()
     end
 end
 
@@ -3031,7 +3005,7 @@ function DrawDebugMessage()
     if DebugMessage ~= "" then
         local pX, pY, pZ = Wow.ObjectPosition("player")
         local debugMessage = DebugMessage
-        if Spell ~= "" and StatusStr == "ATTACK" or StatusStr == "SKINNING" then
+        if Spell ~= "" and PlayerStatus == "ATTACK" or PlayerStatus == "SKINNING" then
             debugMessage = debugMessage .. " [" .. Spell .. "]"
         end
         LibDraw.SetColorRaw(0, 0, 1, 1)
@@ -3042,7 +3016,7 @@ end
 function DrawStatus()
     LibDraw.SetColorRaw(1, 1, 1, 1)
     local pX, pY, pZ = Wow.ObjectPosition("player")
-    if StatusStr == "ATTACK" then -- Attacking
+    if PlayerStatus == "ATTACK" then -- Attacking
         local str = 'Attacking...'
         if AttackObj ~= nil then
             local odist = Wow.GetDistanceBetweenObjects("player", AttackObj)
@@ -3050,26 +3024,26 @@ function DrawStatus()
             str = Wow.ObjectName(AttackObj) .. ' [' .. GetUnitHP(AttackObj) .. '%] {' .. odist .. 'y}'
         end
         LibDraw.Text(str, "GameFontNormal", pX, pY, pZ + 3)
-    elseif StatusStr == "WP" then -- Searching mobs
+    elseif PlayerStatus == "WAYPOINT" then -- Searching mobs
         LibDraw.Text('Searching Mobs...', "GameFontNormal", pX, pY, pZ + 3)
-    elseif StatusStr == "RECOVERING" then -- Recovering
+    elseif PlayerStatus == "RECOVERING" then -- Recovering
         LibDraw.Text('Recovering...', "GameFontNormal", pX, pY, pZ + 3)
-    elseif StatusStr == "LOOTING" then -- Looting
+    elseif PlayerStatus == "LOOTING" then -- Looting
         LibDraw.Text('Looting...', "GameFontNormal", pX, pY, pZ + 3)
-    elseif StatusStr == "SKINNING" then -- Skinning
+    elseif PlayerStatus == "SKINNING" then -- Skinning
         LibDraw.Text('Skinning...', "GameFontNormal", pX, pY, pZ + 3)
-    elseif StatusStr == "CORPSE_RUN" then -- Corpse run
+    elseif PlayerStatus == "CORPSE_RUN" then -- Corpse run
         LibDraw.Text('Corpse Run...', "GameFontNormal", pX, pY, pZ + 3)
-    elseif StatusStr == "VENDOR" then -- Vender
+    elseif PlayerStatus == "VENDOR" then -- Vender
         if SellComplete then
             LibDraw.Text('Going to Start...', "GameFontNormal", pX, pY, pZ + 3)
         else
             LibDraw.Text('Going to Sell...', "GameFontNormal", pX, pY, pZ + 3)
         end
-    elseif StatusStr == "DEAD" then -- Dead
+    elseif PlayerStatus == "DEAD" then -- Dead
         LibDraw.SetColorRaw(1, 0, 0, 1)
         LibDraw.Text('DEAD', "GameFontNormal", pX, pY, pZ + 3)
-    elseif StatusStr == "KITING_DANGER" then -- Avoiding dangerous NPC
+    elseif PlayerStatus == "KITING_DANGER" then -- Avoiding dangerous NPC
         LibDraw.SetColorRaw(1, 0, 0, 1)
         LibDraw.Text('Avoiding Dangerous NPC', "GameFontNormal", pX, pY, pZ + 3)
     end
@@ -3119,7 +3093,6 @@ function DrawVendorPoints()
         end
     end
 end
-
 
 function DeadCheck()
     if Wow.UnitIsDead("player") then
@@ -3228,7 +3201,7 @@ end
 function ResurrectPulse()
     for i = 1, Wow.GetObjectCount() do
         local object = Wow.GetObjectWithIndex(i)
-        if Wow.ObjectName(object) == Wow.ObjectName("player") and Wow.UnitIsCorpse(object) then
+        if IsMyCorpse(object) then
             if Wow.GetDistanceBetweenObjects("player", object) < 35 then
                 if Wow.GetCorpseRecoveryDelay() <= 0 then
                     if PositionAggroCount() >= 1 then
@@ -3246,6 +3219,10 @@ function ResurrectPulse()
     end
 
     return false
+end
+
+function IsMyCorpse(object)
+    return Wow.ObjectName(object) == Wow.ObjectName("player") and Wow.UnitIsCorpse(object)
 end
 
 -- OnUpdate
@@ -3268,11 +3245,11 @@ DoBotStuff = function(self, elapsed)
             Wow.RunMacroText(".dc")
         end
         -- AcceptResurrect()
-        StatusStr = "CORPSE_RUN"
+        PlayerStatus = "CORPSE_RUN"
         DeadTime = DeadTime + PULSE_DELAY
         if ResurrectPulse() == false then
             PulseMovement()
-            PathEndCheck()
+            PathEndCheck(RELOOP)
         end
         return
     else
@@ -3282,11 +3259,6 @@ DoBotStuff = function(self, elapsed)
     -- Main
     if CheckVitals() then
         DebugMessage = "VITALS_OK"
-        if Wow.IsMounted() then
-            ProximalTolerance = PROXIMAL_TOLERANCE * 2
-        else
-            ProximalTolerance = PROXIMAL_TOLERANCE
-        end
 
         local inCombat = IsInCombat("player")
         if inCombat and CombatTime < 90 and (CLEAR_VENDOR_PATH or (CLEAR_VENDOR_PATH == false and Wow.IsMounted() == false and IsNotVendorPathing())) then
@@ -3336,10 +3308,10 @@ DoBotStuff = function(self, elapsed)
                         end
                     end
                 end
-            elseif AtVendor and SellComplete == false then  -- 卖东西
+            elseif AtVendor and SellComplete == false then -- 卖东西
                 DebugMessage = "SELLING"
                 SellAndBuyShit()
-            elseif SellComplete and AtStartAfterVendor == false then    -- 邮寄东西
+            elseif SellComplete and AtStartAfterVendor == false then -- 邮寄东西
                 if MAIL_ENABLED and CanMail then
                     local exitMacro = Wow.ReadFile('Mail.lua')
                     Wow.DebugPrint("Running Mail Script!")
@@ -3362,7 +3334,7 @@ DoBotStuff = function(self, elapsed)
                         end
                     end
                 end
-            elseif AtStartAfterVendor then  -- 变量复位
+            elseif AtStartAfterVendor then -- 变量复位
                 ResetVariables()
             else
                 if Skinning() == false and Looting() == false then
@@ -3383,13 +3355,13 @@ DoBotStuff = function(self, elapsed)
                             else
                                 DebugMessage = "MOVEMENT_LAST"
                                 PulseMovement()
-                                PathEndCheck()
+                                PathEndCheck(RELOOP)
                             end
                         end
                     end
                 else
                     DebugMessage = "LOOTING_SKINNING"
-                    SetIDXToClosest(true, 10)
+                    SetIndexToClosest(true, 10)
                 end
             end
         end
@@ -3402,8 +3374,8 @@ DoBotStuff = function(self, elapsed)
 
     -- 卡住了
     if StuckTime > 90 or CombatTime > 120 then
-        Wow.WriteFile("/Log/Status.txt", 'Bot is stuck at idx ' .. PathIdx, false)
-        Wow.WriteFile("/Log/Terminate.txt", 'Stuck at idx: ' .. PathIdx, false)
+        Wow.WriteFile("/Log/Status.txt", 'Bot is stuck at idx ' .. PathIndex, false)
+        Wow.WriteFile("/Log/Terminate.txt", 'Stuck at idx: ' .. PathIndex, false)
         Wow.RunMacroText(".dc")
         Exit("Stuck")
     end
