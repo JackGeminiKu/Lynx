@@ -4,7 +4,7 @@ Wow = {}
 
 -- 魔兽世界API
 do
-    Wow.CalculateDistance = function(...)
+    CalculateDistance = function(...)
         local x1, y1, z1, x2, y2, z2
         if select("#", ...) == 6 then
            x1, y1, z1, x2, y2, z2 = ... 
@@ -20,16 +20,16 @@ do
         return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
     end
 
-    Wow.IsCastable = function(spellName)
-        local usable, nomana = Wow.IsUsableSpell(spellName)
+    IsCastable = function(spellName)
+        local usable, nomana = IsUsableSpell(spellName)
         if usable == false or nomana then
             return false
         end
-        return not Wow.IsOnCD(spellName)
+        return not IsOnCD(spellName)
     end
 
-    Wow.IsOnCD = function(spellName)
-        local start, duration, enabled = Wow.GetSpellCooldown(spellName);
+    IsOnCD = function(spellName)
+        local start, duration, enabled = GetSpellCooldown(spellName);
         if enabled == 0 then
             return true
         elseif (start > 0 and duration > 0) then
@@ -39,9 +39,9 @@ do
         end
     end
 
-    Wow.HasDebuff = function(name, obj)
+    HasDebuff = function(name, obj)
         for i = 1, 40 do
-            local debuff = Wow.UnitDebuff(obj, i)
+            local debuff = UnitDebuff(obj, i)
             if debuff == nil then
                 return false
             elseif debuff == name then
@@ -51,9 +51,9 @@ do
         return false
     end
 
-    Wow.HasAura = function(object, aura)
+    HasAura = function(object, aura)
         for i = 1, 40 do
-            local name = Wow.UnitAura(object, i)
+            local name = UnitAura(object, i)
             if name then
                 if name == aura then
                     return true
@@ -64,336 +64,336 @@ do
         end
     end
 
-    Wow.IsHunter = function()
-        return Wow.UnitClass("player") == "Hunter"
+    IsHunter = function()
+        return UnitClass("player") == "Hunter"
     end
 
-    Wow.IsMage = function()
-        return Wow.UnitClass("player") == "Mage"
+    IsMage = function()
+        return UnitClass("player") == "Mage"
     end
 
-    Wow.RepopMe = function()
+    RepopMe = function()
         RepopMe()
     end
 
-    Wow.GetSendMailItem = function(index)
+    GetSendMailItem = function(index)
         return GetSendMailItem(index)
     end
 
-    Wow.RepairAllItems = function()
+    RepairAllItems = function()
         RepairAllItems()
     end
 
-    Wow.CanMerchantRepair = function()
+    CanMerchantRepair = function()
         return CanMerchantRepair()
     end
 
-    Wow.DeleteCursorItem = function()
+    DeleteCursorItem = function()
         DeleteCursorItem()
     end
 
-    Wow.PickupContainerItem = function(bagId, slot)
+    PickupContainerItem = function(bagId, slot)
         PickupContainerItem(bagId, slot)
     end
 
-    Wow.TargetUnit = function(unit)
+    TargetUnit = function(unit)
         TargetUnit(unit)
     end
 
-    Wow.UnitCreatureType = function(unit)
+    UnitCreatureType = function(unit)
         return UnitCreatureType(unit)
     end
 
-    Wow.IsSpellInRange = function(spellName)
+    IsSpellInRange = function(spellName)
         return IsSpellInRange(spellName)
     end
 
-    Wow.rad = function(x)
+    rad = function(x)
         return math.rad(x)
     end
 
-    Wow.atan2 = function(y, x)
+    atan2 = function(y, x)
         return math.atan2(y, x)
     end
 
-    Wow.UnitCanAttack = function(attacker, attacked)
+    UnitCanAttack = function(attacker, attacked)
         return UnitCanAttack(attacker, attacked)
     end
 
-    Wow.UnitIsPlayer = function(unit)
+    UnitIsPlayer = function(unit)
         return UnitIsPlayer(unit)
     end
 
-    Wow.IsSwimming = function()
+    IsSwimming = function()
         return IsSwimming()
     end
 
-    Wow.SpellStopCasting = function()
+    SpellStopCasting = function()
         SpellStopCasting()
     end
 
-    Wow.GetContainerItemCooldown = function(bagId, slot)
+    GetContainerItemCooldown = function(bagId, slot)
         return GetContainerItemCooldown(bagId, slot)
     end
 
-    Wow.IsUsableItem = function(item)
+    IsUsableItem = function(item)
         return IsUsableItem(item)
     end
 
-    Wow.GetPetHappiness = function()
+    GetPetHappiness = function()
         return GetPetHappiness()
     end
 
-    Wow.CastPetAction = function(index)
+    CastPetAction = function(index)
         return CastPetAction(index)
     end
 
-    Wow.GetPetActionInfo = function(index)
+    GetPetActionInfo = function(index)
         return GetPetActionInfo(index)
     end
 
-    Wow.UnitExists = function(unit)
+    UnitExists = function(unit)
         return UnitExists(unit)
     end
 
-    Wow.IsUsableSpell = function(spellName)
+    IsUsableSpell = function(spellName)
         return IsUsableSpell(spellName)
     end
 
-    Wow.GetSpellCooldown = function(spellName)
+    GetSpellCooldown = function(spellName)
         return GetSpellCooldown(spellName)
     end
 
-    Wow.UnitPowerMax = function(unit)
+    UnitPowerMax = function(unit)
         return UnitPowerMax(unit)
     end
 
-    Wow.UnitPower = function(unit)
+    UnitPower = function(unit)
         return UnitPower(unit)
     end
 
-    Wow.UnitHealthMax = function(unit)
+    UnitHealthMax = function(unit)
         return UnitHealthMax(unit)
     end
 
-    Wow.UnitHealth = function(unit)
+    UnitHealth = function(unit)
         return UnitHealth(unit)
     end
 
-    Wow.UnitGUID = function(unit)
+    UnitGUID = function(unit)
         return UnitGUID(unit)
     end
 
-    Wow.UnitTarget = function(unit)
+    UnitTarget = function(unit)
         return lb.UnitTarget(unit)
     end
 
-    Wow.UnitAffectingCombat = function(unit)
+    UnitAffectingCombat = function(unit)
         return UnitAffectingCombat(unit)
     end
 
-    Wow.UnitLevel = function(unit)
+    UnitLevel = function(unit)
         return UnitLevel(unit)
     end
 
-    Wow.CombatLogGetCurrentEventInfo = function()
+    CombatLogGetCurrentEventInfo = function()
         return CombatLogGetCurrentEventInfo()
     end
 
-    Wow.UnitLevel = function(unit)
+    UnitLevel = function(unit)
         return UnitLevel(unit)
     end
 
-    Wow.GetTime = function()
+    GetTime = function()
         return GetTime()
     end
 
-    Wow.UnitIsDeadOrGhost = function(unit)
+    UnitIsDeadOrGhost = function(unit)
         return UnitIsDeadOrGhost(unit)
     end
 
-    Wow.IsMounted = function()
+    IsMounted = function()
         return IsMounted()
     end
 
-    Wow.GetObjectCount = function()
+    GetObjectCount = function()
         local objects = lb.GetObjects()
         return #objects
     end
 
-    Wow.GetObjectWithIndex = function(index)
+    GetObjectWithIndex = function(index)
         local objects = lb.GetObjects()
         return objects[index]
     end
 
-    Wow.IsIndoors = function()
+    IsIndoors = function()
         return IsIndoors()
     end
 
-    Wow.UnitIsCorpse = function(unit)
+    UnitIsCorpse = function(unit)
         return UnitIsCorpse(unit)
     end
 
-    Wow.GetCorpseRecoveryDelay = function()
+    GetCorpseRecoveryDelay = function()
         return GetCorpseRecoveryDelay()
     end
 
-    Wow.RetrieveCorpse = function()
+    RetrieveCorpse = function()
         RetrieveCorpse()
     end
 
-    Wow.GetItemCount = function(itemName)
+    GetItemCount = function(itemName)
         return GetItemCount(itemName)
     end
 
-    Wow.BuyMerchantItem = function(index)
+    BuyMerchantItem = function(index)
         BuyMerchantItem(index)
     end
 
-    Wow.CreateFrame = function(frameType)
+    CreateFrame = function(frameType)
         return CreateFrame(frameType)
     end
 
-    Wow.UnitClass = function(unit)
+    UnitClass = function(unit)
         return UnitClass(unit)
     end
 
-    Wow.UnitAura = function(unit, index)
+    UnitAura = function(unit, index)
         return UnitAura(unit, index)
     end
 
-    Wow.UnitDebuff = function(unit, index)
+    UnitDebuff = function(unit, index)
         return UnitDebuff(unit, index)
     end
 
-    Wow.Dismount = function()
+    Dismount = function()
         Dismount()
     end
 
-    Wow.GetInventoryItemDurability = function(invSlot)
+    GetInventoryItemDurability = function(invSlot)
         return GetInventoryItemDurability(invSlot)
     end
 
-    Wow.GetContainerNumSlots = function(bagId)
+    GetContainerNumSlots = function(bagId)
         return GetContainerNumSlots(bagId)
     end
 
-    Wow.GetContainerNumFreeSlots = function(bagId)
+    GetContainerNumFreeSlots = function(bagId)
         return GetContainerNumFreeSlots(bagId)
     end
 
-    Wow.GetContainerItemLink = function(bagId, slot)
+    GetContainerItemLink = function(bagId, slot)
         return GetContainerItemLink(bagId, slot)
     end
 
-    Wow.GetItemInfo = function(item)
+    GetItemInfo = function(item)
         return GetItemInfo(item)
     end
 
-    Wow.GetMerchantItemInfo = function(index)
+    GetMerchantItemInfo = function(index)
         return GetMerchantItemInfo(index)
     end
 
-    Wow.UnitIsEnemy = function(unit, otherUnit)
+    UnitIsEnemy = function(unit, otherUnit)
         return UnitIsEnemy(unit, otherUnit)
     end
 
-    Wow.UnitIsDead = function(unit)
+    UnitIsDead = function(unit)
         return UnitIsDead(unit)
     end
 
-    Wow.GetUnitSpeed = function(unit)
+    GetUnitSpeed = function(unit)
         return GetUnitSpeed(unit)
     end
 end
 
 -- Unlocker
 do
-    Wow.ObjectID = function(object)
+    ObjectID = function(object)
         return lb.ObjectId(object)
     end
 
-    Wow.InteractUnit = function(unit)
+    InteractUnit = function(unit)
         return lb.ObjectInteract(unit)
     end
 
-    Wow.WriteFile = function(path, contents, overwrite)
+    WriteFile = function(path, contents, overwrite)
         if lb ~= nil then
             lb.WriteFile(path, contents, not overwrite)
         end
     end
 
-    Wow.ReadFile = function(path)
+    ReadFile = function(path)
         return lb.ReadFile(path)
     end
 
-    Wow.RunMacroText = function(marco)
-        lb.Unlock(Wow.RunMacroText, marco)
+    RunMacroText = function(marco)
+        lb.Unlock(RunMacroText, marco)
     end
 
-    Wow.GetDistanceBetweenObjects = function(object1, object2)
+    GetDistanceBetweenObjects = function(object1, object2)
         return lb.GetDistance3D(object1, object2)
     end
 
-    Wow.ObjectPosition = function(object)
+    ObjectPosition = function(object)
         return lb.ObjectPosition(object)
     end
 
-    Wow.MoveTo = function(x, y, z)
+    MoveTo = function(x, y, z)
         lb.MoveTo(x, y, z)
     end
 
-    Wow.MoveToPoint = function(point)
+    MoveToPoint = function(point)
         lb.MoveTo(point[1], point[2], point[3])
     end
 
-    Wow.SendKey = function(key, released)
+    SendKey = function(key, released)
         -- TBD: luabox貌似不支持按键功能!
     end
 
-    Wow.FaceDirection = function(facing)
+    FaceDirection = function(facing)
         lb.SetPlayerAngles(facing)
     end
 
-    Wow.GetObjectWithGUID = function(guid)
+    GetObjectWithGUID = function(guid)
         -- TBD
     end
 
-    Wow.UnitCanBeSkinned = function(unit)
+    UnitCanBeSkinned = function(unit)
         -- TBD
     end
 
-    Wow.UnitCanBeLooted = function(unit)
+    UnitCanBeLooted = function(unit)
         return lb.UnitIsLootable(unit)
     end
 
-    Wow.CastSpellByName = function(spellName, onSelf)
+    CastSpellByName = function(spellName, onSelf)
         onSelf = onSelf or true
         lb.Unlock(CastSpellByName, spellName, onSelf)
     end
 
-    Wow.UnitCastID = function(unit)
+    UnitCastID = function(unit)
         local spellId = lb.UnitCastingInfo(unit)
         return spellId
     end
 
-    Wow.UseContainerItem = function(bagId, slot)
+    UseContainerItem = function(bagId, slot)
         return lb.Unlock(UseContainerItem, bagId, slot)
     end
 
-    Wow.ObjectName = function(object)
+    ObjectName = function(object)
         if lb ~= nil then
             return lb.ObjectName(object)
         end
     end
 
-    Wow.ApplyBuff = function(buff, unit)
-        local onSelf = Wow.UnitGUID(unit) == Wow.UnitGUID("player")
+    ApplyBuff = function(buff, unit)
+        local onSelf = UnitGUID(unit) == UnitGUID("player")
         for i = 1, 15 do
-            local name = Wow.UnitAura(unit, i)
+            local name = UnitAura(unit, i)
             if name == nil then -- when name is nil we looped thru all auras 
-                Wow.DebugPrint('Applying Buff: ' .. buff)
-                Wow.CastSpellByName(buff, onSelf)
+                DebugPrint('Applying Buff: ' .. buff)
+                CastSpellByName(buff, onSelf)
                 return
             elseif name == buff then
                 return
@@ -404,8 +404,8 @@ end
 
 -- Bit opeartions
 do
-    Wow.bit = {}
-    Wow.bit.bor = function(b1, b2, ...)
+    bit = {}
+    bit.bor = function(b1, b2, ...)
         return bit.bor(b1, b2, ...)
     end
 end
@@ -413,10 +413,10 @@ end
 -- Debug
 do
     DEBUG_PRINT_ENABLED = true
-    Wow.DebugPrint = function(message)
+    DebugPrint = function(message)
         if DEBUG_PRINT_ENABLED == true then
             print(message)
-            Wow.WriteFile('/Log/Debug.txt', message .. '\n', true)
+            WriteFile('/Log/Debug.txt', message .. '\n', true)
         end
     end
 end
