@@ -309,18 +309,19 @@ end
 
 -- Unlocker
 do
+    wow.Log = function(content)
+        if lb ~= nil then
+            print(content)
+            lb.WriteFile("log-" .. lb.GetGameAccountName() .. ".txt", content .. '\n', true)
+        end
+    end
+
     wow.ObjectID = function(object)
         return lb.ObjectId(object)
     end
 
     wow.InteractUnit = function(unit)
         return lb.ObjectInteract(unit)
-    end
-
-    wow.WriteFile = function(path, contents, overwrite)
-        if lb ~= nil then
-            lb.WriteFile(path, contents, not overwrite)
-        end
     end
 
     wow.ReadFile = function(path)

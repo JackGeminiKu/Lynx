@@ -203,7 +203,7 @@ local rndMax = 50
 local function DbgPrint(str)
     if bPrint == true then
         print(str)
-        wow.WriteFile('_Kkona/Debug.txt', str .. '\n', true)
+        wow.Log(str)
     end
 end
 
@@ -297,8 +297,7 @@ local function StrictPathFollow()
     -- using counter in the form of lastIdxCount is mehhh coz doesnt give indication of time stuck (we vary pulseDelay all the time)
     if LastIndexCount > 35 and (pathIdx < waypointsCount - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. pathIdx
-        print(stuckStr)
-        wow.WriteFile('_Kkona/Stuck.txt', stuckStr .. '\n', true)
+        wow.Log(stuckStr)
         -- local prevIdx = pathIdx
         -- pathIdx = 1
         -- FindNextBestPoint()

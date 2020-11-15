@@ -46,7 +46,6 @@ end
 
 -- CHECK FOR --REMOVE for other zones
 --------------------FILE STUFF--------------------
-RESURRECT_ENABLED = true -- MAKE SURE YOU WRITE MAIL.LUA
 MAIL_ENABLED = false -- NO MAIL!
 
 -- Keep drink 2 for hunter buy!
@@ -652,20 +651,15 @@ RECOVER_TILL_PERCENT = 88 -- once needs to drink/eat will do so till this HP
 KITE = true -- Kite when possible
 
 MIN_BAG_SLOTS = 1
-DRAW_ENABLED = true
-DRAW_WP_ENABLED = true
-DRAW_TEXT_ENABLED = true
-
-DRAW_ONLY = false -- to visualize path ONLY for configuring vendor paths
 
 --------------------ALGORITHM--------------------
 AtEnd = false -- do not touch
 
-LastPulse = wow.GetTime() + START_DELAY
-CanPulseAt = LastPulse + PULSE_DELAY
+LastPulseTime = wow.GetTime() + START_DELAY
+NextPulseTime = LastPulseTime + PULSE_DELAY
 
-LastDrawPulse = wow.GetTime() + START_DELAY
-CanDrawAt = LastPulse + 0.05
+LastDrawTime = wow.GetTime() + START_DELAY
+NextDrawTime = LastPulseTime + 0.05
 
 Frame = wow.CreateFrame("Frame")
 Frame.elapsed = 1
@@ -733,27 +727,24 @@ function GetBandageName()
     return ""
 end
 
-function CanDraw()
+function IsTimeToDraw()
     local timeNow = wow.GetTime()
-    if timeNow >= CanDrawAt then
-        LastDrawPulse = timeNow
-        CanDrawAt = LastDrawPulse + 0.05
-        return true
+    if timeNow < NextDrawTime then
+        return false
     end
-    return false
+    LastDrawTime = timeNow
+    NextDrawTime = LastDrawTime + 0.05
+    return true
 end
 
-function CanPulse()
-    if DRAW_ONLY then
-        return false
-    end
+function IsTimeToPulse()
     local timeNow = wow.GetTime()
-    if timeNow < CanPulseAt then
+    if timeNow < NextPulseTime then
         return false
     end
 
-    LastPulse = timeNow
-    CanPulseAt = LastPulse + PULSE_DELAY
+    LastPulseTime = timeNow
+    NextPulseTime = LastPulseTime + PULSE_DELAY
     return true
 end
 
@@ -769,11 +760,11 @@ end
 function Sleep(secs)
     -- i forgot why this function is so scuffed but leave it as it is UNLESS you rewrite the whole codebase
     local timeNow = wow.GetTime()
-    if CanPulseAt > timeNow then -- since this func may be used several times in 1 cycle
-        local overheadWait = CanPulseAt - timeNow;
-        CanPulseAt = timeNow + overheadWait + secs
+    if NextPulseTime > timeNow then -- since this func may be used several times in 1 cycle
+        local overheadWait = NextPulseTime - timeNow;
+        NextPulseTime = timeNow + overheadWait + secs
     else
-        CanPulseAt = timeNow + secs
+        NextPulseTime = timeNow + secs
     end
 end
 
@@ -999,8 +990,7 @@ function MoveToNextWaypoint()
     -- using counter in the form of lastIdxCount is mehhh coz doesnt give indication of time stuck (we vary pulseDelay all the time)
     if LastIndexCount > 20 and (PathIndex < #Waypoints - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. PathIndex
-        print(stuckStr)
-        wow.WriteFile('/Log/Stuck.txt', stuckStr .. '\n', true)
+        wow.Log(stuckStr)
         wow.SendKey(' ')
         PathIndex = PathIndex + 1
         AtEnd = PathIndex > #Waypoints
@@ -1713,7 +1703,6 @@ function EnemyNearby(obj)
             return
         end
 
-        wow.WriteFile("/Log/ReLog.txt", '600', false)
         wow.RunMacroText(".dc")
     end
 end
@@ -2919,25 +2908,6 @@ end
 
 DebugMessage = ""
 
-function Draw()
-    if DRAW_ENABLED == false or CanDraw() == false then
-        return
-    end
-
-    LibDraw.clearCanvas()
-    MarkEnemyPlayers()
-    MarkEnemyNpcs()
-    if DRAW_WP_ENABLED then
-        DrawMainLine()
-        DrawWaypoints()
-        DrawVendorPoints()
-    end
-    if DRAW_TEXT_ENABLED then
-        DrawDebugMessage()
-        DrawStatus()
-    end
-end
-
 function DrawMainLine()
     if DestX ~= nil and DestY ~= nil and DestZ ~= nil then
         local pX, pY, pZ = wow.ObjectPosition("player")
@@ -3073,17 +3043,12 @@ end
 
 function DeadCheck()
     if wow.UnitIsDead("player") then
-        wow.WriteFile("/Log/Dead.txt", 'Dead at time: ' .. wow.GetTime(), false)
-        Resurrect()
-    end
-end
-
-function Resurrect()
-    if RESURRECT_ENABLED and wow.UnitIsDeadOrGhost("player") then
-        wow.DebugPrint("Running Resurrect Script")
-        local exitMacro = wow.ReadFile('Resurrect.lua')
-        wow.RunMacroText(exitMacro)
-        Exit('Resurrect')
+        wow.Log('Dead at time: ' .. wow.GetTime())
+        if wow.UnitIsDeadOrGhost("player") then
+            wow.DebugPrint("Running Resurrect Script")
+            wow.RunMacroText(wow.ReadFile('Resurrect.lua'))
+            Exit('Resurrect')
+        end
     end
 end
 
@@ -3206,10 +3171,18 @@ end
 DeadTime = 0
 
 local function onUpdate(...)
-    Draw()
+    if IsTimeToDraw() then
+        LibDraw.clearCanvas()
+        MarkEnemyPlayers()
+        MarkEnemyNpcs()
+        DrawMainLine()
+        DrawWaypoints()
+        DrawVendorPoints()
+        DrawDebugMessage()
+        DrawStatus()
+    end
 
-    -- 还没到pulse时间
-    if CanPulse() == false then
+    if not IsTimeToPulse() then
         return
     end
 
@@ -3218,7 +3191,7 @@ local function onUpdate(...)
     -- Resurrect
     if wow.UnitIsDeadOrGhost("player") then
         if DeadTime > 600 then
-            wow.WriteFile("/Log/Terminate.txt", 'Stuck Dead!', false)
+            wow.Log('Stuck Dead!')
             wow.RunMacroText(".dc")
         end
         -- AcceptResurrect()
@@ -3244,12 +3217,12 @@ local function onUpdate(...)
                 FindAttackableUnit()
                 Attack(AttackObj)
             end
-            CombatTime = CombatTime + (CanPulseAt - wow.GetTime())
+            CombatTime = CombatTime + (NextPulseTime - wow.GetTime())
         else
             -- ::Resume::
             if wow.GetTime() - Ttt > TttTick then
                 if DC_ON_ITEM_BREAK and GetLowestDurability() <= 1 then
-                    wow.WriteFile("Log/Terminate.txt", 'Item Break...', false)
+                    wow.Log('Item Break...')
                     wow.RunMacroText(".dc")
                 end
                 DebugMessage = "10s_TIMER_TICK"
@@ -3351,8 +3324,8 @@ local function onUpdate(...)
 
     -- 卡住了
     if StuckTime > 90 or CombatTime > 120 then
-        wow.WriteFile("/Log/Status.txt", 'Bot is stuck at idx ' .. PathIndex, false)
-        wow.WriteFile("/Log/Terminate.txt", 'Stuck at idx: ' .. PathIndex, false)
+        wow.Log('Bot is stuck at idx ' .. PathIndex)
+        wow.Log('Stuck at idx: ' .. PathIndex)
         wow.RunMacroText(".dc")
         Exit("Stuck")
     end

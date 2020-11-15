@@ -83,7 +83,7 @@ end
 local function DbgPrint(str)
     if bPrint == true then
         print(str)
-        wow.WriteFile('_Lynx/Debug.txt', str .. '\n', true)
+        wow.Log(str)
     end
 end
 
@@ -250,7 +250,7 @@ local function StrictPathFollow()
     if LastIndexCount > 35 and (pathIdx < waypointsCount - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. pathIdx
         print(stuckStr)
-        wow.WriteFile('_Lynx/Stuck.txt', stuckStr .. '\n', true)
+        wow.Log(stuckStr)
         -- local prevIdx = pathIdx
         -- pathIdx = 1
         -- FindNextBestPoint()
