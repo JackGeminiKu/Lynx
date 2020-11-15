@@ -1,6 +1,6 @@
 local scriptName = 'felwood_54'
 local recipient = 'Leblanc'
-if Wow.ObjectName("player") == "CURRENT_PLAYER_NAME" then
+if wow.ObjectName("player") == "CURRENT_PLAYER_NAME" then
     recipient = "ACCOUNT_TO_SEND_TO"
 end
 
@@ -19,12 +19,12 @@ local pulseDelay = 0.2
 local startDelay = 1
 local bPrint = false
 
-local frame = Wow.CreateFrame("Frame")
+local frame = wow.CreateFrame("Frame")
 local bRun = true
-local canPulseAt = (Wow.GetTime() + startDelay) + pulseDelay
+local canPulseAt = (wow.GetTime() + startDelay) + pulseDelay
 
 local pathIdx = 1
-local losFlags = Wow.bit.bor(0x10, 0x100)
+local losFlags = wow.bit.bor(0x10, 0x100)
 local proximalTolerance = 4
 
 local bSkipFarPoints = false
@@ -33,12 +33,12 @@ local bReLoop = false
 local rndMax = 1 -- lets be precise for this short path
 
 local function IsAtMailbox()
-    local objCount = Wow.GetObjectCount()
+    local objCount = wow.GetObjectCount()
     for i = 1, objCount do
-        local obj = Wow.GetObjectWithIndex(i)
-        local name = Wow.ObjectName(obj)
+        local obj = wow.GetObjectWithIndex(i)
+        local name = wow.ObjectName(obj)
         if name == "Mailbox" then
-            local dist = Wow.GetDistanceBetweenObjects("player", obj)
+            local dist = wow.GetDistanceBetweenObjects("player", obj)
             if dist < 5 then
                 return true
             end
@@ -49,18 +49,18 @@ local function IsAtMailbox()
 end
 
 local function OpenMailBox()
-    local objCount = Wow.GetObjectCount()
+    local objCount = wow.GetObjectCount()
     for i = 1, objCount do
-        local obj = Wow.GetObjectWithIndex(i)
-        local name = Wow.ObjectName(obj)
+        local obj = wow.GetObjectWithIndex(i)
+        local name = wow.ObjectName(obj)
         if name == "Mailbox" then
-            Wow.ObjectInteract(obj)
+            wow.ObjectInteract(obj)
         end
     end
 end
 
 local function Sleepy(secs)
-    local timeNow = Wow.GetTime()
+    local timeNow = wow.GetTime()
 
     if canPulseAt > timeNow then -- since this func may be used several times in 1 cycle
         local overheadWait = canPulseAt - timeNow;
@@ -83,17 +83,17 @@ end
 local function DbgPrint(str)
     if bPrint == true then
         print(str)
-        Wow.WriteFile('_Lynx/Debug.txt', str .. '\n', true)
+        wow.WriteFile('_Lynx/Debug.txt', str .. '\n', true)
     end
 end
 
-local class, englishClass = Wow.UnitClass("player");
+local class, englishClass = wow.UnitClass("player");
 local isHunter = class == "Hunter"
 local isMage = class == "Mage"
 local isRogue = class == "Rogue"
 
 local name = 'alla'
-local cTip = Wow.CreateFrame("GameTooltip", name .. "Tooltip", nil, "GameTooltipTemplate")
+local cTip = wow.CreateFrame("GameTooltip", name .. "Tooltip", nil, "GameTooltipTemplate")
 local function IsSoulbound(bag, slot)
     cTip:SetOwner(UIParent, "ANCHOR_NONE")
     cTip:SetBagItem(bag, slot)
@@ -109,15 +109,15 @@ end
 
 -- To see UI elements use /framestack 
 local function PulseSend()
-    Wow.RunMacroText('/click MailFrameTab2')
-    Wow.RunMacroText('/run SendMailSubjectEditBox:SetText("Sell")')
-    Wow.RunMacroText('/run SendMailNameEditBox:SetText("' .. recipient .. '")')
+    wow.RunMacroText('/click MailFrameTab2')
+    wow.RunMacroText('/run SendMailSubjectEditBox:SetText("Sell")')
+    wow.RunMacroText('/run SendMailNameEditBox:SetText("' .. recipient .. '")')
 
     for b = 0, 4 do
         for s = 0, 36 do
-            l = Wow.GetContainerItemLink(b, s)
+            l = wow.GetContainerItemLink(b, s)
             if l then
-                local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = Wow.GetItemInfo(l)
+                local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(l)
                 if IsSoulbound(b, s) == false and ArrContains(toKeep, sName) == false then
                     if isHunter and (sType == "Projectile" or ArrContains(PetFood, sName)) then
                         -- DbgPrint('Keeping [Hunter Stuff]: '..sName)
@@ -132,7 +132,7 @@ local function PulseSend()
                     else
                         if iRarity >= 1 then
                             DbgPrint('Sending: ' .. l)
-                            Wow.UseContainerItem(b, s)
+                            wow.UseContainerItem(b, s)
                         end
                     end
                 else
@@ -142,15 +142,15 @@ local function PulseSend()
         end
     end
 
-    local Name, Texture, Count, Quality = Wow.GetSendMailItem(1)
+    local Name, Texture, Count, Quality = wow.GetSendMailItem(1)
     if Name == nil or Name == "" then -- if there is not attached mail
         bRun = false
         DbgPrint('Finished Sending Mail')
-        Wow.RunMacroText('/run SendMailCancelButton:Click()')
+        wow.RunMacroText('/run SendMailCancelButton:Click()')
     end
 
     -- frame:SetScript("OnUpdate", nil)
-    Wow.RunMacroText('/run SendMailMailButton:Click()')
+    wow.RunMacroText('/run SendMailMailButton:Click()')
     Sleepy(2)
 end
 
@@ -163,7 +163,7 @@ local function ShouldExit()
     if bRun == false then
         local exitMacro = '.loadfile _Lynx\\' .. scriptName .. '\\main.lua'
         DbgPrint("Starting main.lua from mail.lua")
-        Wow.RunMacroText(exitMacro)
+        wow.RunMacroText(exitMacro)
         frame:SetScript("OnUpdate", nil)
     end
 end
@@ -173,7 +173,7 @@ local function CalculateDistance(x1, y1, z1, x2, y2, z2)
 end
 
 local function SetIDXToClosest()
-    local px, py, pz = Wow.ObjectPosition("player")
+    local px, py, pz = wow.ObjectPosition("player")
     local moveToIdx = 1
     local moveToDist = 9999999
     local foundSomething = false
@@ -213,7 +213,7 @@ local function StrictPathFollow()
         SetIDXToClosest()
     end
 
-    local px, py, pz = Wow.ObjectPosition("player")
+    local px, py, pz = wow.ObjectPosition("player")
     local xyz = waypoints[pathIdx] -- return is imp to always assign next xyz correctly
 
     if xyz ~= nil then
@@ -250,11 +250,11 @@ local function StrictPathFollow()
     if LastIndexCount > 35 and (pathIdx < waypointsCount - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. pathIdx
         print(stuckStr)
-        Wow.WriteFile('_Lynx/Stuck.txt', stuckStr .. '\n', true)
+        wow.WriteFile('_Lynx/Stuck.txt', stuckStr .. '\n', true)
         -- local prevIdx = pathIdx
         -- pathIdx = 1
         -- FindNextBestPoint()
-        Wow.SendKey(' ')
+        wow.SendKey(' ')
         pathIdx = pathIdx + 1
         AtEnd= pathIdx > waypointsCount
         if AtEndthen then
@@ -281,7 +281,7 @@ local function StrictPathFollow()
     local distToNext = CalculateDistance(px, py, pz, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
     if bSkipFarPoints == false or (bSkipFarPoints and distToNext < 50) then
         if IgnoreLOS== true or TraceLine(px, py, pz + 2.5, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3] + 2.5, losFlags) == nil then
-            Wow.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
+            wow.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
         end
     else
         if bSkipFarPoints then
@@ -312,7 +312,7 @@ local function Pulse()
 end
 
 local function CanPulse()
-    local timeNow = Wow.GetTime()
+    local timeNow = wow.GetTime()
     if timeNow >= canPulseAt then
         canPulseAt = timeNow + pulseDelay
         return true
