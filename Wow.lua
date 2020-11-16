@@ -72,6 +72,10 @@ do
         return wow.UnitClass("player") == "Mage"
     end
 
+    wow.IsRouge = function()
+        return wow.UnitClass("player") == "Rogue"
+    end
+
     wow.RepopMe = function()
         RepopMe()
     end
@@ -417,7 +421,7 @@ do
     wow.DebugPrint = function(message)
         if DEBUG_PRINT_ENABLED == true then
             print(message)
-            --wow.WriteFile('/Log/Debug.txt', message .. '\n', true)
+            wow.Log(message)
         end
     end
 end
