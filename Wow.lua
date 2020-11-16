@@ -4,6 +4,32 @@ wow = {}
 
 -- 魔兽世界API
 do
+    wow.GetFreeSlots = function()
+        local freeSlots = 0
+        for i = 1, 5 do
+            local numberOfFreeSlots, BagType = wow.GetContainerNumFreeSlots(i - 1);
+            if BagType == 0 then -- https://wowwiki.fandom.com/wiki/ItemFamily
+                freeSlots = freeSlots + wow.GetContainerNumFreeSlots(i - 1)
+            end
+        end
+        return freeSlots
+    end
+
+    wow.HasInInventory = function(item)
+        for bag = 0, 4 do
+            for slot = 0, wow.GetContainerNumSlots(bag) do
+                local link = wow.GetContainerItemLink(bag, slot)
+                if link then
+                    local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
+                    if sName == item then
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end
+
     wow.CalculateDistance = function(...)
         local x1, y1, z1, x2, y2, z2
         if select("#", ...) == 6 then
@@ -313,6 +339,11 @@ end
 
 -- Unlocker
 do
+    wow.IsInCombat = function(unit)
+        unit = unit or "player"
+        return wow.UnitAffectingCombat(unit)
+    end
+
     wow.Log = function(content)
         if lb ~= nil then
             print(content)
@@ -421,7 +452,6 @@ do
     wow.DebugPrint = function(message)
         if DEBUG_PRINT_ENABLED == true then
             print(message)
-            wow.Log(message)
         end
     end
 end

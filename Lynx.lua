@@ -697,21 +697,6 @@ function GetLowestDurability()
     return lowest
 end
 
-function HasInInventory(item)
-    for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if sName == item then
-                    return true
-                end
-            end
-        end
-    end
-    return false
-end
-
 function GetBandageName()
     for bag = 0, 4 do
         for slot = 0, wow.GetContainerNumSlots(bag) do
@@ -1070,17 +1055,6 @@ function ReloopWaypoint(waypoints)
     end
 end
 
-function GetFreeSlots()
-    local freeSlots = 0
-    for i = 1, 5 do
-        local numberOfFreeSlots, BagType = wow.GetContainerNumFreeSlots(i - 1);
-        if BagType == 0 then -- https://wowwiki.fandom.com/wiki/ItemFamily
-            freeSlots = freeSlots + wow.GetContainerNumFreeSlots(i - 1)
-        end
-    end
-    return freeSlots
-end
-
 function HasMount()
     if MOUNT_NAME == "" or MOUNT_NAME == nil then
         return false
@@ -1201,7 +1175,7 @@ function EmptyBagsSetup()
     end
 
     local criticalAmmoCount = (#VendorPoints + (#Waypoints - PathIndex)) * 1.5
-    local freeSlots = GetFreeSlots()
+    local freeSlots = wow.GetFreeSlots()
     if freeSlots <= MIN_BAG_SLOTS or (wow.IsHunter() and wow.GetItemCount(Hunter:GetAmmoName()) <= criticalAmmoCount) then
         local px, py, pz = wow.ObjectPosition("player")
         local closestDist = 99999
@@ -1229,10 +1203,10 @@ function EmptyBagsSetup()
 end
 
 Spell = ""
-PauseWPMovTil = 0
+PauseWaypointMovTil = 0
 
 function PulseMovement()
-    if wow.GetTime() < PauseWPMovTil then
+    if wow.GetTime() < PauseWaypointMovTil then
         Spell = "Waiting NPC to Pass"
         wow.DebugPrint("WP Movement is Paused")
         Sleep(1)
@@ -1243,10 +1217,6 @@ function PulseMovement()
     else
         MoveToClosestWaypoint()
     end
-end
-
-function IsInCombat(Unit)
-    return wow.UnitAffectingCombat(Unit)
 end
 
 AttackObj = nil
@@ -1394,7 +1364,7 @@ function ManagePet() -- True = Continue, False = Retick
         return true
     end
 
-    if IsInCombat("player") then -- Res Combat
+    if wow.IsInCombat() then -- Res Combat
         if wow.UnitExists("pet") == false and RevivePetStuck < 1 then
             RevivePetStuck = RevivePetStuck + 1
             wow.RunMacroText("/cast Call Pet")
@@ -1434,7 +1404,7 @@ function ManagePet() -- True = Continue, False = Retick
         end
     end
 
-    if IsInCombat("player") then
+    if wow.IsInCombat() then
         return true -- Actions below should be OUT OF COMBAT
     end
 
@@ -1454,7 +1424,7 @@ function ManagePet() -- True = Continue, False = Retick
         local elapsedSinceLastFed = wow.GetTime() - LastFedTime
         if elapsedSinceLastFed > 10 then -- I have an overfeeding 'bug' - probably timer ticking before feed aura is up
             for i = 1, #PetFoods, 1 do
-                if HasInInventory(PetFoods[i]) then
+                if wow.HasInInventory(PetFoods[i]) then
                     wow.DebugPrint("Feeding Unhappy Pet [" .. PetFoods[i] .. "]")
                     wow.RunMacroText("/use Feed Pet")
                     wow.RunMacroText("/use " .. PetFoods[i])
@@ -1498,7 +1468,7 @@ end
 PvpTargeted = false
 
 function Potion()
-    if IsInCombat("player") == false or PvpTargeted then
+    if wow.IsInCombat() == false or PvpTargeted then
         return false
     end
 
@@ -1552,7 +1522,7 @@ end
 ConjureCount = 0
 
 function Conjure()
-    if wow.IsMage() == false or wow.IsMounted() or GetFreeSlots() <= 1 then
+    if wow.IsMage() == false or wow.IsMounted() or wow.GetFreeSlots() <= 1 then
         return false
     end
 
@@ -1661,7 +1631,7 @@ function CheckVitals()
     end
 
     -- 战斗中直接退出, 以下动作无法执行
-    if IsInCombat("player") then
+    if wow.IsInCombat() then
         return true
     end
 
@@ -1693,7 +1663,7 @@ function CheckVitals()
 end
 
 function EnemyNearby(obj)
-    if DC_HORDE_NEARBY and IsInCombat("player") == false then
+    if DC_HORDE_NEARBY and wow.IsInCombat() == false then
         local dist = wow.GetDistanceBetweenObjects(obj, "player")
         if dist > 100 then
             return
@@ -1851,7 +1821,7 @@ function FindAttackableUnit()
 
                 local isPlayer = wow.UnitIsPlayer(obj)
                 if isPlayer == false and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and AggrodToAnotherPlayer(obj) == false then
-                    if IsInCombat(obj) and targettingMe then -- Targetting me so auto fook him up
+                    if wow.IsInCombat(obj) and targettingMe then -- Targetting me so auto fook him up
                         table.insert(AggroTable, obj)
                     elseif ArrayContains(AvoidNPCs, objectName) == false then -- 不是要避开的NPC
                         local guid = wow.UnitGUID(obj)
@@ -1868,7 +1838,7 @@ function FindAttackableUnit()
                             wow.DebugPrint('Kiting Dangerous NPC - ' .. wow.ObjectName(obj))
                             MoveFacingObject(obj, 1, false) -- 0.2 so to set move far away
                             Sleep(3)
-                            PauseWPMovTil = wow.GetTime() + 10
+                            PauseWaypointMovTil = wow.GetTime() + 10
                         end
                     end
                 else
@@ -1987,7 +1957,6 @@ function HunterRotation()
     local hp = GetUnitHP("player")
     local enemyName = wow.ObjectName("target")
 
-    local inCombat = IsInCombat("player")
     StopMovingBeforeAttack = true
     local px, py, pz = wow.ObjectPosition("player")
     local xx, yy, zz = wow.ObjectPosition("target")
@@ -2046,7 +2015,7 @@ function HunterRotation()
 
     FaceUnit("target")
 
-    if hp < 15 and enemyHP > 15 and inCombat and wow.IsCastable("Feign Death") and PvpTargeted == false then
+    if hp < 15 and enemyHP > 15 and wow.IsInCombat() and wow.IsCastable("Feign Death") and PvpTargeted == false then
         Spell = "Feigning Death at HP " .. hp .. " %"
         wow.CastSpellByName("Feign Death")
         Sleep(10)
@@ -2069,7 +2038,7 @@ function HunterRotation()
         end
 
         local aggrCnt = table.getn(AggroTable)
-        if inCombat and (lvlDiff > 3 or (hp < 30 and enemyHP > 30) or aggrCnt > 1) then
+        if wow.IsInCombat() and (lvlDiff > 3 or (hp < 30 and enemyHP > 30) or aggrCnt > 1) then
             if bRanged and wow.IsCastable("Rapid Fire") then
                 wow.CastSpellByName("Rapid Fire")
                 Spell = "Rapid Fire"
@@ -2083,21 +2052,21 @@ function HunterRotation()
         end
 
         local immuneToSS = enemyName:find("Rock") ~= nil or enemyName:find("rock") ~= nil
-        if inCombat and immuneToSS == false and wow.HasDebuff("Serpent Sting", "target") == false then
+        if wow.IsInCombat() and immuneToSS == false and wow.HasDebuff("Serpent Sting", "target") == false then
             if Cast("Serpent Sting") then
                 Spell = "Serpent Sing"
                 return
             end
         end
 
-        if inCombat and dist < 33 and dist > 10 and isPlayerTakingAggro then
+        if wow.IsInCombat() and dist < 33 and dist > 10 and isPlayerTakingAggro then
             if Cast("Concussive Shot") then
                 Spell = "Concussing"
                 return
             end
         end
 
-        if inCombat and Cast("Arcane Shot") then
+        if wow.IsInCombat() and Cast("Arcane Shot") then
             Spell = "Arcane Shot"
             return
         end
@@ -2211,7 +2180,7 @@ end
 IgnorePolyTill = 0
 
 function MageRotation()
-    local inCombat = IsInCombat("player")
+    local inCombat = wow.IsInCombat()
 
     local tX, tY, tZ = wow.ObjectPosition("target")
     if ForceStopNextMove then -- PRECAUTION when kiting
@@ -2507,7 +2476,7 @@ end
 OpenArr = {false, false, false, false, false, false, false, false, false}
 
 function Random()
-    if IsInCombat("player") then
+    if wow.IsInCombat() then
         return
     end
 
@@ -2618,19 +2587,19 @@ SkinningTime = 0
 IgnoreSkinningTill = 0
 
 function Skinning()
-    if HasInInventory("Skinning Knife") == false then
+    if not wow.HasInInventory("Skinning Knife") then
         return false
     end
     if SkinningTime > 12 then
-        wow.DebugPrint("Stuck Skinning --> SKIPPING")
+        wow.Log("Stuck Skinning --> SKIPPING")
         SkinningTime = 0
         IgnoreSkinningTill = wow.GetTime() + 30
         return false
     end
 
-    -- https://classic.wowhead.com/spells/name:skinning
-    local cID = wow.UnitCastID("player")
-    if cID == 10768 or cID == 10769 or cID == 8617 or cID == 8613 or cID == 8618 then -- if is skinning
+    -- 正在剥皮, https://classic.wowhead.com/spells/name:skinning
+    local spellId = wow.UnitCastID("player")
+    if spellId == 10768 or spellId == 10769 or spellId == 8617 or spellId == 8613 or spellId == 8618 then -- if is skinning
         return true
     end
 
@@ -2638,25 +2607,21 @@ function Skinning()
         return false
     end
 
-    local freeSlots = GetFreeSlots()
-    if freeSlots <= 0 then
+    if wow.GetFreeSlots() <= 0 then
         return false
     end
 
     local closestDist = 999999
     local skinObj = nil
-
     local px, py, pz = wow.ObjectPosition("player")
-
-    local objCount = wow.GetObjectCount()
-    for i = 1, objCount do
+    for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
             local name = wow.ObjectName(obj)
             if name ~= "Campfire" and name ~= PLAYER_NAME and name:find("Rune of") == nil then
                 local ox, oy, oz = wow.ObjectPosition(obj)
-                if wow.UnitCanBeSkinned(obj) == true and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and wow.UnitIsEnemy("player", obj) then
-                    local dist = math.sqrt(((px - ox) ^ 2) + ((py - oy) ^ 2) + ((pz - oz) ^ 2))
+                if wow.UnitCanBeSkinned(obj) and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and wow.UnitIsEnemy("player", obj) then
+                    local dist = wow.CalculateDistance(px, py, pz, ox, oy, oz)
                     if dist < closestDist and IsSafeToLoot(obj) then
                         closestDist = dist
                         skinObj = obj
@@ -2667,22 +2632,18 @@ function Skinning()
     end
 
     if skinObj ~= nil and closestDist < MAX_LOOT_DIST then
-        wow.DebugPrint('Skinning ' .. wow.ObjectName(skinObj) .. '!!!')
-        local objName = wow.ObjectName(skinObj)
-        Spell = objName
+        wow.Log('Skinning ' .. wow.ObjectName(skinObj) .. '!!!')
+        Spell = wow.ObjectName(skinObj)
 
-        local lootX, lootY, lootZ = wow.ObjectPosition(skinObj)
-        wow.MoveTo(lootX, lootY, lootZ)
-
-        local dist = wow.GetDistanceBetweenObjects(skinObj, "player")
-        if dist <= 5 then
+        wow.MoveToPoint(wow.ObjectPosition(skinObj))
+        if wow.GetDistanceBetweenObjects(skinObj, "player") <= 5 then
             DismountCheck()
             wow.InteractUnit(skinObj)
         end
 
         PlayerStatus = "SKINNING"
         ClearTargetDrawTables()
-        if closestDist <= 3 and IsMoving("player") == false then
+        if closestDist <= 3 and not IsMoving("player") then
             SkinningTime = SkinningTime + 1.1 + PULSE_DELAY
             Sleep(1.1)
         else
@@ -2702,13 +2663,12 @@ function Looting()
     if wow.UnitCastID("player") ~= 0 then
         return false
     end
-    local freeSlots = GetFreeSlots()
-    if freeSlots <= 0 then
+    if wow.GetFreeSlots() <= 0 then
         return false
     end
 
     if LootingTime > 6 then
-        wow.DebugPrint("Stuck Looting --> SKIPPING")
+        wow.Log("Stuck Looting --> SKIPPING")
         LootingTime = 0
         IgnoreLootingTill = wow.GetTime() + 30
     end
@@ -2720,18 +2680,14 @@ function Looting()
     local closestDist = 999999
     local lootObj = nil
     local lootCount = 0
-
     local px, py, pz = wow.ObjectPosition("player")
-
-    local objCount = wow.GetObjectCount()
-    for i = 1, objCount do
+    for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
             local ox, oy, oz = wow.ObjectPosition(obj)
             if wow.UnitIsDead(obj) and wow.UnitCanBeLooted(obj) and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil then
                 lootCount = lootCount + 1
-
-                local dist = math.sqrt(((px - ox) ^ 2) + ((py - oy) ^ 2) + ((pz - oz) ^ 2))
+                local dist = wow.CalculateDistance(px, py, pz, ox, oy, oz)
                 if dist < closestDist and IsSafeToLoot(obj) then
                     closestDist = dist
                     lootObj = obj
@@ -2742,12 +2698,10 @@ function Looting()
 
     if lootObj ~= nil and closestDist < MAX_LOOT_DIST then
         local objName = wow.ObjectName(lootObj)
-        wow.DebugPrint('Looting ' .. objName .. '!!!')
+        wow.Log('Looting ' .. objName .. '!!!')
         Spell = objName
 
-        local lootX, lootY, lootZ = wow.ObjectPosition(lootObj)
-        wow.MoveTo(lootX, lootY, lootZ)
-
+        wow.MoveToPoint(wow.ObjectPosition(lootObj))
         local dist = wow.GetDistanceBetweenObjects(lootObj, "player")
         if dist <= 5 then
             DismountCheck()
@@ -3045,7 +2999,7 @@ function DeadCheck()
     if wow.UnitIsDead("player") then
         wow.Log('Dead at time: ' .. wow.GetTime())
         if wow.UnitIsDeadOrGhost("player") then
-            wow.DebugPrint("Running Resurrect Script")
+            wow.Log("Running Resurrect Script")
             wow.RunMacroText(wow.ReadFile('Resurrect.lua'))
             Exit('Resurrect')
         end
@@ -3078,7 +3032,7 @@ function AmIFoccussed()
             if wow.IsHunter() and focussed == false then
                 focussed = IsTargeting(obj, "pet")
             end
-            if IsInCombat(obj) and wow.UnitCanAttack("player", obj) then
+            if wow.IsInCombat(obj) and wow.UnitCanAttack("player", obj) then
                 if focussed or (wow.IsMage() and wow.HasDebuff("Frost Nova", obj)) then
                     -- Unit stops targetting when nova'd
                     return true
@@ -3110,14 +3064,13 @@ function MountUp()
         MountTimeout = wow.GetTime() + 5
     end
 
-    local combat = IsInCombat("player")
     local indoors = wow.IsIndoors()
-    if indoors and combat == false then
+    if indoors and wow.IsInCombat() == false then
         MountTries = 0
         return false -- do not mount
     end
 
-    if combat == false and wow.IsMounted() == false and indoors == false and HasMount() then
+    if wow.IsInCombat() == false and wow.IsMounted() == false and indoors == false and HasMount() then
         if IsMoving("player") then
             wow.SendKey(83, 222)
         end
@@ -3197,7 +3150,7 @@ local function onUpdate(...)
         -- AcceptResurrect()
         PlayerStatus = "CORPSE_RUN"
         DeadTime = DeadTime + PULSE_DELAY
-        if ResurrectPulse() == false then
+        if not ResurrectPulse() then
             PulseMovement()
             PathEndCheck(RELOOP)
         end
@@ -3210,9 +3163,9 @@ local function onUpdate(...)
     if CheckVitals() then
         DebugMessage = "VITALS_OK"
 
-        local inCombat = IsInCombat("player")
-        if inCombat and CombatTime < 90 and (CLEAR_VENDOR_PATH or (CLEAR_VENDOR_PATH == false and wow.IsMounted() == false and IsNotVendorPathing())) then
-            if AmIFoccussed() or (wow.IsMage() and IsPolymorphUsed()) then -- Without this it will go too HAM because of InCombat remains a bit after fight ends w/o time to recover			
+        if wow.IsInCombat() and CombatTime < 90 and (CLEAR_VENDOR_PATH or (not CLEAR_VENDOR_PATH and not wow.IsMounted() and IsNotVendorPathing())) then
+            -- Without this it will go too HAM because of InCombat remains a bit after fight ends w/o time to recover			
+            if AmIFoccussed() or (wow.IsMage() and IsPolymorphUsed()) then 
                 DebugMessage = "ATTACK_1"
                 FindAttackableUnit()
                 Attack(AttackObj)
@@ -3241,31 +3194,31 @@ local function onUpdate(...)
                 EmptyBagsSetup()
             end
 
-            if GoingToVendor and AtVendor == false then
+            if GoingToVendor and not AtVendor then
                 if CLEAR_VENDOR_PATH and FindAttackableUnit() then
                     DebugMessage = "TO_VENDOR_ATTACKING"
                     Attack(AttackObj)
                 else
-                    -- MountUp just checks if it needs to Mount, if not (walking or already mounted) WILL RETURN FALSE
+                    -- MountUp just checks if it needs to Mount, 
+                    -- if not (walking or already mounted) WILL RETURN FALSE
                     if MountUp() == false then
                         DebugMessage = "VENDOR_PATH"
                         if LOOT_ON_VENDOR_PATH == false then
                             VendorPath(true)
                         else
-                            if Skinning() == false and Looting() == false then
+                            if not Skinning() and not Looting() then
                                 VendorPath(true)
                             end
                         end
                     end
                 end
-            elseif AtVendor and SellComplete == false then -- 卖东西
+            elseif AtVendor and not SellComplete then -- 开始卖东西
                 DebugMessage = "SELLING"
                 SellAndBuyShit()
-            elseif SellComplete and AtStartAfterVendor == false then -- 邮寄东西
+            elseif SellComplete and not AtStartAfterVendor then -- 邮寄东西
                 if MAIL_ENABLED and CanMail then
-                    local exitMacro = wow.ReadFile('Mail.lua')
-                    wow.DebugPrint("Running Mail Script!")
-                    wow.RunMacroText(exitMacro)
+                    wow.Log("Running Mail Script!")
+                    wow.RunMacroText(wow.ReadFile('Mail.lua'))
                     Exit('Mail')
                 end
 
@@ -3278,23 +3231,23 @@ local function onUpdate(...)
                         if LOOT_ON_VENDOR_PATH == false then
                             VendorPath(false)
                         else
-                            if Skinning() == false and Looting() == false then
+                            if not Skinning() and not Looting() then
                                 VendorPath(false)
                             end
                         end
                     end
                 end
-            elseif AtStartAfterVendor then -- 变量复位
+            elseif AtStartAfterVendor then -- 刚卖完东西
                 ResetVariables()
             else
-                if Skinning() == false and Looting() == false then
+                if not Skinning() and not Looting() then
                     DebugMessage = "NOT_SKIN/LOOT-ING"
                     if FindAttackableUnit() then
                         DebugMessage = "ATTACK_2"
                         Attack(AttackObj)
                     else
                         local castingID = wow.UnitCastID("player")
-                        if castingID ~= 0 and inCombat == false then -- Mage problem
+                        if castingID ~= 0 and wow.IsInCombat() == false then -- Mage problem
                             DebugMessage = "PREVENTING_MAGE_CAST_INTERR"
                         else
                             if TargetIsFar and MOUNT_WHILE_GRINDING and wow.IsIndoors() == false and wow.IsMounted() == false and HasMount() then
@@ -3325,7 +3278,6 @@ local function onUpdate(...)
     -- 卡住了
     if StuckTime > 90 or CombatTime > 120 then
         wow.Log('Bot is stuck at idx ' .. PathIndex)
-        wow.Log('Stuck at idx: ' .. PathIndex)
         wow.RunMacroText(".dc")
         Exit("Stuck")
     end
@@ -3338,7 +3290,7 @@ Frame:SetScript("OnEvent", function(self, event)
     if event == "MERCHANT_SHOW" then
         TalkedToVendor = true
         wow.DebugPrint("Vendor Window Open!!!")
-    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and IsInCombat("player") then
+    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and wow.IsInCombat() then
         local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = wow.CombatLogGetCurrentEventInfo()
         if subevent == "SPELL_CAST_START" then
             local obj = wow.GetObjectWithGUID(sourceGUID)
