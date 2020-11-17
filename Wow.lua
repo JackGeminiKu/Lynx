@@ -194,20 +194,28 @@ do
         return GetSpellCooldown(spellName)
     end
 
-    wow.UnitPowerMax = function(unit)
-        return UnitPowerMax(unit)
-    end
-
     wow.UnitPower = function(unit)
         return UnitPower(unit)
     end
 
-    wow.UnitHealthMax = function(unit)
-        return UnitHealthMax(unit)
+    wow.UnitPowerPercent = function(unit)
+       return 100 * UnitPower(unit) / UnitPowerMax(unit)
+    end
+
+    wow.UnitPowerMax = function(unit)
+        return UnitPowerMax(unit)
     end
 
     wow.UnitHealth = function(unit)
         return UnitHealth(unit)
+    end
+
+    wow.UnitHealthPercent = function(unit)
+        return 100 * UnitHealth(unit) / UnitHealthMax(unit)
+    end
+
+    wow.UnitHealthMax = function(unit)
+        return UnitHealthMax(unit)
     end
 
     wow.UnitGUID = function(unit)
@@ -240,6 +248,10 @@ do
 
     wow.UnitIsDeadOrGhost = function(unit)
         return UnitIsDeadOrGhost(unit)
+    end
+
+    wow.PlayerIsDeadOrGhost = function()
+        return UnitIsDeadOrGhost("player")
     end
 
     wow.IsMounted = function()
