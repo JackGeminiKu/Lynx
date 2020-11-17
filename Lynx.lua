@@ -19,6 +19,26 @@ function Hunter:GetAmmoMaxCount()
     return 3000
 end
 
+function Hunter:BuyDrinks()
+    local drinksToHave = 140
+    wow.Log('Buying Drinks')
+    local drinkSlot = GetVendorSlot(Drinks[2])
+    if drinkSlot ~= -1 then
+        local drinkCount = wow.GetItemCount(Drinks[2])
+        if drinkCount >= drinksToHave then
+            return
+        end
+
+        local needToBuy = drinksToHave - drinkCount;
+        wow.Log('Buying ' .. needToBuy .. ' ' .. Drinks[2]);
+        local div = needToBuy / 5
+        for i = 1, div do
+            wow.BuyMerchantItem(drinkSlot);
+        end
+        Sleep(1) -- ammo takes a ton of time to appear	
+    end
+end
+
 function Hunter:BuyAmmo()
     if wow.IsHunter() == false then
         return
@@ -601,7 +621,7 @@ VendorPoints = {
     [325] = {5094.9970703125, -357.65872192383, 357.26419067383, "Repair"}
 }
 
-DeleteItems = {[1] = {"OOX-09/HL Distress Beacon"}, [2] = {"Patch of Tainted Skin"}}
+DeleteItems = {[1] = {"OOX-09/HL Distress Beacon"}, [2] = {"Patch of Tainted Skin"}} -- 要删除的垃圾东西
 
 --------------------OPTIONS--------------------
 PULSE_DELAY = 0.25
@@ -674,7 +694,7 @@ DestZ = Waypoints[1][3]
 PlayerStatus = "WAYPOINT"
 
 function Exit(caller)
-    wow.DebugPrint('Exit called by: ' .. caller .. '()')
+    wow.Log('Exit called by: ' .. caller .. '()')
     Frame:SetScript("OnUpdate", nil)
 end
 
@@ -799,7 +819,7 @@ function MoveToClosestWaypoint()
     local px, py, pz = wow.ObjectPosition("player")
     local closestIndex = 1
     local closestDist = 9999999
-    local foundSomething = false
+    local foundWaypoint = false
 
     -- 遍历所有waypint, 查找最近的waypoint
     for i = PathIndex, #Waypoints, 1 do
@@ -812,7 +832,7 @@ function MoveToClosestWaypoint()
                         AtEnd = true
                     end
                     if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, waypoint[1], waypoint[2], waypoint[3] + 2.5, LOST_FLAGS) == nil then
-                        foundSomething = true
+                        foundWaypoint = true
                         closestIndex = i
                         closestDist = dist
                     end
@@ -821,10 +841,10 @@ function MoveToClosestWaypoint()
         end
     end
 
-    if foundSomething == true then
+    if foundWaypoint then
         PathIndex = closestIndex
     else
-        wow.DebugPrint('Found No path in LOS!')
+        wow.Log('Found No path in LOS!')
         PathIndex = 1;
         wow.SendKey(' ')
     end
@@ -942,7 +962,7 @@ FirstTick = true
 -- Follow path from index 1 to end
 -- !THIS FUNCTION IS A MESS! RE-WRITE
 function MoveToNextWaypoint()
-    if FirstTick == true then   -- 只执行一次
+    if FirstTick == true then -- 只执行一次
         FirstTick = false
         SetIndexToClosest()
     end
@@ -1024,7 +1044,7 @@ function PathEndCheck(reloop)
     if reloop then
         ReloopWaypoint(Waypoints)
     else
-        wow.DebugPrint('Finished Pathing!!!')
+        wow.Log('Finished Pathing!!!')
         Exit('PathEndCheck')
     end
 end
@@ -1037,7 +1057,7 @@ function ReloopWaypoint(waypoints)
         local firstWaypoint = waypoints[1]
         local lastWaypoint = waypoints[#waypoints]
         if wow.CalculateDistance(firstWaypoint, lastWaypoint) > 50 then
-            wow.DebugPrint('Reversing Path!!!')
+            wow.Log('Reversing Path!!!')
             local i, j = 1, #waypoints
             while i < j do
                 waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
@@ -1045,12 +1065,12 @@ function ReloopWaypoint(waypoints)
                 j = j - 1
             end
         else
-            wow.DebugPrint('ReLooping Path!!!')
+            wow.Log('ReLooping Path!!!')
         end
 
         PathIndex = 1
     else
-        wow.DebugPrint('Cannot ReLoop as Start is not in LOS!')
+        wow.Log('Cannot ReLoop as Start is not in LOS!')
         PathIndex = 1
     end
 end
@@ -1093,73 +1113,70 @@ function HasManaGem()
     return false
 end
 
-function VendorPath(bToVendor)
-    local px, py, pz = wow.ObjectPosition("player")
-    local xyz = VendorPoints[VendorPathIndex] -- return is imp to always assign next xyz correctly
-
-    if wow.IsHunter() and HunterBuff ~= "Aspect of the Cheetah" and HasMount() == false then
+function VendorPath(toVendor)
+    if wow.IsHunter() and HunterBuff ~= "Aspect of the Cheetah" and not HasMount() then
         HunterBuff = "Aspect of the Cheetah"
     end
 
-    if xyz ~= nil then
-        local dist = math.abs(wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3]))
-        if dist <= GetProximalTolerance() then
-            if bToVendor and VendorPathIndex <= #VendorPoints then
+    local nextPoint = VendorPoints[VendorPathIndex] -- return is imp to always assign next xyz correctly
+    if nextPoint ~= nil then
+        local px, py, pz = wow.ObjectPosition("player")
+        if wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3]) <= GetProximalTolerance() then
+            if toVendor and VendorPathIndex <= #VendorPoints then
                 VendorPathIndex = VendorPathIndex + 1
             elseif VendorPathIndex > 1 then
                 VendorPathIndex = VendorPathIndex - 1
             end
-            wow.DebugPrint('Moving to vendor idx {' .. VendorPathIndex .. '/' .. #VendorPoints .. '}')
+            wow.Log('Moving to vendor idx {' .. VendorPathIndex .. '/' .. #VendorPoints .. '}')
         end
 
-        local action = xyz[4]
-        if action ~= nil then
-            if bToVendor == false then
-                if action == "Repair" then
-                    wow.DebugPrint("Going to Repair Vendor...")
-                    wow.InteractUnit(RepairVendor)
-                    Sleep(10)
+        -- repair or stop
+        local action = nextPoint[4]
+        if not toVendor and action ~= nil then
+            if action == "Repair" then
+                wow.Log("Going to Repair Vendor...")
+                wow.InteractUnit(RepairVendor)
+                Sleep(10)
 
-                    if bToVendor and VendorPathIndex <= #VendorPoints then
-                        VendorPathIndex = VendorPathIndex + 1
-                    elseif VendorPathIndex > 1 then
-                        VendorPathIndex = VendorPathIndex - 1
-                    end
-                    return
-                elseif action == "Stop" then
-                    wow.DebugPrint("Stopping!")
-                    wow.SendKey(83, 123)
-                    Sleep(3)
-
-                    if bToVendor and VendorPathIndex <= #VendorPoints then
-                        VendorPathIndex = VendorPathIndex + 1
-                    elseif VendorPathIndex > 1 then
-                        VendorPathIndex = VendorPathIndex - 1
-                    end
-                    return
+                if toVendor and VendorPathIndex <= #VendorPoints then
+                    VendorPathIndex = VendorPathIndex + 1
+                elseif VendorPathIndex > 1 then
+                    VendorPathIndex = VendorPathIndex - 1
                 end
+                return
+            elseif action == "Stop" then
+                wow.Log("Stopping!")
+                wow.SendKey(83, 123)
+                Sleep(3)
+
+                if toVendor and VendorPathIndex <= #VendorPoints then
+                    VendorPathIndex = VendorPathIndex + 1
+                elseif VendorPathIndex > 1 then
+                    VendorPathIndex = VendorPathIndex - 1
+                end
+                return
             end
         end
     end
 
-    local rnd = math.random(-RANDOM_MAX, RANDOM_MAX) / 100
+    -- Move to next point
     local moveToXYZ = VendorPoints[VendorPathIndex]
     if moveToXYZ ~= nil then
+        PlayerStatus = "VENDOR"
+        local rnd = math.random(-RANDOM_MAX, RANDOM_MAX) / 100
         DestX = moveToXYZ[1] + rnd
         DestY = moveToXYZ[2] + rnd
         DestZ = moveToXYZ[3] + rnd
-        PlayerStatus = "VENDOR"
-
         if VendorPathIndex == #VendorPoints then
-            wow.MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3]) -- don't want random fuck ups
+            wow.MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
         else
             wow.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
         end
     end
 
-    if bToVendor and VendorPathIndex >= #VendorPoints then
+    if toVendor and VendorPathIndex >= #VendorPoints then
         AtVendor = true
-    elseif bToVendor == false and VendorPathIndex <= 1 then
+    elseif not toVendor and VendorPathIndex <= 1 then
         AtStartAfterVendor = true
         SetIndexToClosest(true)
     end
@@ -1174,15 +1191,14 @@ function EmptyBagsSetup()
         return false
     end
 
-    local criticalAmmoCount = (#VendorPoints + (#Waypoints - PathIndex)) * 1.5
-    local freeSlots = wow.GetFreeSlots()
-    if freeSlots <= MIN_BAG_SLOTS or (wow.IsHunter() and wow.GetItemCount(Hunter:GetAmmoName()) <= criticalAmmoCount) then
+    local minAmmoCount = (#VendorPoints + (#Waypoints - PathIndex)) * 1.5
+    if wow.GetFreeSlots() <= MIN_BAG_SLOTS or (wow.IsHunter() and wow.GetItemCount(Hunter:GetAmmoName()) <= minAmmoCount) then
         local px, py, pz = wow.ObjectPosition("player")
         local closestDist = 99999
         for i = 1, #VendorPoints do
-            local xyz = VendorPoints[i]
-            if xyz ~= nil then
-                local dist = wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
+            local vendorPoint = VendorPoints[i]
+            if vendorPoint ~= nil then
+                local dist = wow.CalculateDistance(px, py, pz, vendorPoint[1], vendorPoint[2], vendorPoint[3])
                 if dist < closestDist then
                     closestDist = dist
                     VendorPathIndex = i
@@ -1191,12 +1207,11 @@ function EmptyBagsSetup()
         end
 
         if closestDist < 30 then
-            wow.DebugPrint('Vendoring!!!!!!')
-            GoingToVendor = true
+            wow.Log('Vendoring!!!!!!')
             return true
         end
 
-        wow.DebugPrint('Bags full but not close enough to Vendor path [75y]. Closest = ' .. closestDist)
+        wow.Log('Bags full but not close enough to Vendor path [75y]. Closest = ' .. closestDist)
     end
 
     return false
@@ -1208,7 +1223,7 @@ PauseWaypointMovTil = 0
 function PulseMovement()
     if wow.GetTime() < PauseWaypointMovTil then
         Spell = "Waiting NPC to Pass"
-        wow.DebugPrint("WP Movement is Paused")
+        wow.Log("Waypoint Movement is Paused")
         Sleep(1)
         return
     end
@@ -2483,37 +2498,37 @@ function Random()
     -- Reset Windows
     if OpenArr[1] then
         OpenArr[1] = false
-        wow.SendKey(79)
+        wow.SendKey(79) -- O
         return
     end
     if OpenArr[2] then
         OpenArr[2] = false
-        wow.SendKey(74)
+        wow.SendKey(74) -- J
         return
     end
     if OpenArr[3] then
         OpenArr[3] = false
-        wow.SendKey(76)
+        wow.SendKey(76) -- L
         return
     end
     if OpenArr[4] then
         OpenArr[4] = false
-        wow.SendKey(66)
+        wow.SendKey(66) -- B
         return
     end
     if OpenArr[5] then
         OpenArr[5] = false
-        wow.SendKey(80)
+        wow.SendKey(80) -- P
         return
     end
     if OpenArr[6] then
         OpenArr[6] = false
-        wow.SendKey(67)
+        wow.SendKey(67) -- C
         return
     end
     if OpenArr[7] then
         OpenArr[7] = false
-        wow.SendKey(78)
+        wow.SendKey(78) -- N
         return
     end
 
@@ -2529,25 +2544,25 @@ function Random()
     elseif rnd >= 13 and rnd <= 15 then
         wow.RunMacroText("/train")
     elseif rnd >= 16 and rnd <= 20 then
-        wow.SendKey(79)
+        wow.SendKey(79) -- O
         OpenArr[1] = true
     elseif rnd >= 21 and rnd <= 23 then
-        wow.SendKey(74)
+        wow.SendKey(74) -- J
         OpenArr[2] = true
     elseif rnd >= 26 and rnd <= 28 then
-        wow.SendKey(76)
+        wow.SendKey(76) -- L
         OpenArr[3] = true
     elseif rnd >= 31 and rnd <= 35 then
-        wow.SendKey(66)
+        wow.SendKey(66) -- B
         OpenArr[4] = true
     elseif rnd >= 36 and rnd <= 38 then
-        wow.SendKey(80)
+        wow.SendKey(80) -- P
         OpenArr[5] = true
     elseif rnd >= 39 and rnd <= 42 then
-        wow.SendKey(67)
+        wow.SendKey(67) -- C
         OpenArr[6] = true
     elseif rnd >= 43 and rnd <= 44 then
-        wow.SendKey(78)
+        wow.SendKey(78) -- N
         OpenArr[7] = true
     elseif rnd > 56 and rnd < 70 then
         if wow.UnitCastID("player") == 0 then
@@ -2718,18 +2733,16 @@ function Looting()
     return false
 end
 
-function DeletePeskyItems()
+function DeleteRubbishItems()
     for i = 1, #DeleteItems, 1 do
         local itemName = DeleteItems[i][1]
-        local bag, slot
-        local total = 0
         for bag = 0, 4 do
             for slot = 0, wow.GetContainerNumSlots(bag) do
                 local link = wow.GetContainerItemLink(bag, slot)
                 if link then
                     local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
                     if sName == itemName then
-                        wow.DebugPrint('- DELETING ' .. itemName .. '!!!')
+                        wow.Log('- DELETING ' .. itemName .. '!!!')
                         wow.PickupContainerItem(bag, slot)
                         wow.DeleteCursorItem()
                     end
@@ -2739,44 +2752,23 @@ function DeletePeskyItems()
     end
 end
 
-function BuyStuff()
+function BuyItems()
     if wow.IsMage() then
         return
     end
-
-    local drinksToHave = 140
-    wow.DebugPrint('Buying Drinks')
-    local drinkSlot = GetVendorSlot(Drinks[2])
-    if drinkSlot ~= -1 then
-        local drinkCount = wow.GetItemCount(Drinks[2])
-        if drinkCount >= drinksToHave then
-            return
-        end
-
-        local needToBuy = drinksToHave - drinkCount;
-        wow.DebugPrint('Buying ' .. needToBuy .. ' ' .. Drinks[2]);
-        local div = needToBuy / 5
-
-        for i = 1, div do
-            wow.BuyMerchantItem(drinkSlot);
-        end
-        Sleep(1) -- ammo takes a ton of time to appear	
-    end
-
+    Hunter:BuyDrinks()
     Hunter:BuyAmmo()
 end
 
 SellTick = 0
 CanMail = false
 
-function SellAndBuyShit()
-    -- Delete Shit
-    DeletePeskyItems()
+function SellBuyRepair()
+    DeleteRubbishItems()
 
     -- Talk To Vendor
-    if TalkedToVendor == false then
-        local objCount = wow.GetObjectCount()
-        for i = 1, objCount do
+    if not TalkedToVendor then
+        for i = 1, wow.GetObjectCount() do
             local obj = wow.GetObjectWithIndex(i)
             if wow.ObjectName(obj) == VendorName then
                 wow.DebugPrint('Selling to ' .. VendorName)
@@ -2786,65 +2778,63 @@ function SellAndBuyShit()
         end
         -- merchant_show event will handle this
         return
-    end
-
-    -- SELL ALGO
-    if TalkedToVendor == true then
-        wow.DebugPrint('Clearing Bags...')
-        local bag, slot
-        local total = 0
-        for bag = 0, 4 do
-            for slot = 0, wow.GetContainerNumSlots(bag) do
-                local link = wow.GetContainerItemLink(bag, slot)
-                if link then
-                    local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(link)
-                    if ArrayContains(ForcedToSell, sName) then
-                        wow.DebugPrint('Force-Selling: ' .. sName)
-                        wow.UseContainerItem(bag, slot)
-                    elseif wow.IsHunter() and (sName == Hunter:GetAmmoName() or ArrayContains(PetFoods, sName)) then
-                        -- DbgPrint('Keeping [Hunter Ammo/PetFood]: '..sName)
-                    elseif sSubType == "Bag" or (wow.IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
-                        -- Bug where last Bag is perceived as item in other bags for selling :/
-                    elseif sName:find("Potion") ~= nil or sName:find("Bandage") ~= nil then
-                        -- DbgPrint('Keeping [Potion]: '..sName)
-                    elseif sName == "Hearthstone" or sType == "Projectile" or iRarity >= 3 then
-                        -- DbgPrint('Keeping [HardCoded]: '..sName)
-                    elseif iRarity >= 2 then -- and (sSubType == "Bows" or sSubType == "Guns" or sSubType == "Two-Handed Swords" or sSubType == "Leather") then
-                        -- DbgPrint('Keeping [Rarity]: '..sName)
-                    elseif ArrayContains(ToKeep, sName) or ArrayContains(ToMail, sName) then
-                        -- DbgPrint('Keeping [ToKeepList]: '..sName)
-                    elseif sName == MOUNT_NAME then
-                        -- DbgPrint('Keeping [Mount]: '..sName)
-                    elseif ArrayContains(Foods, sName) or ArrayContains(Drinks, sName) then
-                        -- DbgPrint('Keeping [RegenConsumable]: '..sName)
-                    else
-                        if MAIL_ENABLED and iRarity < 1 then -- since we are mailing, just sell junk
-                            wow.DebugPrint('Selling [Junk]: ' .. sName)
-                            wow.UseContainerItem(bag, slot)
-                        else
-                            if MAIL_ENABLED == false then -- since we are not mailing sell junk + whites
-                                wow.DebugPrint('Selling [Space]: ' .. sName)
-                                wow.UseContainerItem(bag, slot)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-
-        BuyStuff()
-        VendorPathIndex = #VendorPoints - 1
-        SellTick = SellTick + 1
-
+    else
+        SellItems()
+        BuyItems()
         if wow.CanMerchantRepair() then
             wow.RepairAllItems()
         end
+
+        VendorPathIndex = #VendorPoints - 1
+        SellTick = SellTick + 1
         if SellTick == 5 then
             SellComplete = true
             CanMail = true
             SellTick = 0
         end
         Sleep(6)
+    end
+end
+
+function SellItems()
+    wow.DebugPrint('Clearing Bags...')
+    for bag = 0, 4 do
+        for slot = 0, wow.GetContainerNumSlots(bag) do
+            local link = wow.GetContainerItemLink(bag, slot)
+            if link then
+                local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(link)
+                if ArrayContains(ForcedToSell, sName) then
+                    wow.DebugPrint('Force-Selling: ' .. sName)
+                    wow.UseContainerItem(bag, slot)
+                elseif wow.IsHunter() and (sName == Hunter:GetAmmoName() or ArrayContains(PetFoods, sName)) then
+                    -- DbgPrint('Keeping [Hunter Ammo/PetFood]: '..sName)
+                elseif sSubType == "Bag" or (wow.IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
+                    -- Bug where last Bag is perceived as item in other bags for selling :/
+                elseif sName:find("Potion") ~= nil or sName:find("Bandage") ~= nil then
+                    -- DbgPrint('Keeping [Potion]: '..sName)
+                elseif sName == "Hearthstone" or sType == "Projectile" or iRarity >= 3 then
+                    -- DbgPrint('Keeping [HardCoded]: '..sName)
+                elseif iRarity >= 2 then -- and (sSubType == "Bows" or sSubType == "Guns" or sSubType == "Two-Handed Swords" or sSubType == "Leather") then
+                    -- DbgPrint('Keeping [Rarity]: '..sName)
+                elseif ArrayContains(ToKeep, sName) or ArrayContains(ToMail, sName) then
+                    -- DbgPrint('Keeping [ToKeepList]: '..sName)
+                elseif sName == MOUNT_NAME then
+                    -- DbgPrint('Keeping [Mount]: '..sName)
+                elseif ArrayContains(Foods, sName) or ArrayContains(Drinks, sName) then
+                    -- DbgPrint('Keeping [RegenConsumable]: '..sName)
+                else
+                    if MAIL_ENABLED and iRarity < 1 then -- since we are mailing, just sell junk
+                        wow.DebugPrint('Selling [Junk]: ' .. sName)
+                        wow.UseContainerItem(bag, slot)
+                    else
+                        if not MAIL_ENABLED then -- since we are not mailing sell junk + whites
+                            wow.Log('Selling [Space]: ' .. sName)
+                            wow.UseContainerItem(bag, slot)
+                        end
+                    end
+                end
+            end
+        end
     end
 end
 
@@ -3006,16 +2996,15 @@ function DeadCheck()
     end
 end
 
-function OpenShit()
-    local bag, slot
-    local total = 0
+-- 打开箱子, 蚌壳等物品, 具体哪些物品在OpenInBags中定义
+function OpenBoxItems()
     for bag = 0, 4 do
         for slot = 0, wow.GetContainerNumSlots(bag) do
             local link = wow.GetContainerItemLink(bag, slot)
             if link then
                 local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
                 if ArrayContains(OpenInBags, sName) then
-                    wow.DebugPrint("Opening " .. sName)
+                    wow.Log("Opening " .. sName)
                     wow.UseContainerItem(bag, slot)
                 end
             end
@@ -3096,19 +3085,17 @@ end
 function ResurrectPulse()
     for i = 1, wow.GetObjectCount() do
         local object = wow.GetObjectWithIndex(i)
-        if IsMyCorpse(object) then
-            if wow.GetDistanceBetweenObjects("player", object) < 35 then
-                if wow.GetCorpseRecoveryDelay() <= 0 then
-                    if PositionAggroCount() >= 1 then
-                        Sleep(5)
-                        return false
-                    end
-                    wow.RetrieveCorpse()
-                    return true
-                else
+        if IsMyCorpse(object) and wow.GetDistanceBetweenObjects("player", object) < 35 then
+            if wow.GetCorpseRecoveryDelay() <= 0 then
+                if PositionAggroCount() >= 1 then
                     Sleep(5)
-                    return true
+                    return false
                 end
+                wow.RetrieveCorpse()
+                return true
+            else
+                Sleep(5)
+                return true
             end
         end
     end
@@ -3165,7 +3152,8 @@ local function onUpdate(...)
 
         if wow.IsInCombat() and CombatTime < 90 and (CLEAR_VENDOR_PATH or (not CLEAR_VENDOR_PATH and not wow.IsMounted() and IsNotVendorPathing())) then
             -- Without this it will go too HAM because of InCombat remains a bit after fight ends w/o time to recover			
-            if AmIFoccussed() or (wow.IsMage() and IsPolymorphUsed()) then 
+            -- ATTACK_1
+            if AmIFoccussed() or (wow.IsMage() and IsPolymorphUsed()) then
                 DebugMessage = "ATTACK_1"
                 FindAttackableUnit()
                 Attack(AttackObj)
@@ -3178,11 +3166,11 @@ local function onUpdate(...)
                     wow.Log('Item Break...')
                     wow.RunMacroText(".dc")
                 end
-                DebugMessage = "10s_TIMER_TICK"
-                OpenShit()
 
-                if AtVendor == false and SellComplete == false and TalkedToVendor == false and AtStartAfterVendor == false then
-                    DeletePeskyItems()
+                DebugMessage = "10s_TIMER_TICK"
+                OpenBoxItems()
+                if not AtVendor and not SellComplete and not TalkedToVendor and not AtStartAfterVendor then
+                    DeleteRubbishItems()
                     Random()
                 end
                 Ttt = wow.GetTime()
@@ -3190,11 +3178,11 @@ local function onUpdate(...)
             end
             CombatTime = 0
 
-            if GoingToVendor == false then
-                EmptyBagsSetup()
+            if not GoingToVendor then
+                GoingToVendor = EmptyBagsSetup()
             end
 
-            if GoingToVendor and not AtVendor then
+            if GoingToVendor and not AtVendor then -- 跑向vendor中
                 if CLEAR_VENDOR_PATH and FindAttackableUnit() then
                     DebugMessage = "TO_VENDOR_ATTACKING"
                     Attack(AttackObj)
@@ -3213,8 +3201,8 @@ local function onUpdate(...)
                     end
                 end
             elseif AtVendor and not SellComplete then -- 开始卖东西
-                DebugMessage = "SELLING"
-                SellAndBuyShit()
+                DebugMessage = "Selling, buying, repairing"
+                SellBuyRepair()
             elseif SellComplete and not AtStartAfterVendor then -- 邮寄东西
                 if MAIL_ENABLED and CanMail then
                     wow.Log("Running Mail Script!")
@@ -3237,7 +3225,7 @@ local function onUpdate(...)
                         end
                     end
                 end
-            elseif AtStartAfterVendor then -- 刚卖完东西
+            elseif AtStartAfterVendor then -- 卖完东西, 返回到原点
                 ResetVariables()
             else
                 if not Skinning() and not Looting() then
