@@ -629,7 +629,7 @@ START_DELAY = 0.0
 
 function GetProximalTolerance()
     local PROXIMAL_TOLERANCE = 4.4
-    if wow.IsMounted() then
+    if player.IsMounted() then
         return PROXIMAL_TOLERANCE * 2
     else
         return PROXIMAL_TOLERANCE
@@ -699,7 +699,7 @@ function Exit(caller)
 end
 
 function DismountCheck()
-    if wow.IsMounted() then
+    if player.IsMounted() then
         wow.Dismount()
     end
 end
@@ -950,7 +950,7 @@ function FirstTickApply()
     if wow.IsHunter() then
         EatAtHP = 69
         DrinkAtMana = 33
-    elseif wow.IsMage() then
+    elseif player.IsMage() then
         wow.DebugPrint("Applying Mage Mana/HP Preset!")
         EatAtHP = 75
         DrinkAtMana = 75
@@ -1095,7 +1095,7 @@ function HasMount()
 end
 
 function HasManaGem()
-    if wow.IsMage() == false then
+    if player.IsMage() == false then
         return false
     end
     for bag = 0, 4 do
@@ -1328,8 +1328,8 @@ function RecoverHP()
 end
 
 function MendingPet()
-    local isEating = wow.HasAura("player", "Food")
-    local isDrinking = wow.HasAura("player", "Drink")
+    local isEating = player.HasAura("Food")
+    local isDrinking = player.HasAura("Drink")
     if isEating or isDrinking then
         Sleep(1.1)
         return false
@@ -1367,12 +1367,12 @@ LastFedTime = 0
 CallingPet = false
 
 function ManagePet() -- True = Continue, False = Retick
-    if not wow.IsHunter() or wow.HasAura("player", "Feign Death") then
+    if not wow.IsHunter() or player.HasAura("Feign Death") then
         return true
     end
 
     -- 召唤宝宝
-    if wow.IsInCombat() then -- Res Combat
+    if player.IsInCombat() then -- Res Combat
         if not wow.UnitExists("pet") and RevivePetStuck < 1 then
             RevivePetStuck = RevivePetStuck + 1
             wow.RunMacroText("/cast Call Pet")
@@ -1381,7 +1381,7 @@ function ManagePet() -- True = Continue, False = Retick
     end
 
     -- 复活或者召出宝宝
-    if (not wow.UnitExists("pet") or wow.UnitIsDead("pet") or wow.UnitHealth("pet") <= 0) and wow.UnitCastID("player") == 0 and RevivePetStuck < 5 then
+    if (not wow.UnitExists("pet") or wow.UnitIsDead("pet") or wow.UnitHealth("pet") <= 0) and not wow.PlayerIsCasting() and RevivePetStuck < 5 then
         if CallingPet == false then
             CallingPet = true
             wow.RunMacroText("/cast Call Pet")
@@ -1412,7 +1412,7 @@ function ManagePet() -- True = Continue, False = Retick
         end
     end
 
-    if wow.IsInCombat() then
+    if player.IsInCombat() then
         return true -- Actions below should be OUT OF COMBAT
     end
 
@@ -1475,18 +1475,18 @@ end
 PvpTargeted = false
 
 function Potion()
-    if wow.IsInCombat() == false or PvpTargeted then
+    if player.IsInCombat() == false or PvpTargeted then
         return false
     end
 
-    local needHP = wow.UnitHealthPercent("player") <= POT_UP_HP
-    local needMana = wow.UnitPowerPercent("player") <= POT_UP_MANA
+    local needHP = player.GetHealthPercent() <= POT_UP_HP
+    local needMana = player.GetPowerPercent() <= POT_UP_MANA
     if needHP == false and needMana == false then
         return false
     end
 
     local hasMageManaGem = false
-    if wow.IsMage() then
+    if player.IsMage() then
         hasMageManaGem = HasManaGem()
     end
 
@@ -1529,7 +1529,7 @@ end
 ConjureCount = 0
 
 function Conjure()
-    if not wow.IsMage() or wow.IsMounted() or wow.GetFreeSlots() <= 1 then
+    if not player.IsMage() or player.IsMounted() or wow.GetFreeSlots() <= 1 then
         return false
     end
 
@@ -1586,7 +1586,7 @@ end
 StallBuffUp = 0
 
 function ApplyBuff(buff)
-    if wow.IsCastable(buff) == false or wow.IsMounted() == true and wow.UnitCastID("player") ~= 0 and wow.GetTime() < StallBuffUp then
+    if wow.IsCastable(buff) == false or player.IsMounted() == true and wow.PlayerIsCasting() and wow.GetTime() < StallBuffUp then
         return
     end
     wow.ApplyBuff(buff, "player")
@@ -1594,7 +1594,7 @@ function ApplyBuff(buff)
 end
 
 function ApplyBuffs()
-    if wow.IsMage() then
+    if player.IsMage() then
         ApplyBuff("Arcane Intellect")
         if PREFER_MAGE_ARMOR then
             ApplyBuff("Mage Armor")
@@ -1608,29 +1608,25 @@ function ApplyBuffs()
 end
 
 function CheckVitals()
-    if wow.PlayerIsDeadOrGhost() then
+    if player.IsDeadOrGhost() then
         PlayerStatus = "DEAD"
         return false
     end
 
-    if wow.IsSwimming() or wow.IsMounted() then
+    if player.IsSwimming() or player.IsMounted() then
         return true
     end
 
-    local playerHp = wow.UnitHealthPercent("player")
-    local playerMana = wow.UnitPowerPercent("player")
-    local isEating = wow.HasAura("player", "Food")
-    local isDrinking = wow.HasAura("player", "Drink")
-    if isEating and playerHp < RECOVER_TILL_PERCENT then
+    if player.IsEating() and player.GetHealthPercent() < RECOVER_TILL_PERCENT then
         return false
     end
-    if isDrinking and playerMana < RECOVER_TILL_PERCENT then
+    if player.IsDrinking() and player.GetPowerPercent() < RECOVER_TILL_PERCENT then
         return false
     end
 
     -- 管理猎人宝宝
     if not ManagePet() then
-        if playerMana < DrinkAtMana then
+        if player.GetPowerPercent() < DrinkAtMana then
             RecoverMana()
             return false
         end
@@ -1638,7 +1634,7 @@ function CheckVitals()
     end
 
     -- 战斗中直接退出, 以下动作无法执行
-    if wow.IsInCombat() then
+    if player.IsInCombat() then
         return true
     end
 
@@ -1646,23 +1642,23 @@ function CheckVitals()
     ApplyBuffs()
 
     -- 吃喝
-    if playerHp < EatAtHP then
+    if player.GetHealthPercent() < EatAtHP then
         RecoverHP()
-        if playerMana < DrinkAtMana then
+        if player.GetPowerPercent() < DrinkAtMana then
             RecoverMana()
         end
         return false
     end
-    if playerMana < DrinkAtMana then
+    if player.GetPowerPercent() < DrinkAtMana then
         RecoverMana()
         return false
     end
-    if isEating or isDrinking then -- 吃喝结束
+    if player.IsEating() or player.IsDrinking() then -- 吃喝结束
         wow.SendKey(' ') -- no longer sit
     end
 
     -- 法师制作水, 食物, 宝石
-    if wow.IsMage() and Conjure() then
+    if player.IsMage() and Conjure() then
         return false
     end
 
@@ -1670,7 +1666,7 @@ function CheckVitals()
 end
 
 function EnemyNearby(obj)
-    if DC_HORDE_NEARBY and wow.IsInCombat() == false then
+    if DC_HORDE_NEARBY and player.IsInCombat() == false then
         local dist = wow.GetDistanceBetweenObjects(obj, "player")
         if dist > 100 then
             return
@@ -1690,7 +1686,7 @@ function AggrodToAnotherPlayer(obj)
         return false
     end
 
-    if wow.IsMage() == false then
+    if player.IsMage() == false then
         if wow.HasDebuff("Frost Nova", obj) then
             return true
         end
@@ -1760,7 +1756,7 @@ function FindAttackableUnit()
     local keepAttObj = false
     -- This part is to make sure that we don't tag two different targets because incombat would be false and this function returns two diff targets 
     if AttackObj ~= nil then
-        if wow.UnitExists(AttackObj) and wow.UnitIsDead(AttackObj) == false or wow.UnitCastID("player") ~= 0 and wow.UnitHealthPercent(AttackObj) > 0 then -- Keep Target --? but what if not aggrod
+        if wow.UnitExists(AttackObj) and wow.UnitIsDead(AttackObj) == false or wow.PlayerIsCasting() and wow.UnitHealthPercent(AttackObj) > 0 then -- Keep Target --? but what if not aggrod
             if CombatTime < 3 and wow.GetDistanceBetweenObjects("player", AttackObj) < PULL_RANGE + 3 then
                 -- print('Keeping Target '..wow.ObjectName(attackObj)..' at '..wow.GetHealthPercent(attackObj))
                 keepAttObj = true
@@ -1961,7 +1957,7 @@ function HunterRotation()
     HunterBuff = "Aspect of the Hawk"
 
     local enemyHP = wow.UnitHealthPercent("target")
-    local hp = wow.UnitHealthPercent("player")
+    local hp = player.GetHealthPercent()
     local enemyName = wow.ObjectName("target")
 
     StopMovingBeforeAttack = true
@@ -2022,7 +2018,7 @@ function HunterRotation()
 
     FaceUnit("target")
 
-    if hp < 15 and enemyHP > 15 and wow.IsInCombat() and wow.IsCastable("Feign Death") and PvpTargeted == false then
+    if hp < 15 and enemyHP > 15 and player.IsInCombat() and wow.IsCastable("Feign Death") and PvpTargeted == false then
         Spell = "Feigning Death at HP " .. hp .. " %"
         wow.CastSpellByName("Feign Death")
         Sleep(10)
@@ -2045,7 +2041,7 @@ function HunterRotation()
         end
 
         local aggrCnt = table.getn(AggroTable)
-        if wow.IsInCombat() and (lvlDiff > 3 or (hp < 30 and enemyHP > 30) or aggrCnt > 1) then
+        if player.IsInCombat() and (lvlDiff > 3 or (hp < 30 and enemyHP > 30) or aggrCnt > 1) then
             if bRanged and wow.IsCastable("Rapid Fire") then
                 wow.CastSpellByName("Rapid Fire")
                 Spell = "Rapid Fire"
@@ -2059,21 +2055,21 @@ function HunterRotation()
         end
 
         local immuneToSS = enemyName:find("Rock") ~= nil or enemyName:find("rock") ~= nil
-        if wow.IsInCombat() and immuneToSS == false and wow.HasDebuff("Serpent Sting", "target") == false then
+        if player.IsInCombat() and immuneToSS == false and wow.HasDebuff("Serpent Sting", "target") == false then
             if Cast("Serpent Sting") then
                 Spell = "Serpent Sing"
                 return
             end
         end
 
-        if wow.IsInCombat() and dist < 33 and dist > 10 and isPlayerTakingAggro then
+        if player.IsInCombat() and dist < 33 and dist > 10 and isPlayerTakingAggro then
             if Cast("Concussive Shot") then
                 Spell = "Concussing"
                 return
             end
         end
 
-        if wow.IsInCombat() and Cast("Arcane Shot") then
+        if player.IsInCombat() and Cast("Arcane Shot") then
             Spell = "Arcane Shot"
             return
         end
@@ -2187,7 +2183,7 @@ end
 IgnorePolyTill = 0
 
 function MageRotation()
-    local inCombat = wow.IsInCombat()
+    local inCombat = player.IsInCombat()
 
     local tX, tY, tZ = wow.ObjectPosition("target")
     if ForceStopNextMove then -- PRECAUTION when kiting
@@ -2215,8 +2211,8 @@ function MageRotation()
 
     if dist < PULL_RANGE + 5 then
         local enemyHP = wow.UnitHealthPercent("target")
-        local hp = wow.UnitHealthPercent("player")
-        local mana = wow.UnitPowerPercent("player")
+        local hp = player.GetHealthPercent()
+        local mana = player.GetPowerPercent()
 
         Counterspell()
 
@@ -2311,8 +2307,8 @@ function MageRotation()
         end
 
         -- Ice Block
-        if wow.UnitHealthPercent("player") < 15 and inCombat and wow.IsCastable("Ice Block") then
-            Spell = "Blocking at HP " .. wow.UnitHealthPercent("player") .. " %"
+        if player.GetHealthPercent() < 15 and inCombat and wow.IsCastable("Ice Block") then
+            Spell = "Blocking at HP " .. player.GetHealthPercent() .. " %"
             wow.CastSpellByName("Ice Block")
             Sleep(9.3)
             return
@@ -2418,7 +2414,7 @@ function MageRotation()
     end
 
     Spell = "NOTHING"
-    if wow.UnitCastID("player") == 0 and wow.UnitHealthPercent("target") > WAND_BELOW then -- Wanding bug were isOnCD always returns true when wanding unless scripts ticks at perfect time
+    if not wow.PlayerIsCasting() and wow.UnitHealthPercent("target") > WAND_BELOW then -- Wanding bug were isOnCD always returns true when wanding unless scripts ticks at perfect time
         local usable, nomana = wow.IsUsableSpell("Frostbolt")
         if usable and nomana == false then
             Spell = "Frostbolt_NOTHING"
@@ -2433,13 +2429,13 @@ end
 function Attack(obj)
     Potion()
 
-    if wow.HasAura("player", "First Aid") or (wow.IsMage() and wow.HasAura("player", "Evocation")) then
+    if player.HasAura("First Aid") or (player.IsMage() and player.HasAura("Evocation")) then
         Sleep(0.25)
         return
     end
 
-    local isEating = wow.HasAura("player", "Food")
-    local isDrinking = wow.HasAura("player", "Drink")
+    local isEating = player.HasAura("Food")
+    local isDrinking = player.HasAura("Drink")
     if isEating or isDrinking then
         wow.SendKey(' ')
     end
@@ -2469,13 +2465,13 @@ function Attack(obj)
         return
     end
 
-    if wow.IsMounted() then
+    if player.IsMounted() then
         wow.Dismount()
     end
 
     if wow.IsHunter() then
         HunterRotation()
-    elseif wow.IsMage() then
+    elseif player.IsMage() then
         MageRotation()
     end
 end
@@ -2483,7 +2479,7 @@ end
 OpenArr = {false, false, false, false, false, false, false, false, false}
 
 function Random()
-    if wow.IsInCombat() then
+    if player.IsInCombat() then
         return
     end
 
@@ -2526,7 +2522,7 @@ function Random()
 
     local rnd = math.random(1, 200)
     if rnd >= 1 and rnd <= 10 then
-        if wow.UnitCastID("player") == 0 then
+        if not wow.PlayerIsCasting() then
             wow.SendKey(' ')
         end
     elseif rnd == 11 then
@@ -2557,7 +2553,7 @@ function Random()
         wow.SendKey(78) -- N
         OpenArr[7] = true
     elseif rnd > 56 and rnd < 70 then
-        if wow.UnitCastID("player") == 0 then
+        if not wow.PlayerIsCasting() then
             wow.SendKey(' ')
         end
     end
@@ -2667,7 +2663,7 @@ LootingTime = 0
 IgnoreLootingTill = 0
 
 function Looting()
-    if wow.UnitCastID("player") ~= 0 then
+    if wow.PlayerIsCasting() then
         return false
     end
     if wow.GetFreeSlots() <= 0 then
@@ -2745,7 +2741,7 @@ function DeleteRubbishItems()
 end
 
 function BuyItems()
-    if wow.IsMage() then
+    if player.IsMage() then
         return
     end
     Hunter:BuyDrinks()
@@ -2980,7 +2976,7 @@ end
 function DeadCheck()
     if wow.UnitIsDead("player") then
         wow.Log('Dead at time: ' .. wow.GetTime())
-        if wow.PlayerIsDeadOrGhost() then
+        if player.IsDeadOrGhost() then
             wow.Log("Running Resurrect Script")
             wow.RunMacroText(wow.ReadFile('Resurrect.lua'))
             Exit('Resurrect')
@@ -3014,7 +3010,7 @@ function AmIFoccussed()
                 focussed = IsTargeting(obj, "pet")
             end
             if wow.IsInCombat(obj) and wow.UnitCanAttack("player", obj) then
-                if focussed or (wow.IsMage() and wow.HasDebuff("Frost Nova", obj)) then
+                if focussed or (player.IsMage() and wow.HasDebuff("Frost Nova", obj)) then
                     -- Unit stops targetting when nova'd
                     return true
                 else
@@ -3046,12 +3042,12 @@ function MountUp()
     end
 
     local indoors = wow.IsIndoors()
-    if indoors and wow.IsInCombat() == false then
+    if indoors and player.IsInCombat() == false then
         MountTries = 0
         return false -- do not mount
     end
 
-    if wow.IsInCombat() == false and wow.IsMounted() == false and indoors == false and HasMount() then
+    if player.IsInCombat() == false and player.IsMounted() == false and indoors == false and HasMount() then
         if IsMoving("player") then
             wow.SendKey(83, 222)
         end
@@ -3121,7 +3117,7 @@ local function onUpdate(...)
     DeadCheck() -- 会调用Exit()
 
     -- Resurrect
-    if wow.PlayerIsDeadOrGhost() then
+    if player.IsDeadOrGhost() then
         if DeadTime > 600 then
             wow.Log('Stuck Dead!')
             wow.RunMacroText(".dc")
@@ -3142,10 +3138,10 @@ local function onUpdate(...)
     if CheckVitals() then
         DebugMessage = "VITALS_OK"
 
-        if wow.IsInCombat() and CombatTime < 90 and (CLEAR_VENDOR_PATH or (not CLEAR_VENDOR_PATH and not wow.IsMounted() and IsNotVendorPathing())) then
+        if player.IsInCombat() and CombatTime < 90 and (CLEAR_VENDOR_PATH or (not CLEAR_VENDOR_PATH and not player.IsMounted() and IsNotVendorPathing())) then
             -- Without this it will go too HAM because of InCombat remains a bit after fight ends w/o time to recover			
             -- ATTACK_1
-            if AmIFoccussed() or (wow.IsMage() and IsPolymorphUsed()) then
+            if AmIFoccussed() or (player.IsMage() and IsPolymorphUsed()) then
                 DebugMessage = "ATTACK_1"
                 FindAttackableUnit()
                 Attack(AttackObj)
@@ -3227,10 +3223,10 @@ local function onUpdate(...)
                         Attack(AttackObj)
                     else
                         local castingID = wow.UnitCastID("player")
-                        if castingID ~= 0 and wow.IsInCombat() == false then -- Mage problem
+                        if castingID ~= 0 and player.IsInCombat() == false then -- Mage problem
                             DebugMessage = "PREVENTING_MAGE_CAST_INTERR"
                         else
-                            if TargetIsFar and MOUNT_WHILE_GRINDING and wow.IsIndoors() == false and wow.IsMounted() == false and HasMount() then
+                            if TargetIsFar and MOUNT_WHILE_GRINDING and wow.IsIndoors() == false and player.IsMounted() == false and HasMount() then
                                 if MountUp() then
                                     DebugMessage = "MOUNTING_TO_NEXT_TARGET"
                                     wow.DebugPrint('Target is far away... Mounting!')
@@ -3270,13 +3266,13 @@ Frame:SetScript("OnEvent", function(self, event)
     if event == "MERCHANT_SHOW" then
         TalkedToVendor = true
         wow.DebugPrint("Vendor Window Open!!!")
-    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and wow.IsInCombat() then
+    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and player.IsInCombat() then
         local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = wow.CombatLogGetCurrentEventInfo()
         if subevent == "SPELL_CAST_START" then
             local obj = wow.GetObjectWithGUID(sourceGUID)
             if AggrodToAnotherPlayer(obj) == false then
                 InterruptTargetGUID = sourceGUID
-                if wow.IsMage() then
+                if player.IsMage() then
                     ForceCS = true
                     ForceCSAtTime = wow.GetTime() + CS_DELAY
                 end
