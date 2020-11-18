@@ -359,7 +359,7 @@ do
     wow.Log = function(content)
         if lb ~= nil then
             print(content)
-            lb.WriteFile("log-" .. lb.GetGameAccountName() .. ".txt", content .. '\n', true)
+            lb.WriteFile("E:\\log-" .. lb.GetGameAccountName() .. ".txt", content .. '\n', true)
         end
     end
 
