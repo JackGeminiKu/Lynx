@@ -4,6 +4,10 @@ wow = {}
 
 -- 魔兽世界API
 do
+    wow.PlayerIsCasting = function()
+        return lb.UnitCastingInfo("palyer") ~= 0
+    end
+
     wow.GetFreeSlots = function()
         local freeSlots = 0
         for i = 1, 5 do
@@ -33,7 +37,7 @@ do
     wow.CalculateDistance = function(...)
         local x1, y1, z1, x2, y2, z2
         if select("#", ...) == 6 then
-           x1, y1, z1, x2, y2, z2 = ... 
+            x1, y1, z1, x2, y2, z2 = ...
         else
             local point1, point2 = ...
             x1 = point1[1]
@@ -154,10 +158,6 @@ do
         return UnitIsPlayer(unit)
     end
 
-    wow.IsSwimming = function()
-        return IsSwimming()
-    end
-
     wow.SpellStopCasting = function()
         SpellStopCasting()
     end
@@ -199,7 +199,7 @@ do
     end
 
     wow.UnitPowerPercent = function(unit)
-       return 100 * UnitPower(unit) / UnitPowerMax(unit)
+        return 100 * UnitPower(unit) / UnitPowerMax(unit)
     end
 
     wow.UnitPowerMax = function(unit)
@@ -248,14 +248,6 @@ do
 
     wow.UnitIsDeadOrGhost = function(unit)
         return UnitIsDeadOrGhost(unit)
-    end
-
-    wow.PlayerIsDeadOrGhost = function()
-        return UnitIsDeadOrGhost("player")
-    end
-
-    wow.IsMounted = function()
-        return IsMounted()
     end
 
     wow.GetObjectCount = function()
@@ -347,10 +339,7 @@ do
     wow.GetUnitSpeed = function(unit)
         return GetUnitSpeed(unit)
     end
-end
 
--- Unlocker
-do
     wow.IsInCombat = function(unit)
         unit = unit or "player"
         return wow.UnitAffectingCombat(unit)
