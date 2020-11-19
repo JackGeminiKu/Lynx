@@ -4,35 +4,9 @@ wow = {}
 
 -- 魔兽世界API
 do
-    wow.PlayerIsCasting = function()
-        return lb.UnitCastingInfo("palyer") ~= 0
-    end
 
-    wow.GetFreeSlots = function()
-        local freeSlots = 0
-        for i = 1, 5 do
-            local numberOfFreeSlots, BagType = wow.GetContainerNumFreeSlots(i - 1);
-            if BagType == 0 then -- https://wowwiki.fandom.com/wiki/ItemFamily
-                freeSlots = freeSlots + wow.GetContainerNumFreeSlots(i - 1)
-            end
-        end
-        return freeSlots
-    end
 
-    wow.HasInInventory = function(item)
-        for bag = 0, 4 do
-            for slot = 0, wow.GetContainerNumSlots(bag) do
-                local link = wow.GetContainerItemLink(bag, slot)
-                if link then
-                    local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                    if sName == item then
-                        return true
-                    end
-                end
-            end
-        end
-        return false
-    end
+
 
     wow.CalculateDistance = function(...)
         local x1, y1, z1, x2, y2, z2
@@ -50,25 +24,8 @@ do
         return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
     end
 
-    wow.IsCastable = function(spellName)
-        local usable, nomana = wow.IsUsableSpell(spellName)
-        if usable == false or nomana then
-            return false
-        end
-        return not wow.IsOnCD(spellName)
-    end
-
-    wow.IsOnCD = function(spellName)
-        local start, duration, enabled = wow.GetSpellCooldown(spellName);
-        if enabled == 0 then
-            return true
-        elseif (start > 0 and duration > 0) then
-            return true
-        else
-            return false
-        end
-    end
-
+ 
+ 
     wow.HasDebuff = function(name, obj)
         for i = 1, 40 do
             local debuff = wow.UnitDebuff(obj, i)
@@ -94,13 +51,7 @@ do
         end
     end
 
-    wow.IsHunter = function()
-        return wow.UnitClass("player") == "Hunter"
-    end
 
-    wow.IsMage = function()
-        return wow.UnitClass("player") == "Mage"
-    end
 
     wow.IsRouge = function()
         return wow.UnitClass("player") == "Rogue"
@@ -276,10 +227,6 @@ do
         RetrieveCorpse()
     end
 
-    wow.GetItemCount = function(itemName)
-        return GetItemCount(itemName)
-    end
-
     wow.BuyMerchantItem = function(index)
         BuyMerchantItem(index)
     end
@@ -328,8 +275,8 @@ do
         return GetMerchantItemInfo(index)
     end
 
-    wow.UnitIsEnemy = function(unit, otherUnit)
-        return UnitIsEnemy(unit, otherUnit)
+    wow.UnitIsEnemy = function(unit)
+        return UnitIsEnemy("player", unit)
     end
 
     wow.UnitIsDead = function(unit)
@@ -404,11 +351,6 @@ do
         return lb.UnitIsLootable(unit)
     end
 
-    wow.CastSpellByName = function(spellName, onSelf)
-        onSelf = onSelf or true
-        lb.Unlock(CastSpellByName, spellName, onSelf)
-    end
-
     wow.UnitCastID = function(unit)
         local spellId = lb.UnitCastingInfo(unit)
         return spellId
@@ -430,7 +372,7 @@ do
             local name = wow.UnitAura(unit, i)
             if name == nil then -- when name is nil we looped thru all auras 
                 wow.DebugPrint('Applying Buff: ' .. buff)
-                wow.CastSpellByName(buff, onSelf)
+                player.CastSpell(buff, onSelf)
                 return
             elseif name == buff then
                 return

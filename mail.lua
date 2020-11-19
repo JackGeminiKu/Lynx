@@ -101,11 +101,11 @@ local function SendMail()
             if l then
                 local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(l)
                 if not IsSoulbound(b, s)  and not ArrayContains(KeptItems, sName) then
-                    if wow.IsHunter() and (sType == "Projectile" or ArrayContains(PetFood, sName)) then
+                    if player.IsHunter() and (sType == "Projectile" or ArrayContains(PetFood, sName)) then
                         -- wow.Log('Keeping [Hunter Stuff]: '..sName)
                     elseif wow.IsRogue() and sName:find("Throwing") ~= nil then
                         -- wow.Log('Keeping [Rogue Thrown]: '..sName)
-                    elseif sSubType == "Bag" or (wow.IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
+                    elseif sSubType == "Bag" or (player.IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
                         -- Bug where last Bag is perceived as item in other bags for selling :/
                     elseif sName:find("Recipe:") == nil and (sName:find("Potion") ~= nil or sName:find("Bandage") ~= nil) then
                         -- wow.Log('Keeping [Potion/Bandage]: '..sName)
@@ -151,7 +151,7 @@ local function ShouldExit()
 end
 
 local function SetIndexToClosest()
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     local closestIndex = 1
     local closestDist = 9999999
     local foundIndex = false
@@ -190,7 +190,7 @@ local function MoveToClosestWaypoint()
         SetIndexToClosest()
     end
 
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     local waypoint = _waypoints[_pathIndex] -- return is imp to always assign next xyz correctly
     if waypoint ~= nil then
         local dist = wow.CalculateDistance(px, py, pz, waypoint[1], waypoint[2], waypoint[3])

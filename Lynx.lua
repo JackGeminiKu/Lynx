@@ -24,7 +24,7 @@ function Hunter:BuyDrinks()
     wow.Log('Buying Drinks')
     local drinkSlot = GetVendorSlot(Drinks[2])
     if drinkSlot ~= -1 then
-        local drinkCount = wow.GetItemCount(Drinks[2])
+        local drinkCount = player.GetItemCount(Drinks[2])
         if drinkCount >= drinksToHave then
             return
         end
@@ -40,7 +40,7 @@ function Hunter:BuyDrinks()
 end
 
 function Hunter:BuyAmmo()
-    if wow.IsHunter() == false then
+    if player.IsHunter() == false then
         return
     end
 
@@ -49,7 +49,7 @@ function Hunter:BuyAmmo()
         return
     end
 
-    local ammoCount = wow.GetItemCount(self:GetAmmoName())
+    local ammoCount = player.GetItemCount(self:GetAmmoName())
     local needToBuy = self:GetAmmoMaxCount() - ammoCount;
     if needToBuy < 200 then
         return
@@ -789,7 +789,7 @@ LOST_FLAGS = wow.bit.bor(0x10, 0x100)
 
 function IsInAggroRange(obj, tol)
     tol = tol or 5
-    if wow.UnitIsEnemy("player", obj) and wow.UnitIsDead(obj) == false then
+    if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
         local dist = wow.GetDistanceBetweenObjects("player", obj)
         local aggroRad = (wow.UnitLevel(obj) - wow.UnitLevel("player")) + 20 + tol -- suppost +20 imma to be safe +5
         return dist < aggroRad
@@ -801,7 +801,7 @@ function PositionAggroCount()
     for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
-            if wow.UnitIsEnemy("player", obj) and wow.UnitIsDead(obj) == false then
+            if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
                 local dist = wow.GetDistanceBetweenObjects("player", obj)
                 local aggroRad = wow.UnitLevel(obj) - wow.UnitLevel("player") + 20 + 3 -- suppost +20 imma to be safe +5
                 if dist < aggroRad then
@@ -816,7 +816,7 @@ end
 -- Scan whole table and find closest point and always move to it (includes LOS checks)
 -- Doesnt support jumping YET
 function MoveToClosestWaypoint()
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     local closestIndex = 1
     local closestDist = 9999999
     local foundWaypoint = false
@@ -867,7 +867,7 @@ TalkedToVendor = false
 VendorPathIndex = 1
 
 function SetIndexToClosest(waypointOnly, limit)
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     local moveToIdx = 1
     local moveToDist = 9999999
     local foundSomething = false
@@ -947,7 +947,7 @@ LastIndex = nil
 LastIndexCount = 0
 
 function FirstTickApply()
-    if wow.IsHunter() then
+    if player.IsHunter() then
         EatAtHP = 69
         DrinkAtMana = 33
     elseif player.IsMage() then
@@ -968,7 +968,7 @@ function MoveToNextWaypoint()
     end
 
     -- 移动到某个点附近了?
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     local nextPoint = Waypoints[PathIndex] -- return is imp to always assign next xyz correctly
     if nextPoint ~= nil then
         local dist = wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3])
@@ -1051,7 +1051,7 @@ end
 
 function ReloopWaypoint(waypoints)
     local startWaypoint = waypoints[1]
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     if IGNORE_LOS or TraceLine(px, py, pz + 2.5, startWaypoint[1], startWaypoint[2], startWaypoint[3] + 2.5) == nil then
         AtEnd = false
         local firstWaypoint = waypoints[1]
@@ -1114,14 +1114,13 @@ function HasManaGem()
 end
 
 function VendorPath(toVendor)
-    if wow.IsHunter() and HunterBuff ~= "Aspect of the Cheetah" and not HasMount() then
+    if player.IsHunter() and HunterBuff ~= "Aspect of the Cheetah" and not HasMount() then
         HunterBuff = "Aspect of the Cheetah"
     end
 
     local nextPoint = VendorPoints[VendorPathIndex] -- return is imp to always assign next xyz correctly
     if nextPoint ~= nil then
-        local px, py, pz = wow.ObjectPosition("player")
-        if wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3]) <= GetProximalTolerance() then
+        if wow.CalculateDistance(player.GetPosition(), nextPoint) <= GetProximalTolerance() then
             if toVendor and VendorPathIndex <= #VendorPoints then
                 VendorPathIndex = VendorPathIndex + 1
             elseif VendorPathIndex > 1 then
@@ -1143,7 +1142,7 @@ function VendorPath(toVendor)
                 elseif VendorPathIndex > 1 then
                     VendorPathIndex = VendorPathIndex - 1
                 end
-                return
+                return    -- 退出
             elseif action == "Stop" then
                 wow.Log("Stopping!")
                 wow.SendKey(83, 123)
@@ -1154,7 +1153,7 @@ function VendorPath(toVendor)
                 elseif VendorPathIndex > 1 then
                     VendorPathIndex = VendorPathIndex - 1
                 end
-                return
+                return    -- 退出
             end
         end
     end
@@ -1174,10 +1173,10 @@ function VendorPath(toVendor)
         end
     end
 
-    if toVendor and VendorPathIndex >= #VendorPoints then
-        AtVendor = true
-    elseif not toVendor and VendorPathIndex <= 1 then
-        AtStartAfterVendor = true
+    if toVendor then
+        AtVendor = VendorPathIndex >= #VendorPoints
+    else
+        AtStartAfterVendor = VendorPathIndex <= 1
         SetIndexToClosest(true)
     end
 end
@@ -1192,8 +1191,8 @@ function EmptyBagsSetup()
     end
 
     local minAmmoCount = (#VendorPoints + (#Waypoints - PathIndex)) * 1.5
-    if wow.GetFreeSlots() <= MIN_BAG_SLOTS or (wow.IsHunter() and wow.GetItemCount(Hunter:GetAmmoName()) <= minAmmoCount) then
-        local px, py, pz = wow.ObjectPosition("player")
+    if player.GetFreeSlots() <= MIN_BAG_SLOTS or (player.IsHunter() and player.GetItemCount(Hunter:GetAmmoName()) <= minAmmoCount) then
+        local px, py, pz = player.GetPosition()
         local closestDist = 99999
         for i = 1, #VendorPoints do
             local vendorPoint = VendorPoints[i]
@@ -1295,7 +1294,7 @@ end
 
 function RecoverHP()
     if IsMoving("player") then
-        local xx, yy, zz = wow.ObjectPosition("player")
+        local xx, yy, zz = player.GetPosition()
         wow.MoveTo(xx, yy, zz)
     end
 
@@ -1338,7 +1337,7 @@ function MendingPet()
     local petHP = wow.UnitHealthPercent("pet")
     if wow.UnitExists("pet") and petHP > 0 and petHP < PetMendHP then
         local distToPet = wow.GetDistanceBetweenObjects("player", "pet")
-        if distToPet < 20 and wow.IsCastable("Mend Pet") then
+        if distToPet < 20 and player.IsCastable("Mend Pet") then
             local _, castChannelID, _, _ = wow.UnitCastID("player") -- ??might be first var but idk
             if castChannelID == 136 then -- If already casting mend
                 wow.Log('Pet is being Healed!')
@@ -1350,7 +1349,7 @@ function MendingPet()
                 else
                     PetMendHP = 95
                 end
-                wow.CastSpellByName("Mend Pet", false)
+                player.CastSpell("Mend Pet", false)
                 Sleep(5.1)
             end
             return true
@@ -1367,7 +1366,7 @@ LastFedTime = 0
 CallingPet = false
 
 function ManagePet() -- True = Continue, False = Retick
-    if not wow.IsHunter() or player.HasAura("Feign Death") then
+    if not player.IsHunter() or player.HasAura("Feign Death") then
         return true
     end
 
@@ -1381,7 +1380,7 @@ function ManagePet() -- True = Continue, False = Retick
     end
 
     -- 复活或者召出宝宝
-    if (not wow.UnitExists("pet") or wow.UnitIsDead("pet") or wow.UnitHealth("pet") <= 0) and not wow.PlayerIsCasting() and RevivePetStuck < 5 then
+    if (not wow.UnitExists("pet") or wow.UnitIsDead("pet") or wow.UnitHealth("pet") <= 0) and not player.IsCasting() and RevivePetStuck < 5 then
         if CallingPet == false then
             CallingPet = true
             wow.RunMacroText("/cast Call Pet")
@@ -1431,7 +1430,7 @@ function ManagePet() -- True = Continue, False = Retick
     if not happy and distFromPet < 10 then
         if  wow.GetTime() - LastFedTime > 10 then -- I have an overfeeding 'bug' - probably timer ticking before feed aura is up
             for i = 1, #PetFoods, 1 do
-                if wow.HasInInventory(PetFoods[i]) then
+                if player.HasInInventory(PetFoods[i]) then
                     wow.Log("Feeding Unhappy Pet [" .. PetFoods[i] .. "]")
                     wow.RunMacroText("/use Feed Pet")
                     wow.RunMacroText("/use " .. PetFoods[i])
@@ -1507,7 +1506,7 @@ function Potion()
                 end
 
                 if needMana and (hasMageManaGem and sName == "Mana Jade" or sName == "Mana Agate" or sName == "Mana Citrine") or (sName:find("Mana Potion") and hasMageManaGem == false) then
-                    if hasMageManaGem and wow.IsCastable("Evocation") then
+                    if hasMageManaGem and player.IsCastable("Evocation") then
                         -- we can evocate
                     else
                         if IsItemUsable(sName) then
@@ -1529,7 +1528,7 @@ end
 ConjureCount = 0
 
 function Conjure()
-    if not player.IsMage() or player.IsMounted() or wow.GetFreeSlots() <= 1 then
+    if not player.IsMage() or player.IsMounted() or player.GetFreeSlots() <= 1 then
         return false
     end
 
@@ -1539,44 +1538,44 @@ function Conjure()
     end
 
     -- 制作水喝食物
-    if wow.GetItemCount(Drinks[1]) < 12 then
+    if player.GetItemCount(Drinks[1]) < 12 then
         wow.Log("Conjuring Water!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
-        wow.CastSpellByName("Conjure Water")
+        player.CastSpell("Conjure Water")
         Sleep(1)
         return true
     end
-    if wow.GetItemCount(Foods[1]) < 12 then
-        wow.DebugPrint("Conjuring Food!")
+    if player.GetItemCount(Foods[1]) < 12 then
+        wow.Log("Conjuring Food!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
-        wow.CastSpellByName("Conjure Food")
+        player.CastSpell("Conjure Food")
         Sleep(1)
         return true
     end
 
     -- 制作法力宝石
-    local jadeCount = wow.GetItemCount("Mana Citrine")
-    if wow.IsCastable("Conjure Mana Citrine") and jadeCount == 0 then
+    local jadeCount = player.GetItemCount("Mana Citrine")
+    if player.IsCastable("Conjure Mana Citrine") and jadeCount == 0 then
         wow.Log("Conjuring Mana Citrine!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
-        wow.CastSpellByName("Conjure Mana Citrine")
+        player.CastSpell("Conjure Mana Citrine")
         Sleep(1)
         return true
-    elseif wow.IsCastable("Conjure Mana Jade") and jadeCount == 0 then
+    elseif player.IsCastable("Conjure Mana Jade") and jadeCount == 0 then
         wow.Log("Conjuring Mana Jade!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
-        wow.CastSpellByName("Conjure Mana Jade")
+        player.CastSpell("Conjure Mana Jade")
         Sleep(1)
         return true
-    elseif jadeCount == 0 and wow.IsCastable("Conjure Mana Agate") and wow.GetItemCount("Mana Agate") == 0 then
+    elseif jadeCount == 0 and player.IsCastable("Conjure Mana Agate") and player.GetItemCount("Mana Agate") == 0 then
         wow.Log("Conjuring Mana Agate!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
-        wow.CastSpellByName("Conjure Mana Agate")
+        player.CastSpell("Conjure Mana Agate")
         Sleep(1)
         return true
     end
@@ -1586,7 +1585,7 @@ end
 StallBuffUp = 0
 
 function ApplyBuff(buff)
-    if wow.IsCastable(buff) == false or player.IsMounted() == true and wow.PlayerIsCasting() and wow.GetTime() < StallBuffUp then
+    if player.IsCastable(buff) == false or player.IsMounted() == true and player.IsCasting() and wow.GetTime() < StallBuffUp then
         return
     end
     wow.ApplyBuff(buff, "player")
@@ -1602,12 +1601,12 @@ function ApplyBuffs()
             ApplyBuff("Ice Armor")
         end
         ApplyBuff("Ice Barrier")
-    elseif wow.IsHunter() then
+    elseif player.IsHunter() then
         ApplyBuff(HunterBuff)
     end
 end
 
-function CheckVitals()
+function IsPlayerIdle()
     if player.IsDeadOrGhost() then
         PlayerStatus = "DEAD"
         return false
@@ -1693,9 +1692,9 @@ function AggrodToAnotherPlayer(obj)
     end
 
     local targetMe = IsTargeting(obj, "player")
-    if wow.IsHunter() == false then
+    if player.IsHunter() == false then
         return (not targetMe)
-    elseif wow.IsHunter() then
+    elseif player.IsHunter() then
         return targetMe == false and IsTargeting(obj, "pet") == false
     end
 
@@ -1703,7 +1702,7 @@ function AggrodToAnotherPlayer(obj)
 end
 
 function MoveFacingObject(obj, div, into)
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     local ox, oy, oz = wow.ObjectPosition(obj)
     local dx = (px - ox) / div
     local dy = (py - oy) / div
@@ -1756,14 +1755,14 @@ function FindAttackableUnit()
     local keepAttObj = false
     -- This part is to make sure that we don't tag two different targets because incombat would be false and this function returns two diff targets 
     if AttackObj ~= nil then
-        if wow.UnitExists(AttackObj) and wow.UnitIsDead(AttackObj) == false or wow.PlayerIsCasting() and wow.UnitHealthPercent(AttackObj) > 0 then -- Keep Target --? but what if not aggrod
+        if wow.UnitExists(AttackObj) and wow.UnitIsDead(AttackObj) == false or player.IsCasting() and wow.UnitHealthPercent(AttackObj) > 0 then -- Keep Target --? but what if not aggrod
             if CombatTime < 3 and wow.GetDistanceBetweenObjects("player", AttackObj) < PULL_RANGE + 3 then
                 -- print('Keeping Target '..wow.ObjectName(attackObj)..' at '..wow.GetHealthPercent(attackObj))
                 keepAttObj = true
             end
         end
     end
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
 
     local playerLvl = wow.UnitLevel("player")
     local minAttLvl = playerLvl - LEVEL_MINUS
@@ -1786,7 +1785,7 @@ function FindAttackableUnit()
         local objectName = wow.ObjectName(obj)
 
         -- Enemy Player/NPC Check for Drawing
-        if wow.UnitIsEnemy("player", obj) and wow.UnitIsDead(obj) == false then
+        if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
             local ex, ey, ez = wow.ObjectPosition(obj)
             local arr = {ex, ey, ez, wow.UnitLevel(obj), wow.ObjectName(obj)}
             if wow.UnitIsPlayer(obj) then
@@ -1804,14 +1803,14 @@ function FindAttackableUnit()
             if wow.HasDebuff("Frost Nova", obj) then
                 targettingMe = true
             end
-            if wow.IsHunter() and IsTargeting(obj, "pet") then
+            if player.IsHunter() and IsTargeting(obj, "pet") then
                 targettingMe = true
             end
 
             if targettingMe or (unitLvl >= minAttLvl and unitLvl <= maxAttLvl) and unitHp > 0 and wow.UnitIsDead(obj) == false then
                 local ox, oy, oz = wow.ObjectPosition(obj)
                 -- Stop Pet Auto-Aggro Player
-                if wow.IsHunter() and wow.UnitIsPlayer(obj) then
+                if player.IsHunter() and wow.UnitIsPlayer(obj) then
                     if IsTargeting("pet", obj) then
                         for i = 1, 10, 1 do
                             local name, _, _, _, _, _, _ = wow.GetPetActionInfo(i);
@@ -1845,7 +1844,7 @@ function FindAttackableUnit()
                         end
                     end
                 else
-                    if isPlayer and wow.UnitIsEnemy(obj, "player") and IsTargeting(obj, "player") then
+                    if isPlayer and wow.UnitIsEnemy(obj) and IsTargeting(obj, "player") then
                         PvpTargeted = true
                     end
                 end
@@ -1909,7 +1908,7 @@ end
 
 function FaceUnit(unit)
     if wow.UnitExists(unit) then
-        local ax, ay, az = wow.ObjectPosition("player")
+        local ax, ay, az = player.GetPosition()
         local bx, by, bz = wow.ObjectPosition(unit)
         local angle = wow.rad(wow.atan2(by - ay, bx - ax))
         if angle < 0 then
@@ -1928,7 +1927,7 @@ function GetAggrodUnit()
     local objCount = wow.GetObjectCount()
     for i = 1, objCount do
         local obj = wow.GetObjectWithIndex(i)
-        if obj ~= nil then -- and wow.UnitIsEnemy("player", obj) == true  then
+        if obj ~= nil then -- and wow.UnitIsEnemy(obj) == true  then
             local targetedGUID = wow.UnitGUID(wow.UnitTarget(obj))
             if targetedGUID == wow.UnitGUID("player") or targetedGUID == wow.UnitGUID("pet") then
                 local unitHP = wow.UnitHealthPercent(obj)
@@ -1944,8 +1943,8 @@ function GetAggrodUnit()
 end
 
 function Cast(spellName)
-    if wow.IsCastable(spellName) and wow.IsSpellInRange(spellName, "target") then
-        wow.CastSpellByName(spellName, false)
+    if player.IsCastable(spellName) and wow.IsSpellInRange(spellName, "target") then
+        player.CastSpell(spellName, false)
         return true
     end
 end
@@ -1961,7 +1960,7 @@ function HunterRotation()
     local enemyName = wow.ObjectName("target")
 
     StopMovingBeforeAttack = true
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     local xx, yy, zz = wow.ObjectPosition("target")
     DestX = xx
     DestY = yy
@@ -1972,7 +1971,7 @@ function HunterRotation()
     local isPlayerTakingAggro = IsTargeting("target", "player")
 
     local lvlDiff = wow.UnitLevel("target") - wow.UnitLevel("player")
-    local ammo = wow.GetItemCount(Hunter:GetAmmoName())
+    local ammo = player.GetItemCount(Hunter:GetAmmoName())
 
     -- Mend Pet if not being targeted
     if isPlayerTakingAggro == false then
@@ -2000,7 +1999,7 @@ function HunterRotation()
                 Sleep(0.5)
             end
             return
-        elseif KITE and targettingPet and dist < 13 and wow.GetItemCount(Hunter:GetAmmoName()) > 0 then -- Move away to fire 
+        elseif KITE and targettingPet and dist < 13 and player.GetItemCount(Hunter:GetAmmoName()) > 0 then -- Move away to fire 
             wow.DebugPrint('Moving away into kiting range [Dist:' .. dist .. ']') -- ??confirm
             MoveFacingObject("target", 0.02, false) -- 0.2 so to set move far away
             local slp = 0.5 + ((13 - dist) / 10);
@@ -2009,18 +2008,18 @@ function HunterRotation()
         end
     end
 
-    if IsTargeting("target", "player") and dist > 6 and wow.IsCastable("Intimidation") then
+    if IsTargeting("target", "player") and dist > 6 and player.IsCastable("Intimidation") then
         Spell = "Intimidation"
-        wow.CastSpellByName("Intimidation")
+        player.CastSpell("Intimidation")
         Sleep(0.3)
         return
     end
 
     FaceUnit("target")
 
-    if hp < 15 and enemyHP > 15 and player.IsInCombat() and wow.IsCastable("Feign Death") and PvpTargeted == false then
+    if hp < 15 and enemyHP > 15 and player.IsInCombat() and player.IsCastable("Feign Death") and PvpTargeted == false then
         Spell = "Feigning Death at HP " .. hp .. " %"
-        wow.CastSpellByName("Feign Death")
+        player.CastSpell("Feign Death")
         Sleep(10)
         return
     end
@@ -2042,13 +2041,13 @@ function HunterRotation()
 
         local aggrCnt = table.getn(AggroTable)
         if player.IsInCombat() and (lvlDiff > 3 or (hp < 30 and enemyHP > 30) or aggrCnt > 1) then
-            if bRanged and wow.IsCastable("Rapid Fire") then
-                wow.CastSpellByName("Rapid Fire")
+            if bRanged and player.IsCastable("Rapid Fire") then
+                player.CastSpell("Rapid Fire")
                 Spell = "Rapid Fire"
                 return
             end
-            if wow.IsCastable("Bestial Wrath") then
-                wow.CastSpellByName("Bestial Wrath")
+            if player.IsCastable("Bestial Wrath") then
+                player.CastSpell("Bestial Wrath")
                 Spell = "Bestial Wrath"
                 return
             end
@@ -2097,8 +2096,8 @@ function HunterRotation()
             return
         end
 
-        if (lvlDiff >= 3 or (hp < 30 and enemyHP > 30)) and wow.IsCastable("Blood Fury") then
-            wow.CastSpellByName("Blood Fury")
+        if (lvlDiff >= 3 or (hp < 30 and enemyHP > 30)) and player.IsCastable("Blood Fury") then
+            player.CastSpell("Blood Fury")
             Spell = "Blood Fury [RACIAL]"
             Sleep(1)
             return
@@ -2129,10 +2128,10 @@ function Counterspell()
             ForceCSAtTime = 0
             ForceCS = false
         elseif wow.GetDistanceBetweenObjects("player", csObj) < 32 and wow.GetTime() > ForceCSAtTime then
-            if wow.IsCastable("Counterspell") then
+            if player.IsCastable("Counterspell") then
                 Spell = "Counterspell"
                 wow.SpellStopCasting()
-                wow.CastSpellByName("Counterspell", false)
+                player.CastSpell("Counterspell", false)
                 Sleep(0.333)
                 ForceCSAtTime = 0
                 ForceCS = false
@@ -2142,11 +2141,10 @@ function Counterspell()
 end
 
 function IsPolymorphUsed()
-    local objCount = wow.GetObjectCount()
-    for i = 1, objCount do
+    for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
-            if wow.UnitIsEnemy("player", obj) and wow.UnitIsDead(obj) == false then
+            if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
                 if wow.HasDebuff("Polymorph", obj) then
                     return true
                 end
@@ -2173,7 +2171,7 @@ function Decurse()
         if debuff == nil then
             return false
         elseif debuff:find("Curse") or debuff:find("curse") then
-            wow.CastSpellByName("Remove Lesser Curse")
+            player.CastSpell("Remove Lesser Curse")
             DecurseIgnoreTill = wow.GetTime() + 10
             return true
         end
@@ -2219,7 +2217,7 @@ function MageRotation()
         -- Polymorph when 1v2+
         local aggrCount = table.getn(AggroTable)
         local isPolyied = IsPolymorphUsed()
-        if aggrCount > 1 and wow.IsCastable("Polymorph") and isPolyied == false and wow.GetTime() > IgnorePolyTill then
+        if aggrCount > 1 and player.IsCastable("Polymorph") and isPolyied == false and wow.GetTime() > IgnorePolyTill then
             wow.DebugPrint('Polymode: 1v' .. aggrCount)
             local closest = 9999
             local polyTarget = nil
@@ -2253,7 +2251,7 @@ function MageRotation()
                 wow.DebugPrint('Polying Target at ' .. wow.UnitHealthPercent(polyTarget))
                 wow.TargetUnit(polyTarget)
                 Spell = "Polymorph"
-                wow.CastSpellByName("Polymorph", false)
+                player.CastSpell("Polymorph", false)
                 IgnorePolyTill = wow.GetTime() + 2
                 Sleep(0.3)
                 return
@@ -2272,8 +2270,8 @@ function MageRotation()
         end
 
         -- Evocation
-        if isPolyied and mana < 35 and wow.IsCastable("Evocation") then
-            wow.CastSpellByName("Evocation")
+        if isPolyied and mana < 35 and player.IsCastable("Evocation") then
+            player.CastSpell("Evocation")
             Sleep(4.2)
         end
 
@@ -2284,14 +2282,14 @@ function MageRotation()
             Spell = "Kiting"
             -- if isCastable("Blink") then
             -- DbgPrint("Blinking!")
-            -- wow.CastSpellByName("Blink")
+            -- player.CastSpell("Blink")
             -- else
             Sleep(0.666)
             -- end
         else
             -- Evocation
-            if mana < 10 and enemyHP > 6 and wow.IsCastable("Evocation") and HasManaGem() == false then
-                wow.CastSpellByName("Evocation")
+            if mana < 10 and enemyHP > 6 and player.IsCastable("Evocation") and HasManaGem() == false then
+                player.CastSpell("Evocation")
                 Spell = "Evocation"
                 if hp > 75 then
                     Sleep(6.1) -- almost full duration
@@ -2307,9 +2305,9 @@ function MageRotation()
         end
 
         -- Ice Block
-        if player.GetHealthPercent() < 15 and inCombat and wow.IsCastable("Ice Block") then
+        if player.GetHealthPercent() < 15 and inCombat and player.IsCastable("Ice Block") then
             Spell = "Blocking at HP " .. player.GetHealthPercent() .. " %"
-            wow.CastSpellByName("Ice Block")
+            player.CastSpell("Ice Block")
             Sleep(9.3)
             return
         end
@@ -2321,56 +2319,56 @@ function MageRotation()
             -- Cone of Cold/Nova
             if inCombat and dist < 10 and isPolyied == false then
                 -- ! Add Feature to stop ONLY if current cast has long time to fire
-                if wow.IsCastable("Frost Nova") then
+                if player.IsCastable("Frost Nova") then
                     Spell = "Nova"
                     wow.SpellStopCasting()
-                    wow.CastSpellByName("Frost Nova(Rank 1)")
+                    player.CastSpell("Frost Nova(Rank 1)")
                     return
                 end
-                if wow.IsCastable("Cone of Cold") then
+                if player.IsCastable("Cone of Cold") then
                     Spell = "CoC"
                     -- wow.SpellStopCasting()
-                    wow.CastSpellByName("Cone of Cold")
+                    player.CastSpell("Cone of Cold")
                     return
                 end
             end
 
             -- Fire Blast
-            if inCombat and dist <= 19.5 and wow.IsCastable("Fire Blast") then
+            if inCombat and dist <= 19.5 and player.IsCastable("Fire Blast") then
                 Spell = "Fireblast"
-                wow.CastSpellByName("Fire Blast", false)
+                player.CastSpell("Fire Blast", false)
                 return
             end
 
             -- Frostbolt/Fireball Filler
-            if PrefFire == false and wow.IsCastable("Frostbolt") then
+            if PrefFire == false and player.IsCastable("Frostbolt") then
                 Spell = "Frostbolt"
-                wow.CastSpellByName("Frostbolt", false)
+                player.CastSpell("Frostbolt", false)
                 Sleep(0.25)
                 return
-            elseif wow.IsCastable("Fireball") then
+            elseif player.IsCastable("Fireball") then
                 Spell = "Fireball"
-                wow.CastSpellByName("Fireball", false)
+                player.CastSpell("Fireball", false)
                 Sleep(0.5)
                 return
             end
         else -- Enemy is SUPER LOW
             if hp < 20 then -- I am super low too so rush kill w/o wand
-                if inCombat and dist < 20 and wow.IsCastable("Fire Blast") then
+                if inCombat and dist < 20 and player.IsCastable("Fire Blast") then
                     Spell = "Fireblast LOW/CRITICAL"
-                    wow.CastSpellByName("Fire Blast", false)
+                    player.CastSpell("Fire Blast", false)
                     return
                 end
-                if inCombat and dist < 10 and wow.IsCastable("Frost Nova") then
+                if inCombat and dist < 10 and player.IsCastable("Frost Nova") then
                     Spell = "Nova LOW/CRITICAL"
                     wow.SpellStopCasting()
-                    wow.CastSpellByName("Frost Nova(Rank 1)")
+                    player.CastSpell("Frost Nova(Rank 1)")
                     return
                 end
-                if inCombat and dist < 10 and wow.IsCastable("Cone of Cold") and isPolyied == false then
+                if inCombat and dist < 10 and player.IsCastable("Cone of Cold") and isPolyied == false then
                     Spell = "CoC LOW/Critical"
                     wow.SpellStopCasting()
-                    wow.CastSpellByName("Cone of Cold")
+                    player.CastSpell("Cone of Cold")
                     return
                 end
             end
@@ -2414,11 +2412,11 @@ function MageRotation()
     end
 
     Spell = "NOTHING"
-    if not wow.PlayerIsCasting() and wow.UnitHealthPercent("target") > WAND_BELOW then -- Wanding bug were isOnCD always returns true when wanding unless scripts ticks at perfect time
+    if not player.IsCasting() and wow.UnitHealthPercent("target") > WAND_BELOW then -- Wanding bug were isOnCD always returns true when wanding unless scripts ticks at perfect time
         local usable, nomana = wow.IsUsableSpell("Frostbolt")
         if usable and nomana == false then
             Spell = "Frostbolt_NOTHING"
-            wow.CastSpellByName("Frostbolt", false)
+            player.CastSpell("Frostbolt", false)
             Sleep(0.25)
             return
         end
@@ -2469,7 +2467,7 @@ function Attack(obj)
         wow.Dismount()
     end
 
-    if wow.IsHunter() then
+    if player.IsHunter() then
         HunterRotation()
     elseif player.IsMage() then
         MageRotation()
@@ -2522,7 +2520,7 @@ function Random()
 
     local rnd = math.random(1, 200)
     if rnd >= 1 and rnd <= 10 then
-        if not wow.PlayerIsCasting() then
+        if not player.IsCasting() then
             wow.SendKey(' ')
         end
     elseif rnd == 11 then
@@ -2553,7 +2551,7 @@ function Random()
         wow.SendKey(78) -- N
         OpenArr[7] = true
     elseif rnd > 56 and rnd < 70 then
-        if not wow.PlayerIsCasting() then
+        if not player.IsCasting() then
             wow.SendKey(' ')
         end
     end
@@ -2570,7 +2568,7 @@ function IsSafeToLoot(lootObj)
     for i = 1, objCount do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
-            if wow.UnitIsEnemy("player", obj) and wow.UnitIsDead(obj) == false then
+            if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
                 local unitLevel = wow.UnitLevel(obj)
                 local distLootAggroObj = wow.GetDistanceBetweenObjects(lootObj, obj)
                 local aggroRad = (unitLevel - playerLevel) + 25 -- suppost +20 imma to be safe +5
@@ -2590,7 +2588,7 @@ SkinningTime = 0
 IgnoreSkinningTill = 0
 
 function Skinning()
-    if not wow.HasInInventory("Skinning Knife") then
+    if not player.HasInInventory("Skinning Knife") then
         return false
     end
     if SkinningTime > 12 then
@@ -2610,20 +2608,20 @@ function Skinning()
         return false
     end
 
-    if wow.GetFreeSlots() <= 0 then
+    if player.GetFreeSlots() <= 0 then
         return false
     end
 
     local closestDist = 999999
     local skinObj = nil
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
             local name = wow.ObjectName(obj)
             if name ~= "Campfire" and name ~= PLAYER_NAME and name:find("Rune of") == nil then
                 local ox, oy, oz = wow.ObjectPosition(obj)
-                if wow.UnitCanBeSkinned(obj) and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and wow.UnitIsEnemy("player", obj) then
+                if wow.UnitCanBeSkinned(obj) and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and wow.UnitIsEnemy(obj) then
                     local dist = wow.CalculateDistance(px, py, pz, ox, oy, oz)
                     if dist < closestDist and IsSafeToLoot(obj) then
                         closestDist = dist
@@ -2663,10 +2661,10 @@ LootingTime = 0
 IgnoreLootingTill = 0
 
 function Looting()
-    if wow.PlayerIsCasting() then
+    if player.IsCasting() then
         return false
     end
-    if wow.GetFreeSlots() <= 0 then
+    if player.GetFreeSlots() <= 0 then
         return false
     end
 
@@ -2683,7 +2681,7 @@ function Looting()
     local closestDist = 999999
     local lootObj = nil
     local lootCount = 0
-    local px, py, pz = wow.ObjectPosition("player")
+    local px, py, pz = player.GetPosition()
     for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
@@ -2794,9 +2792,9 @@ function SellItems()
                 if ArrayContains(ForcedToSell, sName) then
                     wow.DebugPrint('Force-Selling: ' .. sName)
                     wow.UseContainerItem(bag, slot)
-                elseif wow.IsHunter() and (sName == Hunter:GetAmmoName() or ArrayContains(PetFoods, sName)) then
+                elseif player.IsHunter() and (sName == Hunter:GetAmmoName() or ArrayContains(PetFoods, sName)) then
                     -- DbgPrint('Keeping [Hunter Ammo/PetFood]: '..sName)
-                elseif sSubType == "Bag" or (wow.IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
+                elseif sSubType == "Bag" or (player.IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
                     -- Bug where last Bag is perceived as item in other bags for selling :/
                 elseif sName:find("Potion") ~= nil or sName:find("Bandage") ~= nil then
                     -- DbgPrint('Keeping [Potion]: '..sName)
@@ -2842,7 +2840,7 @@ DebugMessage = ""
 
 function DrawMainLine()
     if DestX ~= nil and DestY ~= nil and DestZ ~= nil then
-        local pX, pY, pZ = wow.ObjectPosition("player")
+        local pX, pY, pZ = player.GetPosition()
         LibDraw.SetColorRaw(0, 0, 1, 1)
         LibDraw.Line(pX, pY, pZ + 0.2, DestX, DestY, DestZ + 0.2)
     end
@@ -2882,7 +2880,7 @@ end
 
 function DrawDebugMessage()
     if DebugMessage ~= "" then
-        local pX, pY, pZ = wow.ObjectPosition("player")
+        local pX, pY, pZ = player.GetPosition()
         local debugMessage = DebugMessage
         if Spell ~= "" and PlayerStatus == "ATTACK" or PlayerStatus == "SKINNING" then
             debugMessage = debugMessage .. " [" .. Spell .. "]"
@@ -2894,7 +2892,7 @@ end
 
 function DrawStatus()
     LibDraw.SetColorRaw(1, 1, 1, 1)
-    local pX, pY, pZ = wow.ObjectPosition("player")
+    local pX, pY, pZ = player.GetPosition()
     if PlayerStatus == "ATTACK" then -- Attacking
         local str = 'Attacking...'
         if AttackObj ~= nil then
@@ -3006,7 +3004,7 @@ function AmIFoccussed()
         local obj = wow.GetObjectWithIndex(i)
         if wow.UnitIsDead(obj) == false and wow.UnitIsPlayer(obj) == false then
             local focussed = IsTargeting(obj, "player")
-            if wow.IsHunter() and focussed == false then
+            if player.IsHunter() and focussed == false then
                 focussed = IsTargeting(obj, "pet")
             end
             if wow.IsInCombat(obj) and wow.UnitCanAttack("player", obj) then
@@ -3067,7 +3065,7 @@ Ttt = wow.GetTime()
 TttTick = 10
 
 function IsNotVendorPathing()
-    return GoingToVendor == false and AtVendor == false and SellComplete == false and TalkedToVendor == false and AtStartAfterVendor == false
+    return not GoingToVendor and not AtVendor and not SellComplete and not TalkedToVendor and not AtStartAfterVendor
 end
 
 function ResurrectPulse()
@@ -3135,7 +3133,7 @@ local function onUpdate(...)
     end
 
     -- Main
-    if CheckVitals() then
+    if IsPlayerIdle() then
         DebugMessage = "VITALS_OK"
 
         if player.IsInCombat() and CombatTime < 90 and (CLEAR_VENDOR_PATH or (not CLEAR_VENDOR_PATH and not player.IsMounted() and IsNotVendorPathing())) then
@@ -3148,8 +3146,9 @@ local function onUpdate(...)
             end
             CombatTime = CombatTime + (NextPulseTime - wow.GetTime())
         else
-            -- ::Resume::
+            -- 没十秒多执行一次?
             if wow.GetTime() - Ttt > TttTick then
+                -- 装备红了?
                 if DC_ON_ITEM_BREAK and GetLowestDurability() <= 1 then
                     wow.Log('Item Break...')
                     wow.RunMacroText(".dc")
@@ -3175,9 +3174,8 @@ local function onUpdate(...)
                     DebugMessage = "TO_VENDOR_ATTACKING"
                     Attack(AttackObj)
                 else
-                    -- MountUp just checks if it needs to Mount, 
-                    -- if not (walking or already mounted) WILL RETURN FALSE
-                    if MountUp() == false then
+                    -- MountUp just checks if it needs to Mount, if not (walking or already mounted) WILL RETURN FALSE
+                    if not MountUp() then
                         DebugMessage = "VENDOR_PATH"
                         if LOOT_ON_VENDOR_PATH == false then
                             VendorPath(true)
@@ -3202,7 +3200,7 @@ local function onUpdate(...)
                     DebugMessage = "TO_START_ATTACKING"
                     Attack(AttackObj)
                 else
-                    if MountUp() == false then
+                    if not MountUp() then
                         DebugMessage = "START_PATH"
                         if LOOT_ON_VENDOR_PATH == false then
                             VendorPath(false)
