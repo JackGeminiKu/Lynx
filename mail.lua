@@ -34,7 +34,7 @@ local function IsAtMailbox()
         local obj = wow.GetObjectWithIndex(i)
         local name = wow.ObjectName(obj)
         if name == "Mailbox" then
-            local dist = wow.GetDistanceBetweenObjects("player", obj)
+            local dist = player.GetDistanceFromFrom(obj)
             if dist < 5 then
                 return true
             end

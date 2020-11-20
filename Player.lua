@@ -1,5 +1,9 @@
 player = {}
 
+player.Level = function()
+    return UnitLevel("player")
+end
+
 player.GetPosition = function()
     return lb.ObjectPosition("player")
 end
@@ -98,12 +102,24 @@ player.IsMage = function()
     return wow.UnitClass("player") == "Mage"
 end
 
+player.IsDead = function()
+    return UnitIsDead("player")
+end
+
 player.GetHealthPercent = function()
     return 100 * UnitHealth("player") / UnitHealthMax("player")
 end
 
 player.GetPowerPercent = function()
     return 100 * UnitPower("player") / UnitPowerMax("player")
+end
+
+player.DistanceFrom = function(dest)
+    return lb.GetDistance3D("player", dest)
+end
+
+player.CorpseRecoveryDelay = function()
+    return GetCorpseRecoveryDelay()
 end
 
 player.HasAura = function(aura)
