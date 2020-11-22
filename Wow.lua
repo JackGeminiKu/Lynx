@@ -201,6 +201,10 @@ do
         return UnitIsDeadOrGhost(unit)
     end
 
+    wow.GetObjects = function()
+        return lb.GetObjects(30)
+    end
+
     wow.GetObjectCount = function()
         local objects = lb.GetObjects()
         return #objects
@@ -319,7 +323,8 @@ do
         return lb.GetDistance3D(object1, object2)
     end
 
-    wow.ObjectPosition = function(object)
+    -- 返回x, y, z
+    wow.GetObjectPosition = function(object)
         return lb.ObjectPosition(object)
     end
 

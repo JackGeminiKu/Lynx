@@ -4,6 +4,7 @@ player.Level = function()
     return UnitLevel("player")
 end
 
+-- 返回Player的坐标, x, y, z
 player.GetPosition = function()
     return lb.ObjectPosition("player")
 end
