@@ -6,7 +6,11 @@ player.MoveTo = function(...)
         lb.MoveTo(x, y, z)
     else
         local point = ...
-        lb.MoveTo(point[1], point[2], point[3])
+        if point.x == nil then
+            lb.MoveTo(point[1], point[2], point[3])
+        else
+            lb.MoveTo(point.x, point.y, point.z)
+        end
     end
 end
 
@@ -129,8 +133,14 @@ player.GetPowerPercent = function()
     return 100 * UnitPower("player") / UnitPowerMax("player")
 end
 
-player.DistanceFrom = function(dest)
-    return lb.GetDistance3D("player", dest)
+player.DistanceFrom = function(...)
+    local argNumber = select('#', ...)
+    if argNumber == 1 then
+        return lb.GetDistance3D("player", dest)
+    elseif argNumber == 3 then
+        local x, y, z = player.Position()
+        return wow.CalculateDistance(x, y, z, ...)
+    end
 end
 
 player.CorpseRecoveryDelay = function()

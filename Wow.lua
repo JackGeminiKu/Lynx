@@ -4,10 +4,6 @@ wow = {}
 
 -- 魔兽世界API
 do
-
-
-
-
     wow.CalculateDistance = function(...)
         local x1, y1, z1, x2, y2, z2
         if select("#", ...) == 6 then
@@ -24,8 +20,6 @@ do
         return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
     end
 
- 
- 
     wow.HasDebuff = function(name, obj)
         for i = 1, 40 do
             local debuff = wow.UnitDebuff(obj, i)

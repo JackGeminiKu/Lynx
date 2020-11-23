@@ -3,22 +3,50 @@ LibDraw = LibStub("LibDraw-1.0")
 SLASH_LYNX_TEST1 = '/lynx-test'
 
 _waypoints = nil 
-_index = 1
+_nextIndex = nil
 
-SlashCmdList['lynx-test'] = function()
-    if _waypoints == nil then
-        _waypoints = lb.NavMgr_MoveTo(wow.GetObjectPosition("target"))
-        _index = 1
-    else
-
-    end
+SlashCmdList['LYNX_TEST'] = function()
+    print("Initialize waypoints")
+    _waypoints = lb.NavMgr_MoveTo(wow.GetObjectPosition("target"))
+    _nextIndex = nil
 end
 
-_nextPoint = nil
+function NextWaypoint()
+    return _waypoints[_nextIndex]
+end
 
+local _updateCount = 0
 Frame = wow.CreateFrame("Frame")
-Frame.SetScript("OnUpdate", function()
+Frame:SetScript("OnUpdate", function()
+    _updateCount = _updateCount + 1
+    if _updateCount % 10 ~= 0 then
+        return
+    end
+    if _waypoints == nil then
+        return
+    end
 
+    if _nextIndex == nil then
+        _nextIndex = 1
+        player.MoveTo(_waypoints[1])
+        return
+    end
+
+    local nextWaypoint = _waypoints[_nextIndex]
+    local dist = player.DistanceFrom(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z)
+    print('dist = ' .. dist, 'next = ' .. _nextIndex, 'total = ' .. #_waypoints)
+    if dist < 0.5 then
+        if _nextIndex < #_waypoints then
+            _nextIndex = _nextIndex + 1
+            local nextPoint = NextWaypoint()
+            lb.Navigator.MoveTo(nextPoint.x, nextPoint.y, nextPoint.z, 1, 0)
+            -- player.MoveTo(NextWaypoint())
+        else
+           print(wow.GetTime() .. ": finished!") 
+        end
+    else
+        print(wow.GetTime() .. ': moving')
+    end
 end)
 
 LibDraw.Sync(function()
