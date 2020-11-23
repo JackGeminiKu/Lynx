@@ -296,13 +296,6 @@ do
         return wow.UnitAffectingCombat(unit)
     end
 
-    wow.Log = function(content)
-        if lb ~= nil then
-            print(content)
-            lb.WriteFile("E:\\log-" .. lb.GetGameAccountName() .. ".txt", content .. '\n', true)
-        end
-    end
-
     wow.ObjectID = function(object)
         return lb.ObjectId(object)
     end
@@ -326,14 +319,6 @@ do
     -- 返回x, y, z
     wow.GetObjectPosition = function(object)
         return lb.ObjectPosition(object)
-    end
-
-    wow.MoveTo = function(x, y, z)
-        lb.MoveTo(x, y, z)
-    end
-
-    wow.MoveToPoint = function(point)
-        lb.MoveTo(point[1], point[2], point[3])
     end
 
     wow.SendKey = function(key, released)
@@ -376,7 +361,7 @@ do
         for i = 1, 15 do
             local name = wow.UnitAura(unit, i)
             if name == nil then -- when name is nil we looped thru all auras 
-                wow.DebugPrint('Applying Buff: ' .. buff)
+                wow.Log('Applying Buff: ' .. buff)
                 player.CastSpell(buff, onSelf)
                 return
             elseif name == buff then
@@ -394,12 +379,13 @@ do
     end
 end
 
--- Debug
+-- Log
 do
-    DEBUG_PRINT_ENABLED = true
-    wow.DebugPrint = function(message)
-        if DEBUG_PRINT_ENABLED == true then
-            print(message)
+    wow.Log = function(content)
+        if lb ~= nil then
+            print(content)
+            lb.WriteFile("E:\\log-" .. lb.GetGameAccountName() .. ".txt", content .. '\n', true)
         end
     end
+
 end

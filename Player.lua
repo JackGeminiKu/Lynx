@@ -1,11 +1,25 @@
 player = {}
 
+player.MoveTo = function(...)
+    if select('#', ...) == 3 then
+        local x, y, z = ...
+        lb.MoveTo(x, y, z)
+    else
+        local point = ...
+        lb.MoveTo(point[1], point[2], point[3])
+    end
+end
+
+player.Jump = function()
+    wow.SendKey(' ')
+end
+
 player.Level = function()
     return UnitLevel("player")
 end
 
 -- 返回Player的坐标, x, y, z
-player.GetPosition = function()
+player.Position = function()
     return lb.ObjectPosition("player")
 end
 

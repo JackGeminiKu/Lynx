@@ -151,7 +151,7 @@ local function ShouldExit()
 end
 
 local function SetIndexToClosest()
-    local px, py, pz = player.GetPosition()
+    local px, py, pz = player.Position()
     local closestIndex = 1
     local closestDist = 9999999
     local foundIndex = false
@@ -190,7 +190,7 @@ local function MoveToClosestWaypoint()
         SetIndexToClosest()
     end
 
-    local px, py, pz = player.GetPosition()
+    local px, py, pz = player.Position()
     local waypoint = _waypoints[_pathIndex] -- return is imp to always assign next xyz correctly
     if waypoint ~= nil then
         local dist = wow.CalculateDistance(px, py, pz, waypoint[1], waypoint[2], waypoint[3])
@@ -216,7 +216,7 @@ local function MoveToClosestWaypoint()
     if LastIndexCount > 35 and (_pathIndex < #_waypoints - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. _pathIndex
         wow.Log(stuckStr)
-        wow.SendKey(' ')
+        player.Jump()
         _pathIndex = _pathIndex + 1
         AtEnd= _pathIndex > #_waypoints
         return
@@ -235,7 +235,7 @@ local function MoveToClosestWaypoint()
     local distToNext = wow.CalculateDistance(px, py, pz, nextWaypoint[1], nextWaypoint[2], nextWaypoint[3])
     if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then
         if IgnoreLOS== true or TraceLine(px, py, pz + 2.5, nextWaypoint[1], nextWaypoint[2], nextWaypoint[3] + 2.5, losFlags) == nil then
-            wow.MoveTo(nextWaypoint[1] + rnd, nextWaypoint[2] + rnd, nextWaypoint[3] + rnd)
+            player.MoveToeTo(nextWaypoint[1] + rnd, nextWaypoint[2] + rnd, nextWaypoint[3] + rnd)
         end
     else
         if SKIP_FAR_POINTS then
