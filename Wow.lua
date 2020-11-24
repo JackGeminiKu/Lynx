@@ -356,7 +356,7 @@ do
             local name = wow.UnitAura(unit, i)
             if name == nil then -- when name is nil we looped thru all auras 
                 wow.Log('Applying Buff: ' .. buff)
-                player.CastSpell(buff, onSelf)
+                Player.CastSpell(buff, onSelf)
                 return
             elseif name == buff then
                 return

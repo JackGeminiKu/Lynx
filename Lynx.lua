@@ -28,12 +28,12 @@ Frame:SetScript("OnUpdate", function()
 
     if _nextIndex == nil then
         _nextIndex = 1
-        player.MoveTo(_waypoints[1])
+        Player.MoveTo(_waypoints[1])
         return
     end
 
     local nextWaypoint = _waypoints[_nextIndex]
-    local dist = player.DistanceFrom(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z)
+    local dist = Player:DistanceFrom(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z)
     print('dist = ' .. dist, 'next = ' .. _nextIndex, 'total = ' .. #_waypoints)
     if dist < 0.5 then
         if _nextIndex < #_waypoints then

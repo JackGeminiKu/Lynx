@@ -6,6 +6,7 @@ Libs\!LibDraw\LibDraw.lua
 Libs\LibStub\LibStub.lua
 
 Wow.lua
+Unit.lua
 Player.lua
 Hunter.lua
 Mage.lua
