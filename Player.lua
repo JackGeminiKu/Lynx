@@ -1,17 +1,23 @@
 Player = Unit:New('player') 
 
 Player.MoveTo = function(...)
+    local x, y, z
     if select('#', ...) == 3 then
-        local x, y, z = ...
-        lb.MoveTo(x, y, z)
+        x, y, z = ...
     else
         local point = ...
         if point.x == nil then
-            lb.MoveTo(point[1], point[2], point[3])
+            x = point[1]
+            y = point[2]
+            z = point[3]
         else
-            lb.MoveTo(point.x, point.y, point.z)
+            x = point.x
+            y = point.y
+            z = point.z
         end
     end
+    wow.Log('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
+    lb.MoveTo(x, y, z)
 end
 
 Player.Jump = function()

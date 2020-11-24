@@ -17,12 +17,17 @@ function Unit:Position()
     return lb.ObjectPosition(self.UnitTag)
 end
 
+function Unit:PositionZ()
+    local x, y, z = lb.ObjectPosition(self.UnitTag)
+    return z
+end
+
 function Unit:DistanceFrom(...)
     local argNumber = select('#', ...)
     if argNumber == 1 then
         return lb.GetDistance3D(self.UnitTag, dest)
     elseif argNumber == 3 then
-        local x, y, z = Unit:Position()
+        local x, y, z = self:Position()
         return wow.CalculateDistance(x, y, z, ...)
     end
 end

@@ -1,13 +1,20 @@
-LibDraw = LibStub("LibDraw-1.0")
-
 SLASH_LYNX_TEST1 = '/lynx-test'
 
 _waypoints = nil 
 _nextIndex = nil
 
 SlashCmdList['LYNX_TEST'] = function()
-    print("Initialize waypoints")
+    if lb.Navigator == nil then
+        lb.LoadScript('TypescriptNavigator')
+        return
+    end
+    wow.Log("Initialize waypoints")
+    local x, y, z = Player:Position()
+    wow.Log('Player position: ' .. x .. ', ' .. y .. ', ' .. z)
     _waypoints = lb.NavMgr_MoveTo(wow.GetObjectPosition("target"))
+    for k, v in pairs(_waypoints) do
+        wow.Log(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
+    end
     _nextIndex = nil
 end
 
@@ -30,25 +37,25 @@ Frame:SetScript("OnUpdate", function()
         _nextIndex = 1
         Player.MoveTo(_waypoints[1])
         return
-    end
-
-    local nextWaypoint = _waypoints[_nextIndex]
-    local dist = Player:DistanceFrom(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z)
-    print('dist = ' .. dist, 'next = ' .. _nextIndex, 'total = ' .. #_waypoints)
-    if dist < 0.5 then
-        if _nextIndex < #_waypoints then
-            _nextIndex = _nextIndex + 1
-            local nextPoint = NextWaypoint()
-            lb.Navigator.MoveTo(nextPoint.x, nextPoint.y, nextPoint.z, 1, 0)
-            -- player.MoveTo(NextWaypoint())
-        else
-           print(wow.GetTime() .. ": finished!") 
-        end
     else
-        print(wow.GetTime() .. ': moving')
+        local dist = Player:DistanceFrom(NextWaypoint().x, NextWaypoint().y, NextWaypoint().z)
+        local distZ = abs(Player:PositionZ() - NextWaypoint().z) 
+        print('dist = ' .. dist, 'distZ = ' .. distZ,  _nextIndex .. ' / '.. #_waypoints)
+        if dist < 0.01 and  distZ < 0.01 then
+            if _nextIndex < #_waypoints then
+                _nextIndex = _nextIndex + 1
+                Player.MoveTo(NextWaypoint())
+                -- player.MoveTo(NextWaypoint())
+            else
+                print(wow.GetTime() .. ": finished!") 
+            end
+        else
+            print(wow.GetTime() .. ': moving')
+        end
     end
 end)
 
+LibDraw = LibStub("LibDraw-1.0")
 LibDraw.Sync(function()
     if _waypoints == nil then
 
