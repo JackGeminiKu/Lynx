@@ -9,6 +9,7 @@ Wow.lua
 Object.lua
 Unit.lua
 Player.lua
+Target.lua
 Hunter.lua
 Mage.lua
 Lynx.lua
