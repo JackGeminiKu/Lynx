@@ -1,79 +1,55 @@
-Unit = {}
-
-function Unit:New(unitTag)
-    return setmetatable({UnitTag = unitTag}, {__index = self})
-end
+Unit = Object:New()
 
 function Unit:IsMoving()
-    return wow.GetUnitSpeed(self.UnitTag) > 0
+    return wow.GetUnitSpeed(self.ObjectTag) > 0
 end
 
 function Unit:Level()
-    return UnitLevel(self.UnitTag)
-end
-
--- 返回Player的坐标, x, y, z
-function Unit:Position()
-    return lb.ObjectPosition(self.UnitTag)
-end
-
-function Unit:PositionZ()
-    local x, y, z = lb.ObjectPosition(self.UnitTag)
-    return z
-end
-
-function Unit:DistanceFrom(...)
-    local argNumber = select('#', ...)
-    if argNumber == 1 then
-        return lb.GetDistance3D(self.UnitTag, dest)
-    elseif argNumber == 3 then
-        local x, y, z = self:Position()
-        return wow.CalculateDistance(x, y, z, ...)
-    end
+    return UnitLevel(self.ObjectTag)
 end
 
 function Unit:IsHunter()
-    return wow.UnitClass(self.UnitTag) == "Hunter"
+    return wow.UnitClass(self.ObjectTag) == "Hunter"
 end
 
 function Unit:IsMage()
-    return wow.UnitClass(self.UnitTag) == "Mage"
+    return wow.UnitClass(self.ObjectTag) == "Mage"
 end
 
 function Unit:IsCasting()
-    return lb.UnitCastingInfo(self.UnitTag) ~= 0
+    return lb.UnitCastingInfo(self.ObjectTag) ~= 0
 end
 
 function Unit:IsDeadOrGhost()
-    return UnitIsDeadOrGhost(self.UnitTag)
+    return UnitIsDeadOrGhost(self.ObjectTag)
 end
 
 function Unit:IsDrinking()
-    return wow.HasAura(self.UnitTag, "Drink")
+    return wow.HasAura(self.ObjectTag, "Drink")
 end
 
 function Unit:IsEating()
-    return wow.HasAura(self.UnitTag, "Food")
+    return wow.HasAura(self.ObjectTag, "Food")
 end
 
 function Unit:IsInCombat()
-    return wow.UnitAffectingCombat(self.UnitTag)
+    return wow.UnitAffectingCombat(self.ObjectTag)
 end
 
 function Unit:IsDead()
-    return UnitIsDead(self.UnitTag)
+    return UnitIsDead(self.ObjectTag)
 end
 
 -- 百分比
 function Unit:Health()
-    return 100 * UnitHealth(self.UnitTag) / UnitHealthMax(self.UnitTag)
+    return 100 * UnitHealth(self.ObjectTag) / UnitHealthMax(self.ObjectTag)
 end
 
 -- 百分比
 function Unit:Power()
-    return 100 * UnitPower(self.UnitTag) / UnitPowerMax(self.UnitTag)
+    return 100 * UnitPower(self.ObjectTag) / UnitPowerMax(self.ObjectTag)
 end
 
 function Unit:HasAura(aura)
-    wow.HasAura(self.UnitTag, aura)
+    wow.HasAura(self.ObjectTag, aura)
 end

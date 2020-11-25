@@ -6,14 +6,14 @@ Player.MoveTo = function(...)
         x, y, z = ...
     else
         local point = ...
-        if point.x == nil then
-            x = point[1]
-            y = point[2]
-            z = point[3]
-        else
+        if point.x ~= nil then
             x = point.x
             y = point.y
             z = point.z
+        else
+            x = point[1]
+            y = point[2]
+            z = point[3]
         end
     end
     wow.Log('Move to: ' .. x .. ', ' .. y .. ', ' .. z)

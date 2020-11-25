@@ -39,9 +39,8 @@ Frame:SetScript("OnUpdate", function()
         return
     else
         local dist = Player:DistanceFrom(NextWaypoint().x, NextWaypoint().y, NextWaypoint().z)
-        local distZ = abs(Player:PositionZ() - NextWaypoint().z) 
-        print('dist = ' .. dist, 'distZ = ' .. distZ,  _nextIndex .. ' / '.. #_waypoints)
-        if dist < 0.01 and  distZ < 0.01 then
+        print('dist = ' .. dist,  _nextIndex .. ' / '.. #_waypoints)
+        if dist < 0.01 then
             if _nextIndex < #_waypoints then
                 _nextIndex = _nextIndex + 1
                 Player.MoveTo(NextWaypoint())

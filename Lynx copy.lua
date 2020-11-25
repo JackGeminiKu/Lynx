@@ -850,25 +850,16 @@ function MoveToClosestWaypoint()
     Player.MoveTo(Waypoints[closestIndex])
 end
 
-function IsMoving(Unit)
-    if Unit == nil then
-        return false
-    end
-    return wow.GetUnitSpeed(Unit) > 0
-end
-
 AtVendor = false
 AtStartAfterVendor = false
 SellComplete = false
 TalkedToVendor = false
-
 VendorPathIndex = 1
 
 function SetIndexToClosest(ignoreVendor, limit)
-    local px, py, pz = Player:Position()
     local closestIndex = 1
     local closestDist = 9999999
-    local foundSomething = false
+    local foundWaypoint = false
     local closestIsVendor = false
     local endWaypointCount = #Waypoints
     local startIndex = 1
@@ -886,13 +877,14 @@ function SetIndexToClosest(ignoreVendor, limit)
     end
 
     -- 寻找距离我最近的路径点
+    local px, py, pz = Player:Position()
     for i = startIndex, endWaypointCount, 1 do
-        local xyz = Waypoints[i]
-        if xyz ~= nil then
-            local dist = wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
+        local waypoint = Waypoints[i]
+        if waypoint ~= nil then
+            local dist = wow.CalculateDistance(px, py, pz, waypoint[1], waypoint[2], waypoint[3])
             if dist <= closestDist then
-                if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, xyz[1], xyz[2], xyz[3] + 2.5, LOST_FLAGS) == nil then
-                    foundSomething = true
+                if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, waypoint[1], waypoint[2], waypoint[3] + 2.5, LOST_FLAGS) == nil then
+                    foundWaypoint = true
                     closestIndex = i
                     closestDist = dist
                     closestIsVendor = false
@@ -901,8 +893,9 @@ function SetIndexToClosest(ignoreVendor, limit)
         end
     end
 
-    if ignoreVendor ~= nil and ignoreVendor then
-        if foundSomething then
+    -- 忽略Vendor
+    if ignoreVendor then
+        if foundWaypoint then
             PathIndex = closestIndex
             wow.Log("Starting at grind path at idx " .. PathIndex)
         end
@@ -911,12 +904,12 @@ function SetIndexToClosest(ignoreVendor, limit)
 
     -- 是否有更近的vendor point?
     for i = 1, #VendorPoints, 1 do
-        local xyz = VendorPoints[i]
-        if xyz ~= nil then
-            local dist = wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
+        local waypoint = VendorPoints[i]
+        if waypoint ~= nil then
+            local dist = wow.CalculateDistance(px, py, pz, waypoint[1], waypoint[2], waypoint[3])
             if dist <= closestDist then
-                if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, xyz[1], xyz[2], xyz[3] + 2.5, LOST_FLAGS) == nil then
-                    foundSomething = true
+                if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, waypoint[1], waypoint[2], waypoint[3] + 2.5, LOST_FLAGS) == nil then
+                    foundWaypoint = true
                     closestIndex = i
                     closestDist = dist
                     closestIsVendor = true
@@ -925,7 +918,7 @@ function SetIndexToClosest(ignoreVendor, limit)
         end
     end
 
-    if not foundSomething then
+    if not foundWaypoint then
         wow.Log('WARNING: Could not find a close point in SetIndexToClosest()')
         return
     end
@@ -956,20 +949,17 @@ end
 
 FirstTickApply()
 FirstTick = true
--- Follow path from index 1 to end
--- !THIS FUNCTION IS A MESS! RE-WRITE
+
 function MoveToNextWaypoint()
     if FirstTick == true then -- 只执行一次
         FirstTick = false
         SetIndexToClosest()
     end
 
-    -- 移动到某个点附近了?
-    local px, py, pz = Player:Position()
+    -- 移动到位了?
     local nextPoint = Waypoints[PathIndex]
     if nextPoint ~= nil then
-        local dist = wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3])
-        if dist <= GetProximalTolerance() then
+        if Player:DistanceFrom(nextPoint) <= GetProximalTolerance() then
             if PathIndex < #Waypoints then
                 PathIndex = PathIndex + 1
                 wow.Log('Moving to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
@@ -1010,13 +1000,14 @@ function MoveToNextWaypoint()
         DestZ = nextPoint[3] + rnd
     end
     PlayerStatus = "WAYPOINT"
+    local px, py, pz = Player:Position()
     local distToNext = wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3])
-    if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then
+    if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then    -- 不忽略远点
         if IGNORE_LOS or TraceLine(px, py, pz + 2.5, nextPoint[1], nextPoint[2], nextPoint[3] + 2.5, LOST_FLAGS) == nil then
             Player.MoveTo(DestX, DestY, DestZ)
         end
     else
-        if SKIP_FAR_POINTS then
+        if SKIP_FAR_POINTS then    -- 忽略远点, 直接下一个点
             wow.Log('*Skipping* to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
             PathIndex = PathIndex + 1
             AtEnd = PathIndex > #Waypoints
@@ -1030,7 +1021,7 @@ function MoveToNextWaypoint()
 end
 
 -- Processes path relooping and Exit()
-function PathEndCheck(reloop)
+local function PathEndCheck(reloop)
     if not AtEnd then
         return
     end
@@ -1214,7 +1205,7 @@ end
 Spell = ""
 PauseWaypointMovTil = 0
 
-function PulseMovement()
+local function PulseMovement()
     if wow.GetTime() < PauseWaypointMovTil then
         Spell = "Waiting NPC to Pass"
         wow.Log("Waypoint Movement is Paused")
@@ -2134,7 +2125,7 @@ function Counterspell()
     end
 end
 
-function IsPolymorphUsed()
+local function IsPolymorphUsed()
     for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
         if obj ~= nil then
@@ -2981,7 +2972,7 @@ function OpenBoxItems()
     end
 end
 
-function IsPlayerFoccussed()
+local function IsPlayerFoccussed()
     local bKawardCheck = true
     for i = 1, wow.GetObjectCount() do
         local obj = wow.GetObjectWithIndex(i)
@@ -3283,41 +3274,5 @@ SlashCmdList["LYNX_STOP"] = function()
     Frame:SetScript("OnUpdate", nil)
 end
 
-local i = 0
 SlashCmdList["LYNX_TEST"] = function()
-    Frame:SetScript("OnUpdate", function()
-        LibDraw.Sync(function()
-            i = i + 1
-            -- if i % 10 ~=0 then
-            --     return
-            -- end
-
-            -- if not IsTimeToDraw() then
-            --     return
-            -- end
-            -- if lb.Navigator == nil then
-            --     lb.LoadScript('TypescriptNavigator')
-            -- end
-            LibDraw.clearCanvas()
-            LibDraw.SetWidth(1)
-
-            local px, py, pz = wow.GetObjectPosition("player")
-            if dx == nil then
-                dx, dy, dz = wow.GetObjectPosition("target")
-            end
-
-            -- lb.Navigator.MoveTo(dx, dy, dz, 1, 2)
-            local waypoints = lb.NavMgr_MoveTo(dx, dy, dz)
-            -- print(wow.GetTime(), lb.NavMgr_GetPathIndex() .. ' / ' .. #waypoints)
-
-            for i = 1, #waypoints - 1 do
-                local p1 = waypoints[i]
-                p2 = waypoints[i + 1]
-                LibDraw.Circle(p1.x, p1.y, p1.z, 0.3)
-                LibDraw.Line(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z)
-            end
-            LibDraw.Circle(p2.x, p2.y, p2.z, 0.3)
-        end)
-    end)
-    LibDraw.Enable(0)
 end
