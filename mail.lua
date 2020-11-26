@@ -29,9 +29,9 @@ local SKIP_FAR_POINTS = false
 local rndMax = 1 -- lets be precise for this short path
 
 local function IsAtMailbox()
-    local objCount = wow.GetObjectCount()
+    local objCount = Object:Count()
     for i = 1, objCount do
-        local obj = wow.GetObjectWithIndex(i)
+        local obj = Object:Get(i)
         local name = wow.ObjectName(obj)
         if name == "Mailbox" then
             local dist = Player.GetDistanceFromFrom(obj)
@@ -45,9 +45,9 @@ local function IsAtMailbox()
 end
 
 local function OpenMailBox()
-    local objCount = wow.GetObjectCount()
+    local objCount = Object:Count()
     for i = 1, objCount do
-        local obj = wow.GetObjectWithIndex(i)
+        local obj = Object:Get(i)
         local name = wow.ObjectName(obj)
         if name == "Mailbox" then
             wow.ObjectInteract(obj)

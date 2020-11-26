@@ -1,11 +1,15 @@
 Unit = Object:New()
 
+function Unit:Exists()
+    return wow.UnitExists(self.ObjectTag)
+end
+
 function Unit:IsMoving()
     return wow.GetUnitSpeed(self.ObjectTag) > 0
 end
 
 function Unit:Level()
-    return UnitLevel(self.ObjectTag)
+    return wow.UnitLevel(self.ObjectTag)
 end
 
 function Unit:IsHunter()
@@ -17,11 +21,11 @@ function Unit:IsMage()
 end
 
 function Unit:IsCasting()
-    return lb.UnitCastingInfo(self.ObjectTag) ~= 0
+    return wow.UnitCastingInfo(self.ObjectTag) ~= 0
 end
 
 function Unit:IsDeadOrGhost()
-    return UnitIsDeadOrGhost(self.ObjectTag)
+    return wow.UnitIsDeadOrGhost(self.ObjectTag)
 end
 
 function Unit:IsDrinking()
@@ -37,19 +41,23 @@ function Unit:IsInCombat()
 end
 
 function Unit:IsDead()
-    return UnitIsDead(self.ObjectTag)
+    return wow.UnitIsDead(self.ObjectTag)
 end
 
 -- 百分比
 function Unit:Health()
-    return 100 * UnitHealth(self.ObjectTag) / UnitHealthMax(self.ObjectTag)
+    return 100 * wow.UnitHealth(self.ObjectTag) / wow.UnitHealthMax(self.ObjectTag)
 end
 
 -- 百分比
 function Unit:Power()
-    return 100 * UnitPower(self.ObjectTag) / UnitPowerMax(self.ObjectTag)
+    return 100 * wow.UnitPower(self.ObjectTag) / wow.UnitPowerMax(self.ObjectTag)
 end
 
 function Unit:HasAura(aura)
     wow.HasAura(self.ObjectTag, aura)
+end
+
+function Unit:Count()
+    -- TBD
 end

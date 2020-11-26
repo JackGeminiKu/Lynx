@@ -1,5 +1,9 @@
 Player = Unit:New('player') 
 
+function Player:Count()
+    -- TBD
+end
+
 Player.MoveTo = function(...)
     local x, y, z
     if select('#', ...) == 3 then
@@ -36,12 +40,11 @@ Player.GetFreeSlots = function()
 end
 
 Player.GetItemCount = function(itemName)
-    return GetItemCount(itemName)
+    return wow.GetItemCount(itemName)
 end
 
 Player.CastSpell = function(spellName, onSelf)
-    onSelf = onSelf or true
-    lb.Unlock(CastSpellByName, spellName, onSelf)
+    wow.CastSpell(spellName, onSelf)
 end
 
 Player.HasInInventory = function(item)
@@ -79,13 +82,13 @@ Player.IsCastable = function(spellName)
 end
 
 Player.IsSwimming = function()
-    return IsSwimming()
+    return wow.IsSwimming()
 end
 
 Player.IsMounted = function()
-    return IsMounted()
+    return wow.IsMounted()
 end
 
 Player.CorpseRecoveryDelay = function()
-    return GetCorpseRecoveryDelay()
+    return wow.GetCorpseRecoveryDelay()
 end

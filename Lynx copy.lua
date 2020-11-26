@@ -733,7 +733,7 @@ function GetBandageName()
     return ""
 end
 
-local function IsTimeToDraw()
+local function ReadyToDraw()
     local timeNow = wow.GetTime()
     if timeNow < NextDrawTime then
         return false
@@ -743,7 +743,7 @@ local function IsTimeToDraw()
     return true
 end
 
-local function IsTimeToPulse()
+local function ReadyToPulse()
     local timeNow = wow.GetTime()
     if timeNow < NextPulseTime then
         return false
@@ -763,7 +763,6 @@ function ArrayContains(arr, search)
 end
 
 function Sleep(secs)
-    -- i forgot why this function is so scuffed but leave it as it is UNLESS you rewrite the whole codebase
     local timeNow = wow.GetTime()
     if timeNow < NextPulseTime then -- since this func may be used several times in 1 cycle
         local overheadWait = NextPulseTime - timeNow;
@@ -799,8 +798,8 @@ end
 
 local function PositionAggroCount()
     local count = 0
-    for i = 1, wow.GetObjectCount() do
-        local obj = wow.GetObjectWithIndex(i)
+    for i = 1, Object:Count() do
+        local obj = Object:Get(i)
         if obj ~= nil then
             if wow.UnitIsEnemy(obj) and not wow.UnitIsDead(obj) then
                 local aggroRad = wow.GetUnitLevel(obj) - Player:Level() + 20 + 3 -- suppost +20 imma to be safe +5
@@ -1002,12 +1001,12 @@ function MoveToNextWaypoint()
     PlayerStatus = "WAYPOINT"
     local px, py, pz = Player:Position()
     local distToNext = wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3])
-    if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then    -- 不忽略远点
+    if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then -- 不忽略远点
         if IGNORE_LOS or TraceLine(px, py, pz + 2.5, nextPoint[1], nextPoint[2], nextPoint[3] + 2.5, LOST_FLAGS) == nil then
             Player.MoveTo(DestX, DestY, DestZ)
         end
     else
-        if SKIP_FAR_POINTS then    -- 忽略远点, 直接下一个点
+        if SKIP_FAR_POINTS then -- 忽略远点, 直接下一个点
             wow.Log('*Skipping* to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
             PathIndex = PathIndex + 1
             AtEnd = PathIndex > #Waypoints
@@ -1321,7 +1320,7 @@ function MendingPet()
     end
 
     local petHP = wow.UnitHealthPercent("pet")
-    if wow.UnitExists("pet") and petHP > 0 and petHP < PetMendHP then
+    if Pet:Exists() and petHP > 0 and petHP < PetMendHP then
         local distToPet = Player:DistanceFrom("pet")
         if distToPet < 20 and Player.IsCastable("Mend Pet") then
             local _, castChannelID, _, _ = wow.UnitCastID("player") -- ??might be first var but idk
@@ -1347,7 +1346,7 @@ function MendingPet()
     return false
 end
 
-RevivePetStuck = 0
+RevivePetCount = 0
 LastFedTime = 0
 CallingPet = false
 
@@ -1358,43 +1357,38 @@ function ManagePet() -- True = Continue, False = Retick
 
     -- 召唤宝宝
     if Player:IsInCombat() then -- Res Combat
-        if not wow.UnitExists("pet") and RevivePetStuck < 1 then
-            RevivePetStuck = RevivePetStuck + 1
+        if not Pet:Exists() and RevivePetCount < 1 then
+            RevivePetCount = RevivePetCount + 1
             wow.RunMacroText("/cast Call Pet")
         end
         return true
     end
 
     -- 复活或者召出宝宝
-    if (not wow.UnitExists("pet") or wow.UnitIsDead("pet") or wow.UnitHealth("pet") <= 0) and not Player:IsCasting() and RevivePetStuck < 5 then
-        if CallingPet == false then
+    if (not Pet:Exists() or Pet:IsDead() or Pet:Health() <= 0) and not Player:IsCasting() and RevivePetCount < 5 then
+        if not CallingPet then
             CallingPet = true
             wow.RunMacroText("/cast Call Pet")
             Sleep(1.5)
-            RevivePetStuck = RevivePetStuck + 1
+            RevivePetCount = RevivePetCount + 1
         else
             CallingPet = false
             wow.RunMacroText("/cast Revive Pet")
             Sleep(8)
-            RevivePetStuck = RevivePetStuck + 1
+            RevivePetCount = RevivePetCount + 1
         end
         return false
     else
-        RevivePetStuck = 0
+        RevivePetCount = 0
     end
-    if not wow.UnitExists("pet") then
+    if not Pet:Exists() then
         return false
     end
 
     -- 太远了, 就改成跟随
     local distFromPet = Player:DistanceFrom("pet")
     if distFromPet > PULL_RANGE + 1 then
-        for i = 1, 10, 1 do
-            local name, _, _, _, _, _, _ = wow.GetPetActionInfo(i);
-            if (name == "PET_ACTION_FOLLOW") then
-                wow.CastPetAction(i);
-            end
-        end
+        Pet:Follow()
     end
 
     if Player:IsInCombat() then
@@ -1765,8 +1759,8 @@ function FindAttackableUnit()
     PvpTargeted = false
 
     -- Fill target tables
-    for i = 1, wow.GetObjectCount() do
-        local obj = wow.GetObjectWithIndex(i)
+    for i = 1, Object:Count() do
+        local obj = Object:Get(i)
         local objectName = wow.ObjectName(obj)
 
         -- Enemy Player/NPC Check for Drawing
@@ -1797,12 +1791,7 @@ function FindAttackableUnit()
                 -- Stop Pet Auto-Aggro Player
                 if Player:IsHunter() and wow.UnitIsPlayer(obj) then
                     if IsTargeting("pet", obj) then
-                        for i = 1, 10, 1 do
-                            local name, _, _, _, _, _, _ = wow.GetPetActionInfo(i);
-                            if (name == "PET_ACTION_FOLLOW") then
-                                wow.CastPetAction(i);
-                            end
-                        end
+                        Pet:Follow()
                     end
                 end
 
@@ -1909,9 +1898,9 @@ function GetAggrodUnit()
     local lowestHPUnit = 101
     local aggrodUnit = nil
 
-    local objCount = wow.GetObjectCount()
+    local objCount = Object:Count()
     for i = 1, objCount do
-        local obj = wow.GetObjectWithIndex(i)
+        local obj = Object:Get(i)
         if obj ~= nil then -- and wow.UnitIsEnemy(obj) == true  then
             local targetedGUID = wow.UnitGUID(wow.UnitTarget(obj))
             if targetedGUID == wow.UnitGUID("player") or targetedGUID == wow.UnitGUID("pet") then
@@ -2126,8 +2115,8 @@ function Counterspell()
 end
 
 local function IsPolymorphUsed()
-    for i = 1, wow.GetObjectCount() do
-        local obj = wow.GetObjectWithIndex(i)
+    for i = 1, Object:Count() do
+        local obj = Object:Get(i)
         if obj ~= nil then
             if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
                 if wow.HasDebuff("Polymorph", obj) then
@@ -2549,9 +2538,9 @@ function IsSafeToLoot(lootObj)
     end
 
     local playerLevel = Player:Level()
-    local objCount = wow.GetObjectCount()
+    local objCount = Object:Count()
     for i = 1, objCount do
-        local obj = wow.GetObjectWithIndex(i)
+        local obj = Object:Get(i)
         if obj ~= nil then
             if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
                 local unitLevel = wow.GetUnitLevel(obj)
@@ -2600,8 +2589,8 @@ function Skinning()
     local closestDist = 999999
     local skinObj = nil
     local px, py, pz = Player:Position()
-    for i = 1, wow.GetObjectCount() do
-        local obj = wow.GetObjectWithIndex(i)
+    for i = 1, Object:Count() do
+        local obj = Object:Get(i)
         if obj ~= nil then
             local name = wow.ObjectName(obj)
             if name ~= "Campfire" and name ~= PLAYER_NAME and name:find("Rune of") == nil then
@@ -2667,8 +2656,8 @@ function Looting()
     local lootObj = nil
     local lootCount = 0
     local px, py, pz = Player:Position()
-    for i = 1, wow.GetObjectCount() do
-        local obj = wow.GetObjectWithIndex(i)
+    for i = 1, Object:Count() do
+        local obj = Object:Get(i)
         if obj ~= nil then
             local ox, oy, oz = wow.GetObjectPosition(obj)
             if wow.UnitIsDead(obj) and wow.UnitCanBeLooted(obj) and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil then
@@ -2739,8 +2728,8 @@ function SellBuyRepair()
 
     -- Talk To Vendor
     if not TalkedToVendor then
-        for i = 1, wow.GetObjectCount() do
-            local obj = wow.GetObjectWithIndex(i)
+        for i = 1, Object:Count() do
+            local obj = Object:Get(i)
             if wow.ObjectName(obj) == VendorName then
                 wow.Log('Selling to ' .. VendorName)
                 wow.InteractUnit(VendorName)
@@ -2879,35 +2868,42 @@ local function DrawStatus()
     LibDraw.SetColorRaw(1, 1, 1, 1)
     local pX, pY, pZ = Player:Position()
     if PlayerStatus == "ATTACK" then -- Attacking
-        local str = 'Attacking...'
+        local attackStatus = 'Attacking...'
         if AttackObj ~= nil then
             local odist = Player:DistanceFrom(AttackObj)
-            odist = math.ceil(odist)
-            str = wow.ObjectName(AttackObj) .. ' [' .. wow.UnitHealthPercent(AttackObj) .. '%] {' .. odist .. 'y}'
+            attackStatus = wow.ObjectName(AttackObj) .. ' [' .. wow.UnitHealthPercent(AttackObj) .. '%] {' .. math.ceil(odist) .. 'y}'
         end
-        LibDraw.Text(str, "GameFontNormal", pX, pY, pZ + 3)
+        LibDraw.Text(attackStatus, "GameFontNormal", pX, pY, pZ + 3)
+
     elseif PlayerStatus == "WAYPOINT" then -- Searching mobs
         LibDraw.Text('Searching Mobs...', "GameFontNormal", pX, pY, pZ + 3)
+
     elseif PlayerStatus == "RECOVERING" then -- Recovering
         LibDraw.Text('Recovering...', "GameFontNormal", pX, pY, pZ + 3)
+
     elseif PlayerStatus == "LOOTING" then -- Looting
         LibDraw.Text('Looting...', "GameFontNormal", pX, pY, pZ + 3)
+
     elseif PlayerStatus == "SKINNING" then -- Skinning
         LibDraw.Text('Skinning...', "GameFontNormal", pX, pY, pZ + 3)
+
     elseif PlayerStatus == "CORPSE_RUN" then -- Corpse run
         LibDraw.Text('Corpse Run...', "GameFontNormal", pX, pY, pZ + 3)
+
     elseif PlayerStatus == "VENDOR" then -- Vender
         if SellComplete then
             LibDraw.Text('Going to Start...', "GameFontNormal", pX, pY, pZ + 3)
         else
             LibDraw.Text('Going to Sell...', "GameFontNormal", pX, pY, pZ + 3)
         end
+
     elseif PlayerStatus == "DEAD" then -- Dead
         LibDraw.SetColorRaw(1, 0, 0, 1)
-        LibDraw.Text('DEAD', "GameFontNormal", pX, pY, pZ + 3)
+        LibDraw.Text('DEAD!!!', "GameFontNormal", pX, pY, pZ + 3)
+
     elseif PlayerStatus == "KITING_DANGER" then -- Avoiding dangerous NPC
         LibDraw.SetColorRaw(1, 0, 0, 1)
-        LibDraw.Text('Avoiding Dangerous NPC', "GameFontNormal", pX, pY, pZ + 3)
+        LibDraw.Text('Avoiding Dangerous NPC!!!', "GameFontNormal", pX, pY, pZ + 3)
     end
 end
 
@@ -2974,8 +2970,8 @@ end
 
 local function IsPlayerFoccussed()
     local bKawardCheck = true
-    for i = 1, wow.GetObjectCount() do
-        local obj = wow.GetObjectWithIndex(i)
+    for i = 1, Object:Count() do
+        local obj = Object:Get(i)
         if not wow.UnitIsDead(obj) and not wow.UnitIsPlayer(obj) then
             local focussed = IsTargeting(obj, "player")
             if not focussed and Player:IsHunter() then
@@ -3043,8 +3039,8 @@ function IsNotVendorPathing()
 end
 
 local function ResurrectPulse()
-    for i = 1, wow.GetObjectCount() do
-        local object = wow.GetObjectWithIndex(i)
+    for i = 1, Object:Count() do
+        local object = Object:Get(i)
         if IsMyCorpse(object) and Player:DistanceFrom(object) < 35 then
             if Player.CorpseRecoveryDelay() <= 0 then
                 if PositionAggroCount() >= 1 then
@@ -3071,7 +3067,7 @@ end
 DeadTime = 0
 
 local function onUpdate(...)
-    if IsTimeToDraw() then
+    if ReadyToDraw() then
         LibDraw.clearCanvas()
         MarkEnemyPlayers()
         MarkEnemyNpcs()
@@ -3082,7 +3078,7 @@ local function onUpdate(...)
         DrawStatus()
     end
 
-    if not IsTimeToPulse() then
+    if not ReadyToPulse() then
         return
     end
 
