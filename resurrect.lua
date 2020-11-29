@@ -172,8 +172,8 @@ local waypointsCount = table.getn(waypoints)
 
 local function DetermineResTime()
     for i = 1, Object:Count() do
-        local obj = Object:Get(i)
-        if wow.UnitIsEnemy(obj) and wow.UnitIsPlayer(obj) and wow.UnitIsDead(obj) == false and Player:DistanceFrom(obj) < 50 then
+        local object = Object:Get(i)
+        if wow.UnitIsEnemy(object) and wow.UnitIsPlayer(object) and wow.UnitIsDead(object) == false and Player:DistanceFrom(object) < 50 then
             waitBeforeRevive = WAIT_BEFORE_REVIVE_IF_PVP_DEATH
             return
         end
@@ -204,12 +204,12 @@ local function ShouldExit()
     -- Needs to be called within OnUpdate itself
     if AtEnd then
         bRun = false
-        wow.Log("Setting bRun to FALSE")
+        Log.WriteLine("Setting bRun to FALSE")
     end
 
     if bRun == false then
         local exitMacro = '.loadfile _Kkona\\' .. scriptName .. '\\main.lua'
-        wow.Log("Starting main.lua from resurrect.lua")
+        Log.WriteLine("Starting main.lua from resurrect.lua")
         RunMacroText(exitMacro)
         frame:SetScript("OnUpdate", nil)
     end
@@ -242,7 +242,7 @@ local function SetIDXToClosest()
 
     if foundSomething then
         pathIdx = moveToIdx
-        wow.Log("Starting at Ressurect path at idx " .. pathIdx)
+        Log.WriteLine("Starting at Ressurect path at idx " .. pathIdx)
     end
 end
 
@@ -269,7 +269,7 @@ local function StrictPathFollow()
         if dist <= proximalTolerance then
             if pathIdx < waypointsCount then
                 pathIdx = pathIdx + 1
-                wow.Log('Moving to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
+                Log.WriteLine('Moving to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
                 return
             else
                 AtEnd = true
@@ -326,12 +326,12 @@ local function StrictPathFollow()
         end
     else
         if bSkipFarPoints then
-            wow.Log('*Skipping* to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
+            Log.WriteLine('*Skipping* to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
             pathIdx = pathIdx + 1
             AtEnd = pathIdx > waypointsCount
             return
         else
-            wow.Log('*Waiting* for player to be close to path...')
+            Log.WriteLine('*Waiting* for player to be close to path...')
         end
     end
 
@@ -403,15 +403,15 @@ end
 local _popMeTime = wow.GetTime() + (_startDelay / 10)
 local _releasedSpirit = false
 
-wow.Log('Starting Corpse Run in ' .. _startDelay .. ' seconds...')
-wow.Log('Popping Spirit in in ' .. (_startDelay / 10) .. ' seconds...')
+Log.WriteLine('Starting Corpse Run in ' .. _startDelay .. ' seconds...')
+Log.WriteLine('Popping Spirit in in ' .. (_startDelay / 10) .. ' seconds...')
 
 frame:SetScript("OnUpdate", function(self, elapsed)
     if not _releasedSpirit and (wow.GetTime() > _popMeTime) then
         LibDraw.clearCanvas()
         _releasedSpirit = true
         RepopMe()
-        wow.Log("Popping Spirit!")
+        Log.WriteLine("Popping Spirit!")
         bRun = true
         AtEnd = false
     end

@@ -4,6 +4,11 @@ wow = {}
 -- * 魔兽世界API *
 -- **************
 
+-- 获取Object的Id
+wow.ObjectId = function(objectTag)
+    return lb.ObjectId(objectTag)
+end
+
 -- 是否在坐骑上
 wow.IsMounted = function()
     return IsMounted()
@@ -37,7 +42,7 @@ end
 
 -- 返回物体的坐标: x, y, z
 wow.ObjectPosition = function(object)
-    return ObjectPosition(object)
+    return lb.ObjectPosition(object)
 end
 
 -- 计算两点或两者间距离
@@ -224,16 +229,12 @@ wow.UnitAffectingCombat = function(unit)
 end
 
 -- 获取Unit的等级
-wow.UnitLevel = function(unit)
+wow.GetUnitLevel = function(unit)
     return UnitLevel(unit)
 end
 
 wow.CombatLogGetCurrentEventInfo = function()
     return CombatLogGetCurrentEventInfo()
-end
-
-wow.UnitLevel = function(unit)
-    return UnitLevel(unit)
 end
 
 wow.GetTime = function()
@@ -399,7 +400,7 @@ wow.ApplyBuff = function(buff, unit)
     for i = 1, 15 do
         local name = wow.UnitAura(unit, i)
         if name == nil then -- when name is nil we looped thru all auras 
-            wow.Log('Applying Buff: ' .. buff)
+            Log.WriteLine('Applying Buff: ' .. buff)
             Player.CastSpell(buff, onSelf)
             return
         elseif name == buff then
@@ -414,16 +415,4 @@ end
 wow.bit = {}
 wow.bit.bor = function(b1, b2, ...)
     return bit.bor(b1, b2, ...)
-end
-
--- **************
--- *     Log    *
--- **************
-
--- 保存Log
-wow.Log = function(content)
-    if lb ~= nil then
-        print(content)
-        lb.WriteFile("E:\\log-" .. lb.GetGameAccountName() .. ".txt", content .. '\n', true)
-    end
 end

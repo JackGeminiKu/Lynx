@@ -6,11 +6,11 @@ Libs\!LibDraw\LibDraw.lua
 Libs\LibStub\LibStub.lua
 
 Wow.lua
+Log.lua
 Object.lua
 Unit.lua
 Player.lua
 Pet.lua
 Target.lua
-Hunter.lua
-Mage.lua
+Navigator.lua
 Lynx.lua

@@ -4,26 +4,6 @@ function Player:Count()
     -- TBD
 end
 
-Player.MoveTo = function(...)
-    local x, y, z
-    if select('#', ...) == 3 then
-        x, y, z = ...
-    else
-        local point = ...
-        if point.x ~= nil then
-            x = point.x
-            y = point.y
-            z = point.z
-        else
-            x = point[1]
-            y = point[2]
-            z = point[3]
-        end
-    end
-    wow.Log('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
-    lb.MoveTo(x, y, z)
-end
-
 Player.Jump = function()
     wow.SendKey(' ')
 end
