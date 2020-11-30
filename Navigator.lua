@@ -1,5 +1,9 @@
 Navigator = {}
 
+Navigator.Initialize = function()
+   lb.LoadScript('TypescriptNavigator')
+end
+
 Navigator.MoveTo = function(...)
     local x, y, z
     if select('#', ...) == 3 then
@@ -17,9 +21,9 @@ Navigator.MoveTo = function(...)
         end
     end
     local px, py, pz = Player:Position()
-    Log.WriteLine('Current position: ' .. x .. ', ' .. y .. ', ' .. z)
+    Log.WriteLine('Current position: ' .. px .. ', ' .. py .. ', ' .. pz)
     Log.WriteLine('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
-    -- lb.Navigator.MoveTo(x, y, z, 1, 2)
+    -- lb.Navigator.MoveTo(x, y, z, 1, 0)
     lb.MoveTo(x, y, z)
 end
 
@@ -33,4 +37,10 @@ end
 
 Navigator.ComparePoint = function(point1, point2)
     return point1.x == point2.x and point1.y == point2.y and point1.z == point2.z
+end
+
+Navigator.SavePosition = function()
+    local x, y, z = Player:Position()
+    Log.Write('Current Position: ')
+    Log.WriteLine(x, y, z)
 end

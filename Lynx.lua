@@ -56,50 +56,51 @@ Frame:SetScript("OnUpdate", function()
         return
     end
 
-    local x, y, z = Player:Position()
-    local x2, y2, z2 = lb.NavMgr_GetRandomPointInCircle(x, y, z, 9, 10)
-    if _points == nil then
-        _points = {}
-        _points[1] = {x = x2, y = y2, z = z2}
-    else
-        local found = false
-        for k, v in pairs(_points) do
-            if Navigator.ComparePoint({x = x2, y = y2, z = z2}, v) then
-                found = true
-                break
-            end
-        end
-        if not found then
-            _points[#_points + 1] = {x = x2, y = y2, z = z2}
-        end
-    end
-
-    -- if _nextIndex == nil then
-    --     _nextIndex = 1
-    --     Navigator.MoveTo(NextWaypoint())
-    --     _startMoveTime = wow.GetTime()
-    --     return
+    -- local x, y, z = Player:Position()
+    -- local x2, y2, z2 = lb.NavMgr_GetRandomPointInCircle(x, y, z, 9, 10)
+    -- if _points == nil then
+    --     _points = {}
+    --     _points[1] = {x = x2, y = y2, z = z2}
     -- else
-    --     local dist = Player:DistanceFrom(NextWaypoint())
-    --     -- Log.WriteLine('dist = ' .. dist .. ', ' .. _nextIndex .. ' / '.. #_waypoints)
-    --     if dist < math.random(0, 2) then
-    --         if _nextIndex < #_waypoints then
-    --             _nextIndex = _nextIndex + 1
-    --             _startMoveTime = wow.GetTime()
-    --             -- Navigator.MoveTo(NextWaypoint())
-    --             Navigator.MoveTo(NextWaypoint())
-    --         else
-    --             -- Log.WriteLine(wow.GetTime() .. ": finished!") 
+    --     local found = false
+    --     for k, v in pairs(_points) do
+    --         if Navigator.ComparePoint({x = x2, y = y2, z = z2}, v) then
+    --             found = true
+    --             break
     --         end
-    --     else
-    --         if wow.GetTime() - _startMoveTime > 3 and _nextIndex ~= #_waypoints then
-    --             _startMoveTime = wow.GetTime()
-    --             -- Log.WriteLine('re-move')
-    --             Navigator.MoveTo(NextWaypoint())
-    --         end
-    --         -- Log.WriteLine(wow.GetTime() .. ': moving')
+    --     end
+    --     if not found then
+    --         _points[#_points + 1] = {x = x2, y = y2, z = z2}
     --     end
     -- end
+
+    if _nextIndex == nil then
+        _nextIndex = 1
+        Navigator.MoveTo(NextWaypoint())
+        _startMoveTime = wow.GetTime()
+        return
+    else
+        local dist = Player:DistanceFrom(NextWaypoint())
+        Log.WriteLine('dist = ' .. dist)
+        -- Log.WriteLine('dist = ' .. dist .. ', ' .. _nextIndex .. ' / '.. #_waypoints)
+        if dist < math.random(0, 1) then
+            if _nextIndex < #_waypoints then
+                _nextIndex = _nextIndex + 1
+                _startMoveTime = wow.GetTime()
+                -- Navigator.MoveTo(NextWaypoint())
+                Navigator.MoveTo(NextWaypoint())
+            else
+                -- Log.WriteLine(wow.GetTime() .. ": finished!") 
+            end
+        else
+            if wow.GetTime() - _startMoveTime > 3 and _nextIndex ~= #_waypoints then
+                _startMoveTime = wow.GetTime()
+                -- Log.WriteLine('re-move')
+                Navigator.MoveTo(NextWaypoint())
+            end
+            -- Log.WriteLine(wow.GetTime() .. ': moving')
+        end
+    end
 end)
 
 _lastDrawTime = wow.GetTime()
