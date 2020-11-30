@@ -72,3 +72,7 @@ end
 Player.CorpseRecoveryDelay = function()
     return wow.GetCorpseRecoveryDelay()
 end
+
+Player.Interact = function(object)
+    return wow.ObjectInteract(object.ObjectTag)
+end

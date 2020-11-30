@@ -4,6 +4,11 @@ wow = {}
 -- * 魔兽世界API *
 -- **************
 
+-- 返回Object的GUID或者nil(如果不是有效的Object)
+wow.UnitTarget = function(unitTag)
+    return lb.UnitTarget(unitTag)
+end
+
 -- 获取Object的Id
 wow.ObjectId = function(objectTag)
     return lb.ObjectId(objectTag)

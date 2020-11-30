@@ -1775,7 +1775,7 @@ function FindAttackableUnit()
             end
         end
 
-        if string.find(objectName, "Totem") == nil and wow.UnitCanAttack("player", object) then
+        if string.find(objectName, "Totem") == nil and object:CanAttack() then
             local unitLvl = object:Level()
             local unitHp = object:Health()
             local targettingMe = IsTargeting(object, "player")
@@ -1818,7 +1818,7 @@ function FindAttackableUnit()
                         end
                     end
                 else
-                    if isPlayer and object:IsEnemy and IsTargeting(object, "player") then
+                    if isPlayer and object:IsEnemy() and IsTargeting(object, "player") then
                         PvpTargeted = true
                     end
                 end
@@ -1891,29 +1891,6 @@ function FaceUnit(unit)
             return wow.FaceDirection(angle)
         end
     end
-end
-
-function GetAggrodUnit()
-    -- Gets Lowest Aggrod Unit
-    local lowestHPUnit = 101
-    local aggrodUnit = nil
-
-    local objCount = Object:Count()
-    for i = 1, objCount do
-        local object = Object:Get(i)
-        if object ~= nil then -- and wow.UnitIsEnemy(obj) == true  then
-            local targetedGUID = wow.UnitGUID(wow.UnitTarget(object))
-            if targetedGUID == wow.UnitGUID("player") or targetedGUID == wow.UnitGUID("pet") then
-                local unitHP = object:Health()
-                if unitHP < lowestHPUnit then
-                    lowestHPUnit = unitHP
-                    aggrodUnit = object
-                end
-            end
-        end
-    end
-
-    return aggrodUnit
 end
 
 function Cast(spellName)
@@ -2118,8 +2095,8 @@ local function IsPolymorphUsed()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if object ~= nil then
-            if wow.UnitIsEnemy(object) and wow.UnitIsDead(object) == false then
-                if wow.HasDebuff("Polymorph", object) then
+            if object:IsEnemy() and not object:IsDead() then
+                if object:HasDebuff("Polymorph") then
                     return true
                 end
             end
@@ -2537,17 +2514,15 @@ function IsSafeToLoot(lootObj)
         return true
     end
 
-    local playerLevel = Player:Level()
     local objCount = Object:Count()
     for i = 1, objCount do
         local object = Object:Get(i)
         if object ~= nil then
-            if wow.UnitIsEnemy(object) and wow.UnitIsDead(object) == false then
-                local unitLevel = wow.GetUnitLevel(object)
-                local distLootAggroObj = wow.GetDistanceBetweenObjects(lootObj, object)
-                local aggroRad = (unitLevel - playerLevel) + 25 -- suppost +20 imma to be safe +5
+            if object:IsEnemy() and object:IsDead() == false then
+                local distLootAggroObj = object:DistanceFrom(lootObj)
+                local aggroRad = (object:Level() - player:Level()) + 25 -- suppost +20 imma to be safe +5
                 if distLootAggroObj < aggroRad then
-                    Log.WriteLine('Not looting ' .. wow.ObjectName(lootObj) .. ' as it is ' .. math.ceil(distLootAggroObj) .. 'y within hostile ' .. wow.ObjectName(object))
+                    Log.WriteLine('Not looting ' .. lootObj:Name() .. ' as it is ' .. math.ceil(distLootAggroObj) .. 'y within hostile ' .. object:Name())
                     return false
                 end
             end
@@ -2557,7 +2532,7 @@ function IsSafeToLoot(lootObj)
     return true
 end
 
-PLAYER_NAME = wow.ObjectName("player")
+PLAYER_NAME = Player:Name()
 SkinningTime = 0
 IgnoreSkinningTill = 0
 
@@ -2592,10 +2567,10 @@ function Skinning()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if object ~= nil then
-            local name = wow.ObjectName(object)
+            local name = object:Name()
             if name ~= "Campfire" and name ~= PLAYER_NAME and name:find("Rune of") == nil then
-                local ox, oy, oz = wow.GetObjectPosition(object)
-                if wow.UnitCanBeSkinned(object) and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and wow.UnitIsEnemy(object) then
+                local ox, oy, oz = object:Position()
+                if object:CanBeSkinned() and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and object:IsEnemy() then
                     local dist = wow.CalculateDistance(px, py, pz, ox, oy, oz)
                     if dist < closestDist and IsSafeToLoot(object) then
                         closestDist = dist
@@ -2607,10 +2582,10 @@ function Skinning()
     end
 
     if skinObj ~= nil and closestDist < MAX_LOOT_DIST then
-        Log.WriteLine('Skinning ' .. wow.ObjectName(skinObj) .. '!!!')
-        Spell = wow.ObjectName(skinObj)
+        Log.WriteLine('Skinning ' .. skinObj:Name() .. '!!!')
+        Spell = skinObj:Name()
 
-        Navigator.MoveTo(wow.GetObjectPosition(skinObj))
+        Navigator.MoveTo(skinObj:Name())
         if Player:DistanceFrom(skinObj) <= 5 then
             DismountCheck()
             wow.InteractUnit(skinObj)
@@ -2659,8 +2634,8 @@ function Looting()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if object ~= nil then
-            local ox, oy, oz = wow.GetObjectPosition(object)
-            if wow.UnitIsDead(object) and wow.UnitCanBeLooted(object) and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil then
+            local ox, oy, oz = object:Position()
+            if object:IsDead() and object:CanBeLooted() and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil then
                 lootCount = lootCount + 1
                 local dist = wow.CalculateDistance(px, py, pz, ox, oy, oz)
                 if dist < closestDist and IsSafeToLoot(object) then
@@ -2672,7 +2647,7 @@ function Looting()
     end
 
     if lootObj ~= nil and closestDist < MAX_LOOT_DIST then
-        local objName = wow.ObjectName(lootObj)
+        local objName = lootObj:Name()
         Log.WriteLine('Looting ' .. objName .. '!!!')
         Spell = objName
 
@@ -2730,7 +2705,7 @@ function SellBuyRepair()
     if not TalkedToVendor then
         for i = 1, Object:Count() do
             local object = Object:Get(i)
-            if wow.ObjectName(object) == VendorName then
+            if object:Name() == VendorName then
                 Log.WriteLine('Selling to ' .. VendorName)
                 wow.InteractUnit(VendorName)
                 Sleep(1.5)
@@ -2972,19 +2947,18 @@ local function IsPlayerFoccussed()
     local bKawardCheck = true
     for i = 1, Object:Count() do
         local object = Object:Get(i)
-        if not wow.UnitIsDead(object) and not wow.UnitIsPlayer(object) then
+        if not object:IsDead() and not object:IsPlayer() then
             local focussed = IsTargeting(object, "player")
             if not focussed and Player:IsHunter() then
                 focussed = IsTargeting(object, "pet")
             end
-            if wow.IsInCombat(object) and wow.UnitCanAttack("player", object) then
-                if focussed or (Player:IsMage() and wow.HasDebuff("Frost Nova", object)) then
+            if object:IsInCombat() and object:CanAttack() then
+                if focussed or (Player:IsMage() and object:HasDebuff("Frost Nova")) then
                     -- Unit stops targetting when nova'd
                     return true
                 else
                     if bKawardCheck then -- Some kaward mobs stop targetting you despite having 'aggro'
-                        local hp = object:Health()
-                        if hp <= 10 then
+                        if object:Health() <= 10 then
                             return true
                         end
                     end
@@ -3041,7 +3015,7 @@ end
 local function ResurrectPulse()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
-        if IsMyCorpse(object) and Player:DistanceFrom(object) < 35 then
+        if object:IsCorpse() and object:Name() == Player:Name() and object:Distance() < 35 then
             if Player.CorpseRecoveryDelay() <= 0 then
                 if PositionAggroCount() >= 1 then
                     Sleep(5)
@@ -3057,10 +3031,6 @@ local function ResurrectPulse()
     end
 
     return false
-end
-
-function IsMyCorpse(object)
-    return wow.ObjectName(object) == wow.ObjectName("player") and wow.UnitIsCorpse(object)
 end
 
 -- OnUpdate

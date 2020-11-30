@@ -1,6 +1,6 @@
 local scriptName = 'felwood_54'
 local recipient = 'Leblanc'
-if wow.ObjectName("player") == "CURRENT_PLAYER_NAME" then
+if Player:Name() == "CURRENT_PLAYER_NAME" then
     recipient = "ACCOUNT_TO_SEND_TO"
 end
 
@@ -32,10 +32,8 @@ local function IsAtMailbox()
     local objCount = Object:Count()
     for i = 1, objCount do
         local object = Object:Get(i)
-        local name = wow.ObjectName(object)
-        if name == "Mailbox" then
-            local dist = Player.GetDistanceFromFrom(object)
-            if dist < 5 then
+        if object:Name() == "Mailbox" then
+            if object:Distance() < 5 then
                 return true
             end
         end
@@ -48,9 +46,8 @@ local function OpenMailBox()
     local objCount = Object:Count()
     for i = 1, objCount do
         local object = Object:Get(i)
-        local name = wow.ObjectName(object)
-        if name == "Mailbox" then
-            wow.ObjectInteract(object)
+        if object:Name() == "Mailbox" then
+            Player.Interact(object)
         end
     end
 end

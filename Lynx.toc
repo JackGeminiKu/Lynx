@@ -7,10 +7,12 @@ Libs\LibStub\LibStub.lua
 
 Wow.lua
 Log.lua
+
 Object.lua
 Unit.lua
 Player.lua
-Pet.lua
 Target.lua
+Pet.lua
+
 Navigator.lua
 Lynx.lua

@@ -173,7 +173,7 @@ local waypointsCount = table.getn(waypoints)
 local function DetermineResTime()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
-        if wow.UnitIsEnemy(object) and wow.UnitIsPlayer(object) and wow.UnitIsDead(object) == false and Player:DistanceFrom(object) < 50 then
+        if object:IsEnemy() and object:IsPlayer() and not object:IsDead() and object:Distance() < 50 then
             waitBeforeRevive = WAIT_BEFORE_REVIVE_IF_PVP_DEATH
             return
         end
