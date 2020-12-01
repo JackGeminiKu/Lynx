@@ -75,6 +75,10 @@ function Object:IsCorpse()
     return wow.UnitIsCorpse(self.ObjectTag)
 end
 
+function Object:HasAura(auraName)
+    return wow.HasAura(self.ObjectTag,auraName)
+end
+
 function Object:HasDebuff(debuffName)
     return wow.HasDebuff(debuffName, self.ObjectTag)
 end

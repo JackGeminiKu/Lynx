@@ -1,78 +1,92 @@
-Player = Unit:New('player') 
+Player = Unit:New('player')
 
-function Player:Count()
-    -- TBD
+-- 各种动作
+do
+    Player.CastSpell = function(spellName, onSelf)
+        wow.CastSpell(spellName, onSelf)
+    end
+
+    Player.Jump = function()
+        wow.SendKey(' ')
+    end
+
+    Player.Interact = function(object)
+        return wow.ObjectInteract(object.ObjectTag)
+    end
+
+    Player.RetrieveCorpse = function()
+        return wow.RetrieveCorpse()
+    end
 end
 
-Player.Jump = function()
-    wow.SendKey(' ')
+-- 各种状态
+do
+    Player.CorpseRecoveryDelay = function()
+        return wow.GetCorpseRecoveryDelay()
+    end
 end
 
-Player.GetFreeSlots = function()
-    local freeSlots = 0
-    for i = 1, 5 do
-        local numberOfFreeSlots, BagType = wow.GetContainerNumFreeSlots(i - 1);
-        if BagType == 0 then -- https://wowwiki.fandom.com/wiki/ItemFamily
-            freeSlots = freeSlots + wow.GetContainerNumFreeSlots(i - 1)
+-- 各种判断
+do
+    Player.IsOnCD = function(spellName)
+        local start, duration, enabled = wow.GetSpellCooldown(spellName);
+        if enabled == 0 then
+            return true
+        elseif (start > 0 and duration > 0) then
+            return true
+        else
+            return false
         end
     end
-    return freeSlots
-end
 
-Player.GetItemCount = function(itemName)
-    return wow.GetItemCount(itemName)
-end
-
-Player.CastSpell = function(spellName, onSelf)
-    wow.CastSpell(spellName, onSelf)
-end
-
-Player.HasInInventory = function(item)
-    for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if sName == item then
-                    return true
-                end
-            end
+    Player.IsCastable = function(spellName)
+        local usable, nomana = wow.IsUsableSpell(spellName)
+        if usable == false or nomana then
+            return false
         end
+        return not Player.IsOnCD(spellName)
     end
-    return false
-end
 
-Player.IsOnCD = function(spellName)
-    local start, duration, enabled = wow.GetSpellCooldown(spellName);
-    if enabled == 0 then
-        return true
-    elseif (start > 0 and duration > 0) then
-        return true
-    else
-        return false
+    Player.IsSwimming = function()
+        return wow.IsSwimming()
+    end
+
+    Player.IsMounted = function()
+        return wow.IsMounted()
     end
 end
 
-Player.IsCastable = function(spellName)
-    local usable, nomana = wow.IsUsableSpell(spellName)
-    if usable == false or nomana then
-        return false
+-- 宠物相关
+do
+    Player.LastFeedPetTime = 0
+
+    function Player.CallPet()
+        return wow.RunMacroText("/cast Call Pet")
     end
-    return not Player.IsOnCD(spellName)
+
+    function Player.RevivePet()
+        return wow.RunMacroText("/cast Revive Pet")
+    end
+
+    function Player.FeedPet(foodName)
+        Player.LastFeedPetTime = wow.GetTime()
+        wow.RunMacroText("/use Feed Pet")
+        wow.RunMacroText("/use " .. foodName)
+    end
+
+    function Player.MendPet()
+        Player.CastSpell("Mend Pet", false)
+    end
+
+    function Player.IsMendingPet()
+        local _, castChannelID, _, _ = wow.UnitCastID("player")
+        return castChannelID == 136
+    end
 end
 
-Player.IsSwimming = function()
-    return wow.IsSwimming()
-end
-
-Player.IsMounted = function()
-    return wow.IsMounted()
-end
-
-Player.CorpseRecoveryDelay = function()
-    return wow.GetCorpseRecoveryDelay()
-end
-
-Player.Interact = function(object)
-    return wow.ObjectInteract(object.ObjectTag)
+-- 静态方法
+do
+    function Player:Count()
+        -- TBD
+    end
 end

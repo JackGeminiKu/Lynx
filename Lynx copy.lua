@@ -24,7 +24,7 @@ function Hunter:BuyDrinks()
     Log.WriteLine('Buying Drinks')
     local drinkSlot = GetVendorSlot(Drinks[2])
     if drinkSlot ~= -1 then
-        local drinkCount = Player.GetItemCount(Drinks[2])
+        local drinkCount = Bag.GetItemCount(Drinks[2])
         if drinkCount >= drinksToHave then
             return
         end
@@ -49,7 +49,7 @@ function Hunter:BuyAmmo()
         return
     end
 
-    local ammoCount = Player.GetItemCount(self:GetAmmoName())
+    local ammoCount = Bag.GetItemCount(self:GetAmmoName())
     local needToBuy = self:GetAmmoMaxCount() - ammoCount;
     if needToBuy < 200 then
         return
@@ -720,13 +720,9 @@ end
 
 function GetBandageName()
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if sName:find("Bandage") ~= nil then
-                    return sName
-                end
+        for slot = 0, Bag.GetNumSlots(bag) do
+            if Bag.GetItemName(bag, slot):find("Bandage") ~= nil then
+                return itemName
             end
         end
     end
@@ -814,7 +810,7 @@ end
 
 -- Scan whole table and find closest point and always move to it (includes LOS checks)
 -- Doesnt support jumping YET
-function MoveToClosestWaypoint()
+local function MoveToClosestWaypoint()
     local px, py, pz = Player:Position()
     local closestIndex = 1
     local closestDist = 9999999
@@ -855,7 +851,7 @@ SellComplete = false
 TalkedToVendor = false
 VendorPathIndex = 1
 
-function SetIndexToClosest(ignoreVendor, limit)
+local function SetIndexToClosest(ignoreVendor, limit)
     local closestIndex = 1
     local closestDist = 9999999
     local foundWaypoint = false
@@ -949,7 +945,7 @@ end
 FirstTickApply()
 FirstTick = true
 
-function MoveToNextWaypoint()
+local function MoveToNextWaypoint()
     if FirstTick == true then -- 只执行一次
         FirstTick = false
         SetIndexToClosest()
@@ -962,7 +958,7 @@ function MoveToNextWaypoint()
             if PathIndex < #Waypoints then
                 PathIndex = PathIndex + 1
                 Log.WriteLine('Moving to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
-                return
+                return -- (1) 移动到位, 下一个点
             else
                 AtEnd = true
             end
@@ -982,7 +978,7 @@ function MoveToNextWaypoint()
         Player.Jump()
         PathIndex = PathIndex + 1
         AtEnd = PathIndex > #Waypoints
-        return
+        return -- (2) 卡主了
     end
     if PathIndex < 1 then
         PathIndex = 1
@@ -992,8 +988,8 @@ function MoveToNextWaypoint()
     end
 
     -- Move
-    local rnd = (math.random(-RANDOM_MAX, RANDOM_MAX) / 100)
     if nextPoint ~= nil then
+        local rnd = (math.random(-RANDOM_MAX, RANDOM_MAX) / 100)
         DestX = nextPoint[1] + rnd
         DestY = nextPoint[2] + rnd
         DestZ = nextPoint[3] + rnd
@@ -1001,16 +997,16 @@ function MoveToNextWaypoint()
     PlayerStatus = "WAYPOINT"
     local px, py, pz = Player:Position()
     local distToNext = wow.CalculateDistance(px, py, pz, nextPoint[1], nextPoint[2], nextPoint[3])
-    if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then -- 不忽略远点
+    if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then
         if IGNORE_LOS or TraceLine(px, py, pz + 2.5, nextPoint[1], nextPoint[2], nextPoint[3] + 2.5, LOST_FLAGS) == nil then
             Navigator.MoveTo(DestX, DestY, DestZ)
         end
     else
-        if SKIP_FAR_POINTS then -- 忽略远点, 直接下一个点
+        if SKIP_FAR_POINTS then
             Log.WriteLine('*Skipping* to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
             PathIndex = PathIndex + 1
             AtEnd = PathIndex > #Waypoints
-            return
+            return -- (3) 忽略远点, 直接下一个点
         else
             Log.WriteLine('*Waiting* for player to be close to path...')
         end
@@ -1063,19 +1059,7 @@ function HasMount()
     if MOUNT_NAME == "" or MOUNT_NAME == nil then
         return false
     end
-    for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if sName == MOUNT_NAME then
-                    return true
-                end
-            end
-        end
-    end
-
-    return false
+    return Bag.Find(MOUNT_NAME)
 end
 
 function HasManaGem()
@@ -1083,13 +1067,10 @@ function HasManaGem()
         return false
     end
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if sName == "Mana Agate" or sName == "Mana Jade" or sName == "Mana Citrine" then
-                    return true
-                end
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local itemName = Bag.GetItemName(bag, slot)
+            if itemName == "Mana Agate" or itemName == "Mana Jade" or itemName == "Mana Citrine" then
+                return true
             end
         end
     end
@@ -1176,7 +1157,7 @@ function EmptyBagsSetup()
     end
 
     local minAmmoCount = (#VendorPoints + (#Waypoints - PathIndex)) * 1.5
-    if Player.GetFreeSlots() <= MIN_BAG_SLOTS or (Player:IsHunter() and Player.GetItemCount(Hunter:GetAmmoName()) <= minAmmoCount) then
+    if Bag.GetFreeSlots() <= MIN_BAG_SLOTS or (Player:IsHunter() and Bag.GetItemCount(Hunter:GetAmmoName()) <= minAmmoCount) then
         local px, py, pz = Player:Position()
         local closestDist = 99999
         for i = 1, #VendorPoints do
@@ -1254,8 +1235,8 @@ function RecoverMana()
     end
 
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local link = Bag.GetItemLink(bag, slot)
             if link then
                 local name, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
                 for i = 1, #Drinks, 1 do
@@ -1288,8 +1269,8 @@ function RecoverHP()
     end
 
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local link = Bag.GetItemLink(bag, slot)
             if link then
                 local name, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
                 for i = 1, #Foods, 1 do
@@ -1312,29 +1293,24 @@ function RecoverHP()
 end
 
 function MendingPet()
-    local isEating = Player:HasAura("Food")
-    local isDrinking = Player:HasAura("Drink")
-    if isEating or isDrinking then
+    if Player:IsEating() or Player:IsDrink() then
         Sleep(1.1)
         return false
     end
 
-    local petHP = wow.UnitHealthPercent("pet")
-    if Pet:Exists() and petHP > 0 and petHP < PetMendHP then
-        local distToPet = Player:DistanceFrom("pet")
-        if distToPet < 20 and Player.IsCastable("Mend Pet") then
-            local _, castChannelID, _, _ = wow.UnitCastID("player") -- ??might be first var but idk
-            if castChannelID == 136 then -- If already casting mend
+    if Pet:Exists() and Pet:Health() > 0 and Pet:Health() < PetMendHP then
+        if Pet:Distance() < 20 and Player.IsCastable("Mend Pet") then
+            if Player.IsMendingPet() then
                 Log.WriteLine('Pet is being Healed!')
                 Sleep(1)
-            else -- If not casting mend
+            else
                 Log.WriteLine('Healing Pet!!!')
                 if IsTargeting("target", "pet") then
                     PetMendHP = 75
                 else
                     PetMendHP = 95
                 end
-                Player.CastSpell("Mend Pet", false)
+                Player.MendPet()
                 Sleep(5.1)
             end
             return true
@@ -1347,7 +1323,6 @@ function MendingPet()
 end
 
 RevivePetCount = 0
-LastFedTime = 0
 CallingPet = false
 
 function ManagePet() -- True = Continue, False = Retick
@@ -1359,21 +1334,21 @@ function ManagePet() -- True = Continue, False = Retick
     if Player:IsInCombat() then -- Res Combat
         if not Pet:Exists() and RevivePetCount < 1 then
             RevivePetCount = RevivePetCount + 1
-            wow.RunMacroText("/cast Call Pet")
+            Player.CallPet()
         end
         return true
     end
 
-    -- 复活或者召出宝宝
+    -- 复活或者召唤宝宝
     if (not Pet:Exists() or Pet:IsDead() or Pet:Health() <= 0) and not Player:IsCasting() and RevivePetCount < 5 then
         if not CallingPet then
             CallingPet = true
-            wow.RunMacroText("/cast Call Pet")
+            Player.CallPet()
             Sleep(1.5)
             RevivePetCount = RevivePetCount + 1
         else
             CallingPet = false
-            wow.RunMacroText("/cast Revive Pet")
+            Player.RevivePet()
             Sleep(8)
             RevivePetCount = RevivePetCount + 1
         end
@@ -1386,40 +1361,35 @@ function ManagePet() -- True = Continue, False = Retick
     end
 
     -- 太远了, 就改成跟随
-    local distFromPet = Player:DistanceFrom("pet")
-    if distFromPet > PULL_RANGE + 1 then
-        Pet:Follow()
+    if Pet:Distance() > PULL_RANGE + 1 then
+        Pet.Follow()
     end
 
+    -- Actions below should be OUT OF COMBAT
     if Player:IsInCombat() then
-        return true -- Actions below should be OUT OF COMBAT
+        return true
     end
 
     -- 喂食
-    local happiness, damagePercentage, loyaltyRate = wow.GetPetHappiness()
     local happy = true
-    if happiness ~= nil then
-        happy = happiness > 2
+    if Pet.Happiness() ~= nil then
+        happy = Pet.Happiness() > 2
     end
-    if wow.HasAura("pet", "Feed Pet Effect") and not happy then
+    if Pet.IsFeeding() and not happy then
         Sleep(2)
         Spell = "Pet Feed - WAIT"
         Log.WriteLine("Waiting for Pet Feeding Effect")
         return false
     end
-    if not happy and distFromPet < 10 then
-        if wow.GetTime() - LastFedTime > 10 then -- I have an overfeeding 'bug' - probably timer ticking before feed aura is up
+    if not happy and Pet:Distance() < 10 then
+        if wow.GetTime() - Player.LastFeedPetTime > 10 then -- I have an overfeeding 'bug' - probably timer ticking before feed aura is up
             for i = 1, #PetFoods, 1 do
-                if Player.HasInInventory(PetFoods[i]) then
-                    Log.WriteLine("Feeding Unhappy Pet [" .. PetFoods[i] .. "]")
-                    wow.RunMacroText("/use Feed Pet")
-                    wow.RunMacroText("/use " .. PetFoods[i])
-                    LastFedTime = wow.GetTime()
+                if Bag.Find(PetFoods[i]) then
+                    Player.FeedPet(PetFoods[i])
                     Sleep(5)
                     return false
                 end
             end
-
             Log.WriteLine("No Pet Food!")
         end
     end
@@ -1436,8 +1406,8 @@ function IsItemUsable(itemName)
         return false
     end
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local link = Bag.GetItemLink(bag, slot)
             if link then
                 local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
                 if sName == itemName then
@@ -1472,8 +1442,8 @@ function Potion()
     local bag, slot
     local total = 0
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local link = Bag.GetItemLink(bag, slot)
             if link then
                 local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
 
@@ -1508,7 +1478,7 @@ end
 ConjureCount = 0
 
 function Conjure()
-    if not Player:IsMage() or Player.IsMounted() or Player.GetFreeSlots() <= 1 then
+    if not Player:IsMage() or Player.IsMounted() or Bag.GetFreeSlots() <= 1 then
         return false
     end
 
@@ -1518,7 +1488,7 @@ function Conjure()
     end
 
     -- 制作水喝食物
-    if Player.GetItemCount(Drinks[1]) < 12 then
+    if Bag.GetItemCount(Drinks[1]) < 12 then
         Log.WriteLine("Conjuring Water!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
@@ -1526,7 +1496,7 @@ function Conjure()
         Sleep(1)
         return true
     end
-    if Player.GetItemCount(Foods[1]) < 12 then
+    if Bag.GetItemCount(Foods[1]) < 12 then
         Log.WriteLine("Conjuring Food!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
@@ -1536,7 +1506,7 @@ function Conjure()
     end
 
     -- 制作法力宝石
-    local jadeCount = Player.GetItemCount("Mana Citrine")
+    local jadeCount = Bag.GetItemCount("Mana Citrine")
     if Player.IsCastable("Conjure Mana Citrine") and jadeCount == 0 then
         Log.WriteLine("Conjuring Mana Citrine!")
         ConjureCount = ConjureCount + 1
@@ -1551,7 +1521,7 @@ function Conjure()
         Player.CastSpell("Conjure Mana Jade")
         Sleep(1)
         return true
-    elseif jadeCount == 0 and Player.IsCastable("Conjure Mana Agate") and Player.GetItemCount("Mana Agate") == 0 then
+    elseif jadeCount == 0 and Player.IsCastable("Conjure Mana Agate") and Bag.GetItemCount("Mana Agate") == 0 then
         Log.WriteLine("Conjuring Mana Agate!")
         ConjureCount = ConjureCount + 1
         DismountCheck()
@@ -1593,7 +1563,7 @@ local function IsPlayerIdle()
     end
 
     if Player.IsSwimming() or Player.IsMounted() then
-        return true
+        return true -- 正在游泳, 或者骑行
     end
 
     if Player:IsEating() and Player:Health() < RECOVER_TILL_PERCENT then
@@ -1787,11 +1757,11 @@ function FindAttackableUnit()
             end
 
             if targettingMe or (unitLvl >= minAttLvl and unitLvl <= maxAttLvl) and unitHp > 0 and not object:IsDead() then
-                local ox, oy, oz = object:Position() 
+                local ox, oy, oz = object:Position()
                 -- Stop Pet Auto-Aggro Player
                 if Player:IsHunter() and object:IsPlayer() then
                     if IsTargeting("pet", object) then
-                        Pet:Follow()
+                        Pet.Follow()
                     end
                 end
 
@@ -1922,7 +1892,7 @@ function HunterRotation()
     local isPlayerTakingAggro = IsTargeting("target", "player")
 
     local lvlDiff = wow.GetUnitLevel("target") - Player:Level()
-    local ammo = Player.GetItemCount(Hunter:GetAmmoName())
+    local ammo = Bag.GetItemCount(Hunter:GetAmmoName())
 
     -- Mend Pet if not being targeted
     if isPlayerTakingAggro == false then
@@ -1950,7 +1920,7 @@ function HunterRotation()
                 Sleep(0.5)
             end
             return
-        elseif KITE and targettingPet and dist < 13 and Player.GetItemCount(Hunter:GetAmmoName()) > 0 then -- Move away to fire 
+        elseif KITE and targettingPet and dist < 13 and Bag.GetItemCount(Hunter:GetAmmoName()) > 0 then -- Move away to fire 
             Log.WriteLine('Moving away into kiting range [Dist:' .. dist .. ']') -- ??confirm
             MoveFacingObject("target", 0.02, false) -- 0.2 so to set move far away
             local slp = 0.5 + ((13 - dist) / 10);
@@ -2537,7 +2507,7 @@ SkinningTime = 0
 IgnoreSkinningTill = 0
 
 function Skinning()
-    if not Player.HasInInventory("Skinning Knife") then
+    if not Bag.Find("Skinning Knife") then
         return false
     end
     if SkinningTime > 12 then
@@ -2557,7 +2527,7 @@ function Skinning()
         return false
     end
 
-    if Player.GetFreeSlots() <= 0 then
+    if Bag.GetFreeSlots() <= 0 then
         return false
     end
 
@@ -2613,7 +2583,7 @@ function Looting()
     if Player:IsCasting() then
         return false
     end
-    if Player.GetFreeSlots() <= 0 then
+    if Bag.GetFreeSlots() <= 0 then
         return false
     end
 
@@ -2672,8 +2642,8 @@ function DeleteRubbishItems()
     for i = 1, #DeleteItems, 1 do
         local itemName = DeleteItems[i][1]
         for bag = 0, 4 do
-            for slot = 0, wow.GetContainerNumSlots(bag) do
-                local link = wow.GetContainerItemLink(bag, slot)
+            for slot = 0, Bag.GetNumSlots(bag) do
+                local link = Bag.GetItemLink(bag, slot)
                 if link then
                     local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
                     if sName == itemName then
@@ -2734,8 +2704,8 @@ end
 function SellItems()
     Log.WriteLine('Clearing Bags...')
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local link = Bag.GetItemLink(bag, slot)
             if link then
                 local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(link)
                 if ArrayContains(ForcedToSell, sName) then
@@ -2930,8 +2900,8 @@ end
 -- 打开箱子, 蚌壳等物品, 具体哪些物品在OpenInBags中定义
 function OpenBoxItems()
     for bag = 0, 4 do
-        for slot = 0, wow.GetContainerNumSlots(bag) do
-            local link = wow.GetContainerItemLink(bag, slot)
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local link = Bag.GetItemLink(bag, slot)
             if link then
                 local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
                 if ArrayContains(OpenInBags, sName) then
@@ -3021,7 +2991,7 @@ local function ResurrectPulse()
                     Sleep(5)
                     return false
                 end
-                wow.RetrieveCorpse()
+                Player.RetrieveCorpse()
                 return true
             else
                 Sleep(5)
