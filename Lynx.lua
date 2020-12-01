@@ -33,6 +33,10 @@ SlashCmdList['LYNX_TEST'] = function()
 
     _waypoints = Navigator.GetWaypoints(x, y, z)
     for k, v in pairs(_waypoints) do
+        local rnd = math.random(-10, 10) / 100
+        v.x = v.x + rnd
+        v.y = v.y + rnd
+        v.z = v.z + rnd
         Log.WriteLine(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
     end
     _nextIndex = nil
@@ -47,7 +51,7 @@ _lastUpdateTime = 0
 _startMoveTime = 0
 local Frame = wow.CreateFrame("Frame")
 Frame:SetScript("OnUpdate", function()
-    if wow.GetTime() - _lastUpdateTime < 0.001 then
+    if wow.GetTime() - _lastUpdateTime < 0.1 then
         return
     end
     _lastUpdateTime = wow.GetTime()
@@ -83,11 +87,10 @@ Frame:SetScript("OnUpdate", function()
         local dist = Player:DistanceFrom(NextWaypoint())
         Log.WriteLine('dist = ' .. dist)
         -- Log.WriteLine('dist = ' .. dist .. ', ' .. _nextIndex .. ' / '.. #_waypoints)
-        if dist < math.random(0, 1) then
+        if dist < 2 then
             if _nextIndex < #_waypoints then
                 _nextIndex = _nextIndex + 1
                 _startMoveTime = wow.GetTime()
-                -- Navigator.MoveTo(NextWaypoint())
                 Navigator.MoveTo(NextWaypoint())
             else
                 -- Log.WriteLine(wow.GetTime() .. ": finished!") 
