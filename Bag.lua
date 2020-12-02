@@ -25,13 +25,55 @@ function Bag.GetItemName(bag, slot)
     return name
 end
 
-function Bag.Find(itemName)
+function Bag.GetItemCount(itemName)
+    return wow.GetItemCount(itemName)
+end
+
+-- 如果找到了物品(第一个), 返回bag, slot; 否则, 返回nil
+function Bag.GetItemPosition(...)
+    local items = {...}
     for bag = 0, 4 do
         for slot = 0, Bag.GetNumSlots(bag) do
-            local link = Bag.GetItemLink(bag, slot)
-            if link then
-                local itemName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if itemName == itemName then
+            local name = Bag.GetItemName(bag, slot)
+            for i = 1, #items do
+                if name == items[i] then
+                    return bag, slot
+                end
+            end
+        end
+    end
+    return nil
+end
+
+function Bag.GetItems()
+    local items = {}
+    for bag = 0, 4 do
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local name = Bag.GetItemName(bag, slot)
+            items[#items + 1] = name
+        end
+    end
+    return items
+end
+
+function Bag.GetBandageName()
+    for bag = 0, 4 do
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local itemName = Bag.GetItemName(bag, slot)
+            if itemName:find("Bandage") ~= nil then
+                return itemName
+            end
+        end
+    end
+    return nil
+end
+
+function Bag.Found(...)
+    local items = {...}
+    for bag = 0, 4 do
+        for slot = 0, Bag.GetNumSlots(bag) do
+            for i = 1, #items do
+                if Bag.GetItemName(bag, slot) == items[i] then
                     return true
                 end
             end
@@ -44,6 +86,31 @@ function Bag.UseItem(bag, slot)
     wow.UseContainerItem(bag, slot)
 end
 
-function Bag.GetItemCount(itemName)
-    return wow.GetItemCount(itemName)
+function Bag.IsOnCD(bag, slot)
+    local startTime, duration, isEnabled = wow.GetContainerItemCooldown(bag, slot)
+    return startTime ~= 0
+end
+
+function Bag.IsItemUsable(itemName)
+    local usable, nomana = wow.IsUsableItem(itemName)
+    if not usable or nomana then
+        return false
+    end
+    local bag, slot = Bag.GetItemPosition(itemName)
+    if not bag or not slot then
+        return false
+    end
+    return not Bag.IsOnCD(bag, slot)
+end
+
+function Bag.DeleteItem(itemName)
+    for bag = 0, 4 do
+        for slot = 0, Bag.GetNumSlots(bag) do
+            if Bag.GetItemName(bag, slot) == itemName then
+                Log.WriteLine('DELETING ' .. itemName .. '!!!')
+                wow.PickupContainerItem(bag, slot)
+                wow.DeleteCursorItem()
+            end
+        end
+    end
 end

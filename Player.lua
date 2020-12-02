@@ -2,19 +2,27 @@ Player = Unit:New('player')
 
 -- 各种动作
 do
-    Player.CastSpell = function(spellName, onSelf)
+    function Player.CastSpell(spellName, onSelf)
         wow.CastSpell(spellName, onSelf)
     end
 
-    Player.Jump = function()
+    function Player.UseItem(itemName)
+        wow.RunMacroText('/use ' .. itemName)
+    end
+
+    function Player.StopCast()
+        wow.SpellStopCasting()
+    end
+
+    function Player.Jump()
         wow.SendKey(' ')
     end
 
-    Player.Interact = function(object)
+    function Player.Interact(object)
         return wow.ObjectInteract(object.ObjectTag)
     end
 
-    Player.RetrieveCorpse = function()
+    function Player.RetrieveCorpse()
         return wow.RetrieveCorpse()
     end
 end

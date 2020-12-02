@@ -718,17 +718,6 @@ function GetLowestDurability()
     return lowest
 end
 
-function GetBandageName()
-    for bag = 0, 4 do
-        for slot = 0, Bag.GetNumSlots(bag) do
-            if Bag.GetItemName(bag, slot):find("Bandage") ~= nil then
-                return itemName
-            end
-        end
-    end
-    return ""
-end
-
 local function ReadyToDraw()
     local timeNow = wow.GetTime()
     if timeNow < NextDrawTime then
@@ -749,7 +738,7 @@ local function ReadyToPulse()
     return true
 end
 
-function ArrayContains(arr, search)
+local function ArrayContains(arr, search)
     for i = 1, #arr, 1 do
         if arr[i] == search then
             return true
@@ -1059,23 +1048,14 @@ function HasMount()
     if MOUNT_NAME == "" or MOUNT_NAME == nil then
         return false
     end
-    return Bag.Find(MOUNT_NAME)
+    return Bag.Found(MOUNT_NAME)
 end
 
 function HasManaGem()
     if Player:IsMage() == false then
         return false
     end
-    for bag = 0, 4 do
-        for slot = 0, Bag.GetNumSlots(bag) do
-            local itemName = Bag.GetItemName(bag, slot)
-            if itemName == "Mana Agate" or itemName == "Mana Jade" or itemName == "Mana Citrine" then
-                return true
-            end
-        end
-    end
-
-    return false
+    return Bag.Found("Mana Agate", "Mana Jade", "Mana Citrine")
 end
 
 function VendorPath(toVendor)
@@ -1234,28 +1214,18 @@ function RecoverMana()
         return false
     end
 
-    for bag = 0, 4 do
-        for slot = 0, Bag.GetNumSlots(bag) do
-            local link = Bag.GetItemLink(bag, slot)
-            if link then
-                local name, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                for i = 1, #Drinks, 1 do
-                    if name == Drinks[i] then
-                        Log.WriteLine("Recovering Mana...")
-                        DismountCheck()
-                        wow.UseContainerItem(bag, slot)
-                        PlayerStatus = "RECOVERING"
-                        ClearTargetDrawTables()
-                        Sleep(2.1)
-                        return true
-                    end
-                end
-            end
-        end
+    local bag, slot = Bag.GetItemPosition(Drinks)
+    if not bag or not slot then
+        Log.WriteLine("Unable to find a Drink to restore Mana...")
+        return false
     end
-
-    Log.WriteLine("Unable to find a Drink to restore Mana...")
-    return false
+    Log.WriteLine("Recovering Mana...")
+    DismountCheck()
+    wow.UseContainerItem(bag, slot)
+    PlayerStatus = "RECOVERING"
+    ClearTargetDrawTables()
+    Sleep(2.1)
+    return true
 end
 
 function RecoverHP()
@@ -1268,28 +1238,18 @@ function RecoverHP()
         return false
     end
 
-    for bag = 0, 4 do
-        for slot = 0, Bag.GetNumSlots(bag) do
-            local link = Bag.GetItemLink(bag, slot)
-            if link then
-                local name, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                for i = 1, #Foods, 1 do
-                    if name == Foods[i] then
-                        Log.WriteLine("Recovering Health...")
-                        DismountCheck()
-                        wow.UseContainerItem(bag, slot)
-                        PlayerStatus = "RECOVERING"
-                        ClearTargetDrawTables()
-                        Sleep(2.1)
-                        return true
-                    end
-                end
-            end
-        end
+    local bag, slot = Bag.GetItemPosition(Foods)
+    if not bag or not slot then
+        Log.WriteLine("Unable to find Food to restore HP...")
+        return false
     end
-
-    Log.WriteLine("Unable to find Food to restore HP...")
-    return false
+    Log.WriteLine("Recovering Health...")
+    DismountCheck()
+    wow.UseContainerItem(bag, slot)
+    PlayerStatus = "RECOVERING"
+    ClearTargetDrawTables()
+    Sleep(2.1)
+    return true
 end
 
 function MendingPet()
@@ -1384,7 +1344,7 @@ function ManagePet() -- True = Continue, False = Retick
     if not happy and Pet:Distance() < 10 then
         if wow.GetTime() - Player.LastFeedPetTime > 10 then -- I have an overfeeding 'bug' - probably timer ticking before feed aura is up
             for i = 1, #PetFoods, 1 do
-                if Bag.Find(PetFoods[i]) then
+                if Bag.Found(PetFoods[i]) then
                     Player.FeedPet(PetFoods[i])
                     Sleep(5)
                     return false
@@ -1398,27 +1358,6 @@ function ManagePet() -- True = Continue, False = Retick
     if MendingPet() then
         return false
     end
-end
-
-function IsItemUsable(itemName)
-    local usable, nomana = wow.IsUsableItem(itemName)
-    if usable == false or nomana then
-        return false
-    end
-    for bag = 0, 4 do
-        for slot = 0, Bag.GetNumSlots(bag) do
-            local link = Bag.GetItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if sName == itemName then
-                    local startTime, duration, isEnabled = wow.GetContainerItemCooldown(bag, slot)
-                    return startTime == 0
-                end
-            end
-        end
-    end
-
-    return false
 end
 
 PvpTargeted = false
@@ -1439,39 +1378,28 @@ function Potion()
         hasMageManaGem = HasManaGem()
     end
 
-    local bag, slot
-    local total = 0
-    for bag = 0, 4 do
-        for slot = 0, Bag.GetNumSlots(bag) do
-            local link = Bag.GetItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
+    local items = Bag.GetItems()
+    for _, itemName in ipairs(items) do
+        if needHP and itemName:find("Healing Potion") and Bag.IsItemUsable(itemName) then
+            Log.WriteLine('Drinking [' .. itemName .. '] for HEALTH!')
+            Player.StopCast()
+            Player.UseItem(itemName)
+            return true
+        end
 
-                if needHP and sName:find("Healing Potion") and IsItemUsable(sName) then
-                    Log.WriteLine('Drinking [' .. sName .. '] for HEALTH!')
-                    wow.SpellStopCasting()
-                    wow.RunMacroText('/use ' .. sName)
-                    -- wow.UseContainerItem(bag, slot, 1)
+        if needMana and (hasMageManaGem and itemName == "Mana Jade" or itemName == "Mana Agate" or itemName == "Mana Citrine") or (itemName:find("Mana Potion") and hasMageManaGem == false) then
+            if hasMageManaGem and Player.IsCastable("Evocation") then
+                -- we can evocate
+            else
+                if Bag.IsItemUsable(itemName) then
+                    Log.WriteLine('Drinking [' .. itemName .. '] for MANA!')
+                    Player.StopCast()
+                    Player.UseItem(itemName)
                     return true
-                end
-
-                if needMana and (hasMageManaGem and sName == "Mana Jade" or sName == "Mana Agate" or sName == "Mana Citrine") or (sName:find("Mana Potion") and hasMageManaGem == false) then
-                    if hasMageManaGem and Player.IsCastable("Evocation") then
-                        -- we can evocate
-                    else
-                        if IsItemUsable(sName) then
-                            Log.WriteLine('Drinking [' .. sName .. '] for MANA!')
-                            wow.SpellStopCasting()
-                            wow.RunMacroText('/use ' .. sName)
-                            -- wow.UseContainerItem(bag, slot, 1)
-                            return true
-                        end
-                    end
                 end
             end
         end
     end
-
     return false
 end
 
@@ -2051,7 +1979,7 @@ function Counterspell()
         elseif Player:DistanceFrom(csObj) < 32 and wow.GetTime() > ForceCSAtTime then
             if Player.IsCastable("Counterspell") then
                 Spell = "Counterspell"
-                wow.SpellStopCasting()
+                Player.StopCast()
                 Player.CastSpell("Counterspell", false)
                 Sleep(0.333)
                 ForceCSAtTime = 0
@@ -2181,8 +2109,8 @@ function MageRotation()
 
         -- Bandage
         if isPolyied and aggrCount == 0 and hp < 70 then
-            local bandage = GetBandageName()
-            if bandage ~= "" and IsItemUsable(bandage) then
+            local bandage = Bag.GetBandageName()
+            if bandage and Bag.IsItemUsable(bandage) then
                 Log.WriteLine('Using ' .. bandage)
                 wow.RunMacroText("/use " .. bandage)
                 Sleep(1.1)
@@ -2242,13 +2170,13 @@ function MageRotation()
                 -- ! Add Feature to stop ONLY if current cast has long time to fire
                 if Player.IsCastable("Frost Nova") then
                     Spell = "Nova"
-                    wow.SpellStopCasting()
+                    Player.StopCast()
                     Player.CastSpell("Frost Nova(Rank 1)")
                     return
                 end
                 if Player.IsCastable("Cone of Cold") then
                     Spell = "CoC"
-                    -- wow.SpellStopCasting()
+                    -- Player.StopCast()
                     Player.CastSpell("Cone of Cold")
                     return
                 end
@@ -2282,13 +2210,13 @@ function MageRotation()
                 end
                 if inCombat and dist < 10 and Player.IsCastable("Frost Nova") then
                     Spell = "Nova LOW/CRITICAL"
-                    wow.SpellStopCasting()
+                    Player.StopCast()
                     Player.CastSpell("Frost Nova(Rank 1)")
                     return
                 end
                 if inCombat and dist < 10 and Player.IsCastable("Cone of Cold") and isPolyied == false then
                     Spell = "CoC LOW/Critical"
-                    wow.SpellStopCasting()
+                    Player.StopCast()
                     Player.CastSpell("Cone of Cold")
                     return
                 end
@@ -2304,7 +2232,7 @@ function MageRotation()
 
             Spell = "Wanding LOW"
             -- Wand and player not critical
-            wow.SpellStopCasting()
+            Player.StopCast()
             -- print('LOW --> Wanding! '..enemyHP..' hp')
             wow.RunMacroText("/cast !Shoot")
             Sleep(1.2)
@@ -2320,7 +2248,7 @@ function MageRotation()
                 Sleep(0.25)
                 return
             end
-            wow.SpellStopCasting()
+            Player.StopCast()
             -- print('OOM --> Wanding! '..mana..' mana')
             Spell = "Wanding OOM"
             wow.RunMacroText("/cast !Shoot")
@@ -2507,7 +2435,7 @@ SkinningTime = 0
 IgnoreSkinningTill = 0
 
 function Skinning()
-    if not Bag.Find("Skinning Knife") then
+    if not Bag.Found("Skinning Knife") then
         return false
     end
     if SkinningTime > 12 then
@@ -2640,20 +2568,7 @@ end
 
 function DeleteRubbishItems()
     for i = 1, #DeleteItems, 1 do
-        local itemName = DeleteItems[i][1]
-        for bag = 0, 4 do
-            for slot = 0, Bag.GetNumSlots(bag) do
-                local link = Bag.GetItemLink(bag, slot)
-                if link then
-                    local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                    if sName == itemName then
-                        Log.WriteLine('- DELETING ' .. itemName .. '!!!')
-                        wow.PickupContainerItem(bag, slot)
-                        wow.DeleteCursorItem()
-                    end
-                end
-            end
-        end
+        Bag.DeleteItem(DeleteItems[i][1])
     end
 end
 
@@ -2711,22 +2626,31 @@ function SellItems()
                 if ArrayContains(ForcedToSell, sName) then
                     Log.WriteLine('Force-Selling: ' .. sName)
                     wow.UseContainerItem(bag, slot)
+
                 elseif Player:IsHunter() and (sName == Hunter:GetAmmoName() or ArrayContains(PetFoods, sName)) then
                     -- DbgPrint('Keeping [Hunter Ammo/PetFood]: '..sName)
+
                 elseif sSubType == "Bag" or (Player:IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
                     -- Bug where last Bag is perceived as item in other bags for selling :/
+
                 elseif sName:find("Potion") ~= nil or sName:find("Bandage") ~= nil then
                     -- DbgPrint('Keeping [Potion]: '..sName)
+
                 elseif sName == "Hearthstone" or sType == "Projectile" or iRarity >= 3 then
                     -- DbgPrint('Keeping [HardCoded]: '..sName)
+
                 elseif iRarity >= 2 then -- and (sSubType == "Bows" or sSubType == "Guns" or sSubType == "Two-Handed Swords" or sSubType == "Leather") then
                     -- DbgPrint('Keeping [Rarity]: '..sName)
+
                 elseif ArrayContains(ToKeep, sName) or ArrayContains(ToMail, sName) then
                     -- DbgPrint('Keeping [ToKeepList]: '..sName)
+
                 elseif sName == MOUNT_NAME then
                     -- DbgPrint('Keeping [Mount]: '..sName)
+
                 elseif ArrayContains(Foods, sName) or ArrayContains(Drinks, sName) then
                     -- DbgPrint('Keeping [RegenConsumable]: '..sName)
+
                 else
                     if MAIL_ENABLED and iRarity < 1 then -- since we are mailing, just sell junk
                         Log.WriteLine('Selling [Junk]: ' .. sName)
@@ -2901,13 +2825,10 @@ end
 function OpenBoxItems()
     for bag = 0, 4 do
         for slot = 0, Bag.GetNumSlots(bag) do
-            local link = Bag.GetItemLink(bag, slot)
-            if link then
-                local sName, _, _, _, _, _, _, _ = wow.GetItemInfo(link)
-                if ArrayContains(OpenInBags, sName) then
-                    Log.WriteLine("Opening " .. sName)
-                    wow.UseContainerItem(bag, slot)
-                end
+            local itemName = Bag.GetItemName(bag, slot)
+            if ArrayContains(OpenInBags, itemName) then
+                Log.WriteLine("Opening " .. itemName)
+                Bag.UseItem(bag, slot)
             end
         end
     end
