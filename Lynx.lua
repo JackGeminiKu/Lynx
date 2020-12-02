@@ -1,8 +1,18 @@
 SLASH_LYNX_TEST1 = '/lynx-test'
 SLASH_LYNX_TEST_MS1 = '/lynx-test-ms'
+SLASH_LYNX_TEST_AAA1 = '/lynx-test-aaa'
 
 _waypoints = nil 
 _nextIndex = nil
+
+SlashCmdList['LYNX_TEST_AAA'] = function()
+    if lb.Navigator == nil then
+        lb.LoadScript('TypescriptNavigator')
+        return
+    end
+    local x, y, z = Player:Position()
+    Log.WriteLine(x, y, z)
+end
 
 SlashCmdList['LYNX_TEST_MS'] = function()
     if lb.Navigator == nil then
@@ -16,6 +26,13 @@ SlashCmdList['LYNX_TEST_MS'] = function()
 
     _waypoints = Navigator.GetWaypoints(x, y, z)
     for k, v in pairs(_waypoints) do
+        Log.WriteLine(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
+    end
+    for k, v in pairs(_waypoints) do
+        local rnd = math.random(-100, 100) / 100
+        v.x = v.x + rnd
+        v.y = v.y + rnd
+        v.z = v.z + rnd
         Log.WriteLine(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
     end
     _nextIndex = nil
@@ -33,7 +50,10 @@ SlashCmdList['LYNX_TEST'] = function()
 
     _waypoints = Navigator.GetWaypoints(x, y, z)
     for k, v in pairs(_waypoints) do
-        local rnd = math.random(-10, 10) / 100
+        Log.WriteLine(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
+    end
+    for k, v in pairs(_waypoints) do
+        local rnd = math.random(-100, 100) / 100
         v.x = v.x + rnd
         v.y = v.y + rnd
         v.z = v.z + rnd
