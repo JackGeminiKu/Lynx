@@ -75,6 +75,26 @@ function Object:IsCorpse()
     return wow.UnitIsCorpse(self.ObjectTag)
 end
 
+function Object:IsTargeting(target)
+    if target == nil then
+        return false
+    end
+    local objectTarget = wow.UnitTarget(self.ObjectTag)
+    if objectTarget == nil then
+        return false
+    end
+    return wow.UnitGUID(objectTarget) == wow.UnitGUID(target)
+end
+
+function  Object:IsInAggroRange(tol)
+    tol = tol or 10 
+    if self:IsEnemy() and not self:IsDead() then
+        local aggroRad = (self:Level() - Player:Level()) + 20 + tol -- suppost +20 imma to be safe +5
+        return  self:Distance() < aggroRad
+    end
+    return false
+end
+
 function Object:HasAura(auraName)
     return wow.HasAura(self.ObjectTag,auraName)
 end

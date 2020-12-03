@@ -773,13 +773,6 @@ LOST_FLAGS = wow.bit.bor(0x10, 0x100)
 
 function IsInAggroRange(obj, tol)
     tol = tol or 5
-    if wow.UnitIsEnemy(obj) and wow.UnitIsDead(obj) == false then
-        local dist = Player:DistanceFrom(obj)
-        local aggroRad = (wow.GetUnitLevel(obj) - Player:Level()) + 20 + tol -- suppost +20 imma to be safe +5
-
-        return dist < aggroRad
-    end
-end
 
 local function PositionAggroCount()
     local count = 0
@@ -1196,7 +1189,7 @@ end
 EnemyNpcs = {}
 EnemyPlayers = {}
 
-function ClearTargetDrawTables()
+local function ClearTargetDrawTables()
     for k in pairs(EnemyPlayers) do
         EnemyPlayers[k] = nil
     end
@@ -1265,7 +1258,7 @@ function MendingPet()
                 Sleep(1)
             else
                 Log.WriteLine('Healing Pet!!!')
-                if IsTargeting("target", "pet") then
+                if Target:IsTargeting('pet') then
                     PetMendHP = 75
                 else
                     PetMendHP = 95
@@ -1542,14 +1535,12 @@ local function IsPlayerIdle()
     return true
 end
 
-function EnemyNearby(obj)
+function EnemyNearby(object)
     if DC_HORDE_NEARBY and Player:IsInCombat() == false then
-        local dist = Player:DistanceFrom(obj)
-        if dist > 100 then
+        if object:Distance() > 100 then
             return
         end
-
-        if Player:Level() - wow.GetUnitLevel(obj) > 10 then -- Harmless Enemy
+        if Player:Level() - object:level() > 10 then -- Harmless Enemy
             return
         end
 
@@ -1557,23 +1548,22 @@ function EnemyNearby(obj)
     end
 end
 
-function AggrodToAnotherPlayer(obj)
-    local hp = wow.UnitHealthPercent(obj)
-    if hp == 0 or wow.UnitTarget(obj) == nil then
+function AggrodToAnotherPlayer(object)
+    if object:Health() == 0 or wow.UnitTarget(object) == nil then
         return false
     end
 
-    if Player:IsMage() == false then
-        if wow.HasDebuff("Frost Nova", obj) then
+    if not Player:IsMage() then
+        if Player:HasDebuff("Frost Nova") then
             return true
         end
     end
 
-    local targetMe = IsTargeting(obj, "player")
-    if Player:IsHunter() == false then
+    local targetMe = object:IsTargeting("player")
+    if not Player:IsHunter() then
         return (not targetMe)
     elseif Player:IsHunter() then
-        return targetMe == false and IsTargeting(obj, "pet") == false
+        return not targetMe and not object:IsTargeting("pet")
     end
 
     return false
@@ -1629,13 +1619,12 @@ TargetIsFar = false
 AggroTable = {}
 
 -- Holy shit this function is a mess
-function FindAttackableUnit()
+local function FindAttackableUnit()
     local keepAttObj = false
     -- This part is to make sure that we don't tag two different targets because incombat would be false and this function returns two diff targets 
     if AttackObj ~= nil then
-        if wow.UnitExists(AttackObj) and not wow.UnitIsDead(AttackObj) or Player:IsCasting() and wow.UnitHealthPercent(AttackObj) > 0 then -- Keep Target --? but what if not aggrod
-            if CombatTime < 3 and Player:DistanceFrom(AttackObj) < PULL_RANGE + 3 then
-                -- print('Keeping Target '..wow.ObjectName(attackObj)..' at '..wow.GetHealthPercent(attackObj))
+        if (AttackObj:Exists() and not AttackObj:IsDead()) or (Player:IsCasting() and AttackObj:Health() > 0) then -- Keep Target --? but what if not aggrod
+            if CombatTime < 3 and AttackObj:Distance() < PULL_RANGE + 3 then
                 keepAttObj = true
             end
         end
@@ -1645,7 +1634,7 @@ function FindAttackableUnit()
     local minAttLvl = Player:Level() - LEVEL_MINUS
     local maxAttLvl = Player:Level() + LEVEL_PLUS
 
-    -- CLEAR Tables to choose from
+    -- Clear tables to choose from
     local targetTable = {}
     for k in pairs(AggroTable) do
         AggroTable[k] = nil
@@ -1659,11 +1648,10 @@ function FindAttackableUnit()
     -- Fill target tables
     for i = 1, Object:Count() do
         local object = Object:Get(i)
-        local objectName = object:Name()
 
         -- Enemy Player/NPC Check for Drawing
         if object:IsEnemy() and not object:IsDead() then
-            local ex, ey, ez = O
+            local ex, ey, ez = object:Position()
             local arr = {ex, ey, ez, object:Level(), object:Name()}
             if object:IsPlayer() then
                 EnemyNearby(object)
@@ -1673,18 +1661,16 @@ function FindAttackableUnit()
             end
         end
 
-        if string.find(objectName, "Totem") == nil and object:CanAttack() then
-            local unitLvl = object:Level()
-            local unitHp = object:Health()
-            local targettingMe = IsTargeting(object, "player")
-            if object:HasDebuff("Frost Nova") then
-                targettingMe = true
+        if string.find(object:Name(), "Totem") == nil and object:CanAttack() then
+            local targetingMe = object:IsTargeting('player')
+            if Player:IsMage() and object:HasDebuff("Frost Nova") then
+                targetingMe = true
             end
-            if Player:IsHunter() and IsTargeting(object, "pet") then
-                targettingMe = true
+            if Player:IsHunter() and object:IsTargeting('pet') then
+                targetingMe = true
             end
 
-            if targettingMe or (unitLvl >= minAttLvl and unitLvl <= maxAttLvl) and unitHp > 0 and not object:IsDead() then
+            if targetingMe or object:Level() >= minAttLvl and object:Level() <= maxAttLvl and object:Health() > 0 and not object:IsDead() then
                 local ox, oy, oz = object:Position()
                 -- Stop Pet Auto-Aggro Player
                 if Player:IsHunter() and object:IsPlayer() then
@@ -1693,21 +1679,20 @@ function FindAttackableUnit()
                     end
                 end
 
-                local isPlayer = object:IsPlayer()
-                if isPlayer == false and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and AggrodToAnotherPlayer(object) == false then
-                    if object:IsInCombat() and targettingMe then -- Targetting me so auto fook him up
+                if not object:IsPlayer() and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and not AggrodToAnotherPlayer(object) then
+                    if object:IsInCombat() and targetingMe then -- Targetting me so auto fook him up
                         table.insert(AggroTable, object)
-                    elseif ArrayContains(AvoidNPCs, objectName) == false then -- 不是要避开的NPC
+                    elseif not ArrayContains(AvoidNPCs, object:Name()) then -- 不是要避开的NPC
                         local guid = object:GUID()
                         if string.find(guid, "Pet") == nil then -- make sure target is not a pet of horde
-                            if unitHp <= 10 and unitHp > 0 then
+                            if object:Health() > 0 and object:Health() <= 10 then
                                 table.insert(AggroTable, object) -- add to aggro list for priority in killing blow
                             else
                                 table.insert(targetTable, object)
                             end
                         end
                     else
-                        if IsInAggroRange(object, 10) then
+                        if object:IsInAggroRange() then
                             PlayerStatus = "KITING_DANGER"
                             Log.WriteLine('Kiting Dangerous NPC - ' .. object:Name())
                             MoveFacingObject(object, 1, false) -- 0.2 so to set move far away
@@ -1716,7 +1701,7 @@ function FindAttackableUnit()
                         end
                     end
                 else
-                    if isPlayer and object:IsEnemy() and IsTargeting(object, "player") then
+                    if object:IsPlayer() and object:IsEnemy() and object:IsTargeting("player") then
                         PvpTargeted = true
                     end
                 end
@@ -2839,13 +2824,12 @@ local function IsPlayerFoccussed()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if not object:IsDead() and not object:IsPlayer() then
-            local focussed = IsTargeting(object, "player")
+            local focussed = object:IsTargeting('player')
             if not focussed and Player:IsHunter() then
-                focussed = IsTargeting(object, "pet")
+                focussed = object:IsTargeting('pet')
             end
             if object:IsInCombat() and object:CanAttack() then
-                if focussed or (Player:IsMage() and object:HasDebuff("Frost Nova")) then
-                    -- Unit stops targetting when nova'd
+                if focussed or (Player:IsMage() and object:HasDebuff("Frost Nova")) then -- Unit stops targetting when nova'd
                     return true
                 else
                     if bKawardCheck then -- Some kaward mobs stop targetting you despite having 'aggro'
