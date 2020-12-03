@@ -771,9 +771,6 @@ end
 PathIndex = 1
 LOST_FLAGS = wow.bit.bor(0x10, 0x100)
 
-function IsInAggroRange(obj, tol)
-    tol = tol or 5
-
 local function PositionAggroCount()
     local count = 0
     for i = 1, Object:Count() do
