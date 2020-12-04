@@ -1169,7 +1169,7 @@ local function PulseMovement()
     end
 end
 
-AttackObj = nil
+AttackObject = nil
 
 function IsTargeting(obj, tar)
     if obj == nil or tar == nil then
@@ -1186,7 +1186,7 @@ end
 EnemyNpcs = {}
 EnemyPlayers = {}
 
-local function ClearTargetDrawTables()
+local function ClearEnemyTables()
     for k in pairs(EnemyPlayers) do
         EnemyPlayers[k] = nil
     end
@@ -1213,7 +1213,7 @@ function RecoverMana()
     DismountCheck()
     wow.UseContainerItem(bag, slot)
     PlayerStatus = "RECOVERING"
-    ClearTargetDrawTables()
+    ClearEnemyTables()
     Sleep(2.1)
     return true
 end
@@ -1237,7 +1237,7 @@ function RecoverHP()
     DismountCheck()
     wow.UseContainerItem(bag, slot)
     PlayerStatus = "RECOVERING"
-    ClearTargetDrawTables()
+    ClearEnemyTables()
     Sleep(2.1)
     return true
 end
@@ -1533,7 +1533,7 @@ local function IsPlayerIdle()
 end
 
 function EnemyNearby(object)
-    if DC_HORDE_NEARBY and Player:IsInCombat() == false then
+    if DC_HORDE_NEARBY and not Player:IsInCombat() then
         if object:Distance() > 100 then
             return
         end
@@ -1546,21 +1546,19 @@ function EnemyNearby(object)
 end
 
 function AggrodToAnotherPlayer(object)
-    if object:Health() == 0 or wow.UnitTarget(object) == nil then
+    if object:Health() == 0 or not object:HasTarget() then
         return false
     end
 
-    if not Player:IsMage() then
-        if Player:HasDebuff("Frost Nova") then
-            return true
-        end
+    if not Player:IsMage() and object:HasDebuff("Frost Nova") then
+        return true
     end
 
-    local targetMe = object:IsTargeting("player")
+    local targetingMe = object:IsTargeting("player")
     if not Player:IsHunter() then
-        return (not targetMe)
+        return (not targetingMe)
     elseif Player:IsHunter() then
-        return not targetMe and not object:IsTargeting("pet")
+        return not targetingMe and not object:IsTargeting("pet")
     end
 
     return false
@@ -1619,17 +1617,15 @@ AggroTable = {}
 local function FindAttackableUnit()
     local keepAttObj = false
     -- This part is to make sure that we don't tag two different targets because incombat would be false and this function returns two diff targets 
-    if AttackObj ~= nil then
-        if (AttackObj:Exists() and not AttackObj:IsDead()) or (Player:IsCasting() and AttackObj:Health() > 0) then -- Keep Target --? but what if not aggrod
-            if CombatTime < 3 and AttackObj:Distance() < PULL_RANGE + 3 then
+    if AttackObject ~= nil then
+        if (AttackObject:Exists() and not AttackObject:IsDead()) or (Player:IsCasting() and AttackObject:Health() > 0) then -- Keep Target --? but what if not aggrod
+            if CombatTime < 3 and AttackObject:Distance() < PULL_RANGE + 3 then
                 keepAttObj = true
             end
         end
     end
 
     local px, py, pz = Player:Position()
-    local minAttLvl = Player:Level() - LEVEL_MINUS
-    local maxAttLvl = Player:Level() + LEVEL_PLUS
 
     -- Clear tables to choose from
     local targetTable = {}
@@ -1638,7 +1634,7 @@ local function FindAttackableUnit()
     end
 
     -- Clear out liest each scan otherwise clutter 101
-    ClearTargetDrawTables()
+    ClearEnemyTables()
     TargetIsFar = false
     PvpTargeted = false
 
@@ -1646,15 +1642,14 @@ local function FindAttackableUnit()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
 
-        -- Enemy Player/NPC Check for Drawing
         if object:IsEnemy() and not object:IsDead() then
-            local ex, ey, ez = object:Position()
-            local arr = {ex, ey, ez, object:Level(), object:Name()}
+            local ox, oy, oz = object:Position()
+            local objectInfo = {ox, oy, oz, object:Level(), object:Name()}
             if object:IsPlayer() then
                 EnemyNearby(object)
-                table.insert(EnemyPlayers, arr)
+                table.insert(EnemyPlayers, objectInfo)
             else
-                table.insert(EnemyNpcs, arr)
+                table.insert(EnemyNpcs, objectInfo)
             end
         end
 
@@ -1667,21 +1662,19 @@ local function FindAttackableUnit()
                 targetingMe = true
             end
 
-            if targetingMe or object:Level() >= minAttLvl and object:Level() <= maxAttLvl and object:Health() > 0 and not object:IsDead() then
-                local ox, oy, oz = object:Position()
-                -- Stop Pet Auto-Aggro Player
+            if targetingMe or object:Level() >= Player:Level() - LEVEL_MINUS and object:Level() <= Player:Level() + LEVEL_PLUS and object:Health() > 0 and not object:IsDead() then
                 if Player:IsHunter() and object:IsPlayer() then
-                    if IsTargeting("pet", object) then
+                    if object:IsTargeting("pet") then
                         Pet.Follow()
                     end
                 end
 
+                local ox, oy, oz = object:Position()
                 if not object:IsPlayer() and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and not AggrodToAnotherPlayer(object) then
                     if object:IsInCombat() and targetingMe then -- Targetting me so auto fook him up
                         table.insert(AggroTable, object)
                     elseif not ArrayContains(AvoidNPCs, object:Name()) then -- 不是要避开的NPC
-                        local guid = object:GUID()
-                        if string.find(guid, "Pet") == nil then -- make sure target is not a pet of horde
+                        if not object:IsPet() then -- make sure target is not a pet of horde
                             if object:Health() > 0 and object:Health() <= 10 then
                                 table.insert(AggroTable, object) -- add to aggro list for priority in killing blow
                             else
@@ -1706,57 +1699,44 @@ local function FindAttackableUnit()
         end
     end
 
-    -- Iterate thru table containing all targets AT ALL DISTANCE (not just within pullrange)
+    -- 寻找攻击目标
     local found = false
     local lowestDist = 99999
     if #AggroTable > 0 then
+        -- 寻找3个pull range内, 血量最少的
         local lowestHP = 99999
-        for i = 1, #AggroTable, 1 do
-            local tar = AggroTable[i]
-            local unitHp = wow.UnitHealthPercent(tar)
-            local dist = Player:DistanceFrom(tar)
-            if dist < lowestDist then
-                lowestDist = dist
+        for i = 1, #AggroTable do
+            local object = AggroTable[i]
+            if object:Distance() < lowestDist then
+                lowestDist = object:Distance()
             end
-            if unitHp < lowestHP and unitHp > 0.0 then
-                -- Using pullrange*3 coz is aggrod (we don't want aggrod target which is far to go unchecked)
-                if dist <= (PULL_RANGE * 3) then -- tbh should remove this dist check
-                    lowestHP = unitHp
-                    if keepAttObj == false then
-                        AttackObj = tar
+            if object:Health() < lowestHP and object:Health() > 0 then
+                if object:Distance() <= PULL_RANGE * 3 then
+                    lowestHP = object:Health()
+                    if not keepAttObj then
+                        AttackObject = object
                     end
                     found = true
-                    -- DbgPrint('Target chosen based on AGGRO')
                 end
             end
         end
     else
-        for i = 1, #AggroTable, 1 do
-            local tar = targetTable[i]
-            local unitHp = wow.UnitHealthPercent(tar)
-            local dist = Player:DistanceFrom(tar)
-            if dist < lowestDist and unitHp > 0.0 then
-                lowestDist = dist
-                if dist <= PULL_RANGE then -- -5 to test stutter step bug
-                    if keepAttObj == false then
-                        AttackObj = tar
+        -- 寻找1个pull range范围内, 距离最近的
+        for i = 1, #AggroTable do
+            local object = targetTable[i]
+            if object:Distance() < lowestDist and object:Health() > 0 then
+                lowestDist = object:Distance()
+                if object:Distance() <= PULL_RANGE then
+                    if not keepAttObj then
+                        AttackObject = object
                     end
                     found = true
-                    -- DbgPrint('Target chosen based on Proximity')
                 end
             end
         end
     end
 
-    -- print(lowestDist)
-    if lowestDist > MOUNT_CUT_OFF_DIST then
-        -- print('====> dist is too far at '..lowestDist)
-        TargetIsFar = true
-    else
-        -- print('CLOSE :)')
-        TargetIsFar = false
-    end
-
+    TargetIsFar = lowestDist > MOUNT_CUT_OFF_DIST
     return found
 end
 
@@ -2472,7 +2452,7 @@ function Skinning()
         end
 
         PlayerStatus = "SKINNING"
-        ClearTargetDrawTables()
+        ClearEnemyTables()
         if closestDist <= 3 and not Player:IsMoving() then
             SkinningTime = SkinningTime + 1.1 + PULSE_DELAY
             Sleep(1.1)
@@ -2720,9 +2700,9 @@ local function DrawStatus()
     local pX, pY, pZ = Player:Position()
     if PlayerStatus == "ATTACK" then -- Attacking
         local attackStatus = 'Attacking...'
-        if AttackObj ~= nil then
-            local odist = Player:DistanceFrom(AttackObj)
-            attackStatus = wow.ObjectName(AttackObj) .. ' [' .. wow.UnitHealthPercent(AttackObj) .. '%] {' .. math.ceil(odist) .. 'y}'
+        if AttackObject ~= nil then
+            local odist = Player:DistanceFrom(AttackObject)
+            attackStatus = wow.ObjectName(AttackObject) .. ' [' .. wow.UnitHealthPercent(AttackObject) .. '%] {' .. math.ceil(odist) .. 'y}'
         end
         LibDraw.Text(attackStatus, "GameFontNormal", pX, pY, pZ + 3)
 
@@ -2960,7 +2940,7 @@ local function onUpdate(...)
             if IsPlayerFoccussed() or (Player:IsMage() and IsPolymorphUsed()) then
                 DebugMessage = "ATTACK_1"
                 FindAttackableUnit()
-                Attack(AttackObj)
+                Attack(AttackObject)
             end
             CombatTime = CombatTime + (NextPulseTime - wow.GetTime())
         else
@@ -2990,7 +2970,7 @@ local function onUpdate(...)
             if GoingToVendor and not AtVendor then -- 跑向vendor中
                 if CLEAR_VENDOR_PATH and FindAttackableUnit() then
                     DebugMessage = "TO_VENDOR_ATTACKING"
-                    Attack(AttackObj)
+                    Attack(AttackObject)
                 else
                     -- MountUp just checks if it needs to Mount, if not (walking or already mounted) WILL RETURN FALSE
                     if not MountUp() then
@@ -3016,7 +2996,7 @@ local function onUpdate(...)
 
                 if CLEAR_VENDOR_PATH and FindAttackableUnit() then
                     DebugMessage = "TO_START_ATTACKING"
-                    Attack(AttackObj)
+                    Attack(AttackObject)
                 else
                     if not MountUp() then
                         DebugMessage = "START_PATH"
@@ -3036,7 +3016,7 @@ local function onUpdate(...)
                     DebugMessage = "NOT_SKIN/LOOT-ING"
                     if FindAttackableUnit() then
                         DebugMessage = "ATTACK_2"
-                        Attack(AttackObj)
+                        Attack(AttackObject)
                     else
                         local castingID = wow.UnitCastID("player")
                         if castingID ~= 0 and Player:IsInCombat() == false then -- Mage problem

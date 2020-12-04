@@ -34,6 +34,10 @@ function Object:Power()
     return 100 * wow.UnitPower(self.ObjectTag) / wow.UnitPowerMax(self.ObjectTag)
 end
 
+function Object:Distance()
+    return wow.GetDiatance3D(self.ObjectTag, 'player')
+end
+
 -- 已作废, 请见使用Object:Distance()
 function Object:DistanceFrom(...)
     local argNumber = select('#', ...)
@@ -49,10 +53,6 @@ function Object:DistanceFrom(...)
         local x, y, z = self:Position()
         return wow.CalculateDistance(x, y, z, ...)
     end
-end
-
-function Object:Distance()
-    return wow.GetDiatance3D(self.ObjectTag, 'player')
 end
 
 function Object:IsEnemy()
@@ -95,12 +95,21 @@ function  Object:IsInAggroRange(tol)
     return false
 end
 
+function Object:IsPet()
+    local guid = wow.UnitGUID(self.ObjectTag)
+    return string.find(guid, 'pet')
+end
+
 function Object:HasAura(auraName)
     return wow.HasAura(self.ObjectTag,auraName)
 end
 
 function Object:HasDebuff(debuffName)
     return wow.HasDebuff(debuffName, self.ObjectTag)
+end
+
+function Object:HasTarget()
+    return wow.UnitTarget(self.ObjectTag)
 end
 
 function Object:CanAttack()
