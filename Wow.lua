@@ -414,6 +414,10 @@ wow.ApplyBuff = function(buff, unit)
     end
 end
 
+wow.Unlock = function(...)
+    return lb.Unlock(...)
+end
+
 -- ******************
 -- * Bit opeartions *
 -- ******************

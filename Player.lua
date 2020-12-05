@@ -15,7 +15,8 @@ do
     end
 
     function Player.Jump()
-        wow.SendKey(' ')
+        print('Jump')
+        wow.Unlock(JumpOrAscendStart)
     end
 
     function Player.Interact(object)

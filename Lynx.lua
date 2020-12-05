@@ -1,5 +1,5 @@
-SLASH_LYNX_TEST1 = '/lynx-test'
-SLASH_LYNX_TEST_MS1 = '/lynx-test-ms'
+SLASH_LYNX_TEST_START1 = '/lynx-test-start'
+SLASH_LYNX_TEST_END1 = '/lynx-test-end'
 SLASH_LYNX_TEST_AAA1 = '/lynx-test-aaa'
 
 _waypoints = nil 
@@ -10,18 +10,18 @@ SlashCmdList['LYNX_TEST_AAA'] = function()
         lb.LoadScript('TypescriptNavigator')
         return
     end
-    local x, y, z = Player:Position()
+    local x, y, z = Target:Position()
     Log.WriteLine(x, y, z)
 end
 
-SlashCmdList['LYNX_TEST_MS'] = function()
+SlashCmdList['LYNX_TEST_START'] = function()
     if lb.Navigator == nil then
         lb.LoadScript('TypescriptNavigator')
         return
     end
 
     Log.WriteLine("\n\nInitialize waypoints")
-    x, y , z = 2305.9111328125, 265.16384887695, 38.669979095459
+    x, y, z = -9313.1806640625, 288.41790771484, 70.538162231445
     Log.WriteLine('Target position: ' .. x .. ', ' .. y .. ', ' .. z)
 
     _waypoints = Navigator.GetWaypoints(x, y, z)
@@ -38,14 +38,14 @@ SlashCmdList['LYNX_TEST_MS'] = function()
     _nextIndex = nil
 end
 
-SlashCmdList['LYNX_TEST'] = function()
+SlashCmdList['LYNX_TEST_END'] = function()
     if lb.Navigator == nil then
         lb.LoadScript('TypescriptNavigator')
         return
     end
 
     Log.WriteLine("\n\nInitialize waypoints")
-    x, y, z = 2252.7019042969, 251.92225646973, 41.114749908447
+    x, y , z = -9264.478515625, 352.29013061523, 76.694160461426
     Log.WriteLine('Target position: ' .. x .. ', ' .. y .. ', ' .. z)
 
     _waypoints = Navigator.GetWaypoints(x, y, z)
