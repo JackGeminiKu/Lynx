@@ -414,8 +414,8 @@ wow.ApplyBuff = function(buff, unit)
     end
 end
 
-wow.Unlock = function(...)
-    return lb.Unlock(...)
+wow.Unlock = function(method, arg1, arg2, ...)
+    return lb.Unlock(method, arg1, arg2, ...)
 end
 
 -- ******************

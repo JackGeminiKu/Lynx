@@ -32,7 +32,18 @@ Navigator.Stop = function()
 end
 
 Navigator.GetWaypoints = function(x, y, z)
-    return lb.NavMgr_MoveTo(x, y, z)
+    local waypoints =  lb.NavMgr_MoveTo(x, y, z)
+    local i, j = 1, #waypoints
+    while i < j do
+        waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
+        i = i + 1
+        j = j - 1
+    end
+    return waypoints
+end
+
+function Navigator.CanMove(x1, y1, z1, x2, y2, z2)
+    return lb.Raycast(x1, y1, z1 + 2.5, x2, y2, z2 + 2.5, wow.bit.bor(0x10, 0x100)) == nil
 end
 
 Navigator.ComparePoint = function(point1, point2)

@@ -15,7 +15,6 @@ do
     end
 
     function Player.Jump()
-        print('Jump')
         wow.Unlock(JumpOrAscendStart)
     end
 
