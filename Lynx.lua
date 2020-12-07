@@ -78,30 +78,29 @@ function DeleteWaypoint()
     end
 end
 
-_updateCount = 0
 _lastUpdateTime = 0
-_startMoveTime = 0
+_lastMoveTime = 0
+_proximityTolerance = 2
 local Frame = wow.CreateFrame("Frame")
 
 Frame:SetScript("OnUpdate", function()
     if wow.GetTime() - _lastUpdateTime < 0.1 then
         return
     end
-    _lastUpdateTime = wow.GetTime()
 
     if NextWaypoint() == nil then
         return
     end
 
     local dist = Player:DistanceFrom(NextWaypoint())
-    if dist < 2 then
+    if dist < _proximityTolerance then
         DeleteWaypoint()
         if NextWaypoint() ~= nil then
+            _lastMoveTime = wow.GetTime()
             Navigator.MoveTo(NextWaypoint())
-            _startMoveTime = wow.GetTime()
         end
     else
-        if wow.GetTime() - _startMoveTime > 3 and NextWaypoint() ~= nil then
+        if wow.GetTime() - _lastMoveTime > 1 and not Player:IsMoving() and NextWaypoint() ~= nil then
             Log.WriteLine('Stuck!!!')
             local waypoints = Navigator.GetWaypoints(NextWaypoint().x, NextWaypoint().y, NextWaypoint().z)
             for i = 1, #waypoints do
@@ -109,8 +108,9 @@ Frame:SetScript("OnUpdate", function()
                 _waypoints[#_waypoints + 1] = waypoints[i]
             end
 
-            _startMoveTime = wow.GetTime()
+            Player:Jump()
             Navigator.MoveTo(NextWaypoint())
+            _lastMoveTime = wow.GetTime()
         end
     end
 end)
