@@ -42,8 +42,10 @@ Navigator.GetWaypoints = function(x, y, z)
     return waypoints
 end
 
-function Navigator.CanMove(x1, y1, z1, x2, y2, z2)
-    return lb.Raycast(x1, y1, z1 + 2.5, x2, y2, z2 + 2.5, wow.bit.bor(0x10, 0x100)) == nil
+function Navigator.HasBarrier(location1, location2)
+    local x1, y1, z1 = location1.x, location1.y, location1.z
+    local x2, y2, z2 = location2.x, location2.y, location2.z
+    return lb.Raycast(x1, y1, z1 + 2.5, x2, y2, z2 + 2.5, wow.bit.bor(0x10, 0x100)) ~= nil
 end
 
 Navigator.ComparePoint = function(point1, point2)

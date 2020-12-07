@@ -4,6 +4,10 @@ wow = {}
 -- * 魔兽世界API *
 -- **************
 
+function wow.Raycast(x1, y1, z1, x2, y2, z2, flags)
+    return lb.Raycast(x1, y1, z1, x2, y2, z2, flags)
+end
+
 -- 返回Object的GUID或者nil(如果不是有效的Object)
 wow.UnitTarget = function(unitTag)
     return lb.UnitTarget(unitTag)

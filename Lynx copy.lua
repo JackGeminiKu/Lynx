@@ -1625,8 +1625,6 @@ local function FindAttackableUnit()
         end
     end
 
-    local px, py, pz = Player:Position()
-
     -- Clear tables to choose from
     local targetTable = {}
     for k in pairs(AggroTable) do
@@ -1669,8 +1667,7 @@ local function FindAttackableUnit()
                     end
                 end
 
-                local ox, oy, oz = object:Position()
-                if not object:IsPlayer() and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and not AggrodToAnotherPlayer(object) then
+                if not object:IsPlayer() and not Navigator.HasBarrier(Player:Location(), object:Location()) and not AggrodToAnotherPlayer(object) then
                     if object:IsInCombat() and targetingMe then -- Targetting me so auto fook him up
                         table.insert(AggroTable, object)
                     elseif not ArrayContains(AvoidNPCs, object:Name()) then -- 不是要避开的NPC

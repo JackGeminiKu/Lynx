@@ -24,6 +24,11 @@ function Object:Position()
     return wow.ObjectPosition(self.ObjectTag)
 end
 
+function Object:Location()
+    local x, y, z = wow.ObjectPosition(self.ObjectTag)
+    return {x = x, y = y, z = z}
+end
+
 -- 百分比
 function Object:Health()
     return 100 * wow.UnitHealth(self.ObjectTag) / wow.UnitHealthMax(self.ObjectTag)
@@ -86,11 +91,11 @@ function Object:IsTargeting(target)
     return wow.UnitGUID(objectTarget) == wow.UnitGUID(target)
 end
 
-function  Object:IsInAggroRange(tol)
-    tol = tol or 10 
+function Object:IsInAggroRange(tol)
+    tol = tol or 10
     if self:IsEnemy() and not self:IsDead() then
         local aggroRad = (self:Level() - Player:Level()) + 20 + tol -- suppost +20 imma to be safe +5
-        return  self:Distance() < aggroRad
+        return self:Distance() < aggroRad
     end
     return false
 end
@@ -101,7 +106,7 @@ function Object:IsPet()
 end
 
 function Object:HasAura(auraName)
-    return wow.HasAura(self.ObjectTag,auraName)
+    return wow.HasAura(self.ObjectTag, auraName)
 end
 
 function Object:HasDebuff(debuffName)
