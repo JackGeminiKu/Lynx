@@ -2,8 +2,23 @@ Player = Unit:New('player')
 
 -- 各种动作
 do
+    -- 返回true, false, 代表施放成功还是失败
     function Player.CastSpell(spellName, onSelf)
-        wow.CastSpell(spellName, onSelf)
+        if Player.IsCastable(spellName) then
+            return false
+        end
+        local onSelf = onSelf or true
+        if onSelf then
+            wow.CastSpell(spellName, onSelf)
+            return true
+        else
+            if Player.IsSpellInRange(spellName, 'target') then
+                wow.CastSpell(spellName, onSelf)
+                return true
+            else
+                return false
+            end
+        end
     end
 
     function Player.UseItem(itemName)
@@ -18,12 +33,21 @@ do
         wow.Unlock(JumpOrAscendStart)
     end
 
+    function Player.Dismount()
+        wow.Dismount()
+    end
+
     function Player.Interact(object)
         return wow.ObjectInteract(object.ObjectTag)
     end
 
     function Player.RetrieveCorpse()
         return wow.RetrieveCorpse()
+    end
+
+    -- 选中object作为当前目标
+    function Player.Target(object)
+        wow.TargetUnit(object.ObjectTag)
     end
 end
 
@@ -53,6 +77,10 @@ do
             return false
         end
         return not Player.IsOnCD(spellName)
+    end
+
+    function Player.IsSpellInRange(spellName, target)
+        return wow.IsSpellInRange(spellName, target)
     end
 
     Player.IsSwimming = function()
