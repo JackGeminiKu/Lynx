@@ -2,6 +2,10 @@ Player = Unit:New('player')
 
 -- 各种动作
 do
+    function Player.Attack()
+        wow.RunMacroText("/startattack")
+    end
+
     -- 返回true, false, 代表施放成功还是失败
     function Player.CastSpell(spellName, onSelf)
         if Player.IsCastable(spellName) then

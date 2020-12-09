@@ -29,6 +29,10 @@ function Object:Location()
     return {x = x, y = y, z = z}
 end
 
+function Object:Type()
+    return wow.UnitCreatureType(self.ObjectTag)
+end
+
 -- 百分比
 function Object:Health()
     return 100 * wow.UnitHealth(self.ObjectTag) / wow.UnitHealthMax(self.ObjectTag)
@@ -111,6 +115,10 @@ end
 
 function Object:HasDebuff(debuffName)
     return wow.HasDebuff(debuffName, self.ObjectTag)
+end
+
+function Object:GetDebuff(index)
+    return wow.UnitDebuff(self.ObjectTag, index)
 end
 
 function Object:HasTarget()

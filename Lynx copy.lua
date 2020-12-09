@@ -1041,7 +1041,7 @@ function HasMount()
     return Bag.Found(MOUNT_NAME)
 end
 
-function HasManaGem()
+local function HasManaGem()
     if not Player:IsMage() then
         return false
     end
@@ -1753,15 +1753,10 @@ end
 InterruptTargetGUID = nil
 StopMovingBeforeAttack = true
 
-function HunterRotation()
+local function HunterRotation()
     HunterBuff = "Aspect of the Hawk"
-
     StopMovingBeforeAttack = true
-    local px, py, pz = Player:Position()
-    local xx, yy, zz = Target:Position()
-    DestX = xx
-    DestY = yy
-    DestZ = zz
+    DestX, DestY, DestZ = Target:Position()
     PlayerStatus = "ATTACK"
 
     local lvlDiff = Target:Level() - Player:Level()
@@ -1820,24 +1815,24 @@ function HunterRotation()
         return
     end
 
+    -- Range attack
     local ranged = Target:Distance() < PULL_RANGE and Target:Distance() >= 8 and ammo > 0
     if ranged then
         if not Target:HasDebuff("Hunter's Mark") then
             Spell = "Marking"
             Player.CastSpell("Hunter's Mark", false)
 
-            if AGGRO_WITH_PET or ranged == false then
-                wow.RunMacroText("/petattack")
-                wow.RunMacroText("/startattack")
+            if AGGRO_WITH_PET then
+                Pet.Attack()
+                Player.Attack()
             end
 
             Sleep(1)
             return
         end
 
-        local aggrCnt = table.getn(AggroTable)
-        if Player:IsInCombat() and (lvlDiff > 3 or (Player:Health() < 30 and Target:Health() > 30) or aggrCnt > 1) then
-            if ranged and Player.IsCastable("Rapid Fire") then
+        if Player:IsInCombat() and (lvlDiff > 3 or (Player:Health() < 30 and Target:Health() > 30) or #AggroTable > 1) then
+            if Player.IsCastable("Rapid Fire") then
                 Player.CastSpell("Rapid Fire")
                 Spell = "Rapid Fire"
                 return
@@ -1850,7 +1845,7 @@ function HunterRotation()
         end
 
         local immuneToSS = Target:Name():find("Rock") ~= nil or Target:Name():find("rock") ~= nil
-        if Player:IsInCombat() and immuneToSS == false and wow.HasDebuff("Serpent Sting", "target") == false then
+        if Player:IsInCombat() and not immuneToSS and not Target:HasDebuff("Serpent Sting") then
             if Player.CastSpell("Serpent Sting", false) then
                 Spell = "Serpent Sing"
                 return
@@ -1869,16 +1864,21 @@ function HunterRotation()
             return
         end
 
+        -- 自动射击
         Spell = "Arrowing"
         wow.RunMacroText("/cast !Auto Shot")
+
+        -- 自动攻击
         if AGGRO_WITH_PET then
-            wow.RunMacroText("/petattack")
-            wow.RunMacroText("/startattack")
+            Pet.Attack()
+            Player.Attack()
         end
     end
 
+    -- Melee attack
     if Target:Distance() <= MELEE_RANGE then
-        if Target:IsTargeting('pet') == false then
+        -- Disengage
+        if not Target:IsTargeting('pet') then
             if Player.CastSpell("Disengage", false) then
                 Spell = "Disengage"
                 Sleep(0.2)
@@ -1886,12 +1886,14 @@ function HunterRotation()
             end
         end
 
+        -- Mongoose bite
         if Player.CastSpell("Mongoose Bite", false) then
             Spell = "Mongoose Bite"
             Sleep(0.5)
             return
         end
 
+        -- Blood Fury
         if (lvlDiff >= 3 or (Player:Health() < 30 and Target:Health() > 30)) and Player.IsCastable("Blood Fury") then
             Player.CastSpell("Blood Fury")
             Spell = "Blood Fury [RACIAL]"
@@ -1899,11 +1901,12 @@ function HunterRotation()
             return
         end
 
+        -- Melee attack
         Spell = "MELEE RANGE"
-        wow.RunMacroText("/petattack")
-        wow.RunMacroText("/startattack")
+        Pet.Attack()
+        Player.Attack()
 
-        ----If have no pet
+        -- Raptor strike
         if Player.CastSpell("Raptor Strike", false) then
             Spell = "Raptor Strike"
             Sleep(0.5)
@@ -1917,13 +1920,13 @@ PrefFire = false
 ForceCS = false
 ForceCSAtTime = 0
 
-function Counterspell()
+local function CounterSpell()
     if ForceCS then
-        local csObj = wow.GetObjectWithGUID(InterruptTargetGUID)
-        if csObj == nil or wow.UnitIsDead(csObj) then
+        local object = Obect:New(InterruptTargetGUID)
+        if object == nil or object:IsDead() then
             ForceCSAtTime = 0
             ForceCS = false
-        elseif Player:DistanceFrom(csObj) < 32 and wow.GetTime() > ForceCSAtTime then
+        elseif object:Distance() < 32 and wow.GetTime() > ForceCSAtTime then
             if Player.IsCastable("Counterspell") then
                 Spell = "Counterspell"
                 Player.StopCast()
@@ -1950,20 +1953,19 @@ local function IsPolymorphUsed()
     return false
 end
 
-function CanPoly(obj)
-    local cType = wow.UnitCreatureType(obj)
-    return cType == "Beast" or cType == "Humanoid" or cType == "Critter"
+local function CanPoly(object)
+    return object:Type() == "Beast" or object:Type() == "Humanoid" or object:Type() == "Critter"
 end
 
 DecurseIgnoreTill = 0
 
-function Decurse()
+local function Decurse()
     if wow.GetTime() < DecurseIgnoreTill then
         return false
     end
 
     for i = 1, 40 do
-        local debuff = wow.UnitDebuff("player", i)
+        local debuff = Player.GetDebuff(i) 
         if debuff == nil then
             return false
         elseif debuff:find("Curse") or debuff:find("curse") then
@@ -1977,65 +1979,57 @@ end
 IgnorePolyTill = 0
 
 function MageRotation()
-    local inCombat = Player:IsInCombat()
-
-    local tX, tY, tZ = Target:Position()
     if ForceStopNextMove then -- PRECAUTION when kiting
         ForceStopNextMove = false
         wow.SendKey(83, 123)    -- S
     end
-    DestX = tX
-    DestY = tY
-    DestZ = tZ
+
+    DestX, DestY, DestZ = Target:Position()
     Spell = ""
     PlayerStatus = "ATTACK"
 
+    -- 清除诅咒
     if Decurse() then
         return
     end
 
-    local dist = Player:DistanceFrom("target")
-    if dist > PULL_RANGE + 1 or (inCombat and dist > PULL_RANGE) then
-        Log.WriteLine('Cast Distance = TOOLARGE @' .. dist)
+    -- 太远了, 靠近点
+    if Target:Distance() > PULL_RANGE + 1 or (Player:IsInCombat() and Target:Distance() > PULL_RANGE) then
+        Log.WriteLine('Cast Distance = TOOLARGE @' .. Target:Distance())
         MoveFacingObject("target", 2, true)
         Spell = "Moving Within Range"
         Sleep(0.5)
         return
     end
 
-    if dist < PULL_RANGE + 5 then
-        local enemyHP = Target:Health()
-        local hp = Player:Health()
-        local mana = Player:Power()
 
-        Counterspell()
+    if Target:Distance() < PULL_RANGE + 5 then
+        CounterSpell()
 
         -- Polymorph when 1v2+
-        local aggrCount = table.getn(AggroTable)
-        local isPolyied = IsPolymorphUsed()
-        if aggrCount > 1 and Player.IsCastable("Polymorph") and isPolyied == false and wow.GetTime() > IgnorePolyTill then
+        local aggrCount = #AggroTable
+        if aggrCount > 1 and Player.IsCastable("Polymorph") and not IsPolymorphUsed() and wow.GetTime() > IgnorePolyTill then
             Log.WriteLine('Polymode: 1v' .. aggrCount)
             local closest = 9999
             local polyTarget = nil
             local closestTar = nil
             local highestHP = 1
-            for i = 1, aggrCount, 1 do
-                local tar = AggroTable[i]
-                local tHP = wow.UnitHealthPercent(tar)
-                Log.WriteLine(' --> ' .. tHP)
-                local tdist = Player:DistanceFrom(tar)
-                if CanPoly(tar) and tHP > 40 then
-                    if tHP > highestHP and tdist < 30 then
-                        highestHP = tHP
-                        polyTarget = tar
+            for i = 1, aggrCount do
+                local target = AggroTable[i]
+                Log.WriteLine(' --> ' .. target:Health())
+                if CanPoly(target) and target:Health() > 40 then
+                    if target:Health() > highestHP and target:Ditance() < 30 then    -- 30码内血量最高的
+                        highestHP = target:Health()
+                        polyTarget = target
                     end
-                    if tdist < closest then
-                        closest = tdist
-                        closestTar = tar
+                    if target:Ditance() < closest then
+                        closest = target:Ditance()
+                        closestTar = target
                     end
                 end
             end
 
+            -- 最近的也超过了30码, 无法施放变羊
             if closestTar ~= nil and closest > 30 then
                 Log.WriteLine('Moving into polymorph range as closest is' .. math.ceil(closest) .. 'y away!')
                 MoveFacingObject(closestTar, 2, true)
@@ -2043,9 +2037,10 @@ function MageRotation()
                 return
             end
 
+            -- 施放变羊
             if polyTarget ~= nil then
                 Log.WriteLine('Polying Target at ' .. wow.UnitHealthPercent(polyTarget))
-                wow.TargetUnit(polyTarget)
+                Player.Target(polyTarget)
                 Spell = "Polymorph"
                 Player.CastSpell("Polymorph", false)
                 IgnorePolyTill = wow.GetTime() + 2
@@ -2055,24 +2050,24 @@ function MageRotation()
         end
 
         -- Bandage
-        if isPolyied and aggrCount == 0 and hp < 70 then
+        if IsPolymorphUsed() and aggrCount == 0 and Player:Health() < 70 then
             local bandage = Bag.GetBandageName()
             if bandage and Bag.IsItemUsable(bandage) then
                 Log.WriteLine('Using ' .. bandage)
-                wow.RunMacroText("/use " .. bandage)
+                Player.UserItem(bandage)
                 Sleep(1.1)
                 return
             end
         end
 
         -- Evocation
-        if isPolyied and mana < 35 and Player.IsCastable("Evocation") then
+        if IsPolymorphUsed() and Player:Power() < 35 and Player.IsCastable("Evocation") then
             Player.CastSpell("Evocation")
             Sleep(4.2)
         end
 
         -- Kite/Blink
-        if KITE_ENABLED and dist <= 7 and wow.HasDebuff("Frost Nova", "target") then
+        if KITE_ENABLED and Target:Distance() <= 7 and Target:HasDebuff("Frost Nova") then
             MoveFacingObject("target", 0.01, false) -- 0.01 div so as to set move marker far in case tar is close
             ForceStopNextMove = true
             Spell = "Kiting"
@@ -2084,24 +2079,24 @@ function MageRotation()
             -- end
         else
             -- Evocation
-            if mana < 10 and enemyHP > 6 and Player.IsCastable("Evocation") and HasManaGem() == false then
+            if Player:Power() < 10 and Target:Health() > 6 and Player.IsCastable("Evocation") and not HasManaGem() then
                 Player.CastSpell("Evocation")
                 Spell = "Evocation"
-                if hp > 75 then
+                if Player:Health() > 75 then
                     Sleep(6.1) -- almost full duration
-                elseif hp > 50 then
+                elseif Player:Health() > 50 then
                     Sleep(4.1)
                 else
                     Sleep(2.1)
                 end
                 return
-            elseif mana > 40 or hp < 20 then
+            elseif Player:Power() > 40 or Player:Health() < 20 then
                 ApplyBuff("Ice Barrier")
             end
         end
 
         -- Ice Block
-        if Player:Health() < 15 and inCombat and Player.IsCastable("Ice Block") then
+        if Player:Health() < 15 and Player:IsInCombat() and Player.IsCastable("Ice Block") then
             Spell = "Blocking at HP " .. Player:Health() .. " %"
             Player.CastSpell("Ice Block")
             Sleep(9.3)
@@ -2111,9 +2106,9 @@ function MageRotation()
         -- Standard Rotation
         FaceUnit("target")
 
-        if enemyHP > WAND_BELOW then -- 0 condition is to debug :/
+        if Target:Health() > WAND_BELOW then -- 0 condition is to debug :/
             -- Cone of Cold/Nova
-            if inCombat and dist < 10 and isPolyied == false then
+            if Player:IsInCombat() and Target:Distance() < 10 and IsPolymorphUsed() == false then
                 -- ! Add Feature to stop ONLY if current cast has long time to fire
                 if Player.IsCastable("Frost Nova") then
                     Spell = "Nova"
@@ -2130,7 +2125,7 @@ function MageRotation()
             end
 
             -- Fire Blast
-            if inCombat and dist <= 19.5 and Player.IsCastable("Fire Blast") then
+            if Player:IsInCombat() and Target:Distance() <= 19.5 and Player.IsCastable("Fire Blast") then
                 Spell = "Fireblast"
                 Player.CastSpell("Fire Blast", false)
                 return
@@ -2149,19 +2144,19 @@ function MageRotation()
                 return
             end
         else -- Enemy is SUPER LOW
-            if hp < 20 then -- I am super low too so rush kill w/o wand
-                if inCombat and dist < 20 and Player.IsCastable("Fire Blast") then
+            if Player:Health() < 20 then -- I am super low too so rush kill w/o wand
+                if Player:IsInCombat() and Target:Distance() < 20 and Player.IsCastable("Fire Blast") then
                     Spell = "Fireblast LOW/CRITICAL"
                     Player.CastSpell("Fire Blast", false)
                     return
                 end
-                if inCombat and dist < 10 and Player.IsCastable("Frost Nova") then
+                if Player:IsInCombat() and Target:Distance() < 10 and Player.IsCastable("Frost Nova") then
                     Spell = "Nova LOW/CRITICAL"
                     Player.StopCast()
                     Player.CastSpell("Frost Nova(Rank 1)")
                     return
                 end
-                if inCombat and dist < 10 and Player.IsCastable("Cone of Cold") and isPolyied == false then
+                if Player:IsInCombat() and Target:Distance() < 10 and Player.IsCastable("Cone of Cold") and IsPolymorphUsed() == false then
                     Spell = "CoC LOW/Critical"
                     Player.StopCast()
                     Player.CastSpell("Cone of Cold")
@@ -2169,7 +2164,7 @@ function MageRotation()
                 end
             end
 
-            if dist > 29 then
+            if Target:Distance() > 29 then
                 Spell = "Moving to Wand LOW"
                 Log.WriteLine('Moving into Wanding Distance')
                 MoveFacingObject("target", 8, true)
@@ -2187,8 +2182,8 @@ function MageRotation()
         end
 
         -- If No Mana  => WAND
-        if mana < 5 then
-            if dist > 29 then
+        if Player:Power() < 5 then
+            if Target:Distance() > 29 then
                 Spell = "Moving to Wand OOM"
                 Log.WriteLine('Moving into Wanding Distance')
                 MoveFacingObject("target", 8, true)
@@ -3043,14 +3038,17 @@ Frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Frame:RegisterEvent("MERCHANT_SHOW")
 
 Frame:SetScript("OnEvent", function(self, event)
+    -- 打开商人窗口
     if event == "MERCHANT_SHOW" then
         TalkedToVendor = true
         Log.WriteLine("Vendor Window Open!!!")
+    -- 战斗信息
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and Player:IsInCombat() then
         local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = wow.CombatLogGetCurrentEventInfo()
+        -- 开始施法
         if subevent == "SPELL_CAST_START" then
-            local obj = wow.GetObjectWithGUID(sourceGUID)
-            if AggrodToAnotherPlayer(obj) == false then
+            local object = wow.GetObjectWithGUID(sourceGUID)
+            if not AggrodToAnotherPlayer(object) then
                 InterruptTargetGUID = sourceGUID
                 if Player:IsMage() then
                     ForceCS = true

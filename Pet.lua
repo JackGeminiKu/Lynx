@@ -4,6 +4,10 @@ function Pet.CastAction(index)
     return wow.CastPetAction(index)
 end
 
+function Pet.Attack()
+    wow.RunMacroText("/petattack")
+end
+
 function Pet.Follow()
     for i = 1, 10, 1 do
         local name, _, _, _, _, _, _ = wow.GetPetActionInfo(i);
