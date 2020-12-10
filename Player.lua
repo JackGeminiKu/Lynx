@@ -25,7 +25,7 @@ do
         end
     end
 
-    function Player.UseItem(itemName)
+    function Player.Use(itemName)
         wow.RunMacroText('/use ' .. itemName)
     end
 
@@ -53,6 +53,19 @@ do
     function Player.Target(object)
         wow.TargetUnit(object.ObjectTag)
     end
+
+    function Player.FaceTarget()
+        if wow.UnitExists('target') then
+            local ax, ay, az = Player:Position()
+            local bx, by, bz = wow.GetObjectPosition('target')
+            local angle = wow.rad(wow.atan2(by - ay, bx - ax))
+            if angle < 0 then
+                return wow.FaceDirection(wow.rad(wow.atan2(by - ay, bx - ax) + 360))
+            else
+                return wow.FaceDirection(angle)
+            end
+        end
+    end
 end
 
 -- 各种状态
@@ -77,7 +90,7 @@ do
 
     Player.IsCastable = function(spellName)
         local usable, nomana = wow.IsUsableSpell(spellName)
-        if usable == false or nomana then
+        if not usable or nomana then
             return false
         end
         return not Player.IsOnCD(spellName)
@@ -93,6 +106,10 @@ do
 
     Player.IsMounted = function()
         return wow.IsMounted()
+    end
+
+    function Player.IsIndoor()
+        return IsIndoors()
     end
 end
 
@@ -128,5 +145,21 @@ end
 do
     function Player:Count()
         -- TBD
+    end
+end
+
+-- 装备相关
+do
+    function Player.GetLowestDurability()
+        local lowest = 9999
+        for i = 1, 22 do
+            local current, maximum = wow.GetInventoryItemDurability(i);
+            if current ~= nil then
+                if current < lowest then
+                    lowest = current
+                end
+            end
+        end
+        return lowest
     end
 end

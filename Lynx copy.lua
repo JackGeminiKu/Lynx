@@ -705,19 +705,6 @@ function DismountCheck()
     end
 end
 
-function GetLowestDurability()
-    local lowest = 9999
-    for i = 1, 22 do
-        local current, maximum = wow.GetInventoryItemDurability(i);
-        if current ~= nil then
-            if current < lowest then
-                lowest = current
-            end
-        end
-    end
-    return lowest
-end
-
 local function ReadyToDraw()
     local timeNow = wow.GetTime()
     if timeNow < NextDrawTime then
@@ -1081,7 +1068,7 @@ function VendorPath(toVendor)
                 return -- 退出
             elseif action == "Stop" then
                 Log.WriteLine("Stopping!")
-                wow.SendKey(83, 123)    -- S
+                wow.SendKey(83, 123) -- S
                 Sleep(3)
 
                 if toVendor and VendorPathIndex <= #VendorPoints then
@@ -1119,7 +1106,7 @@ end
 
 GoingToVendor = false
 
-function EmptyBagsSetup()
+local function EmptyBagsSetup()
     -- Check Drinks + Food
     -- Check Arrows +/ if equipped too
     if #VendorPoints <= 1 then -- no vendor path
@@ -1128,12 +1115,11 @@ function EmptyBagsSetup()
 
     local minAmmoCount = (#VendorPoints + (#Waypoints - PathIndex)) * 1.5
     if Bag.GetFreeSlots() <= MIN_BAG_SLOTS or (Player:IsHunter() and Bag.GetItemCount(Hunter:GetAmmoName()) <= minAmmoCount) then
-        local px, py, pz = Player:Position()
         local closestDist = 99999
         for i = 1, #VendorPoints do
             local vendorPoint = VendorPoints[i]
             if vendorPoint ~= nil then
-                local dist = wow.CalculateDistance(px, py, pz, vendorPoint[1], vendorPoint[2], vendorPoint[3])
+                local dist = Player:DistanceFrom(vendorPoint[1], vendorPoint[2], vendorPoint[3])
                 if dist < closestDist then
                     closestDist = dist
                     VendorPathIndex = i
@@ -1197,7 +1183,7 @@ end
 
 function RecoverMana()
     if Player:IsMoving() then
-        wow.SendKey(83, 123)    -- S
+        wow.SendKey(83, 123) -- S
     end
 
     if Player:IsMoving() then
@@ -1373,7 +1359,7 @@ local function DrinkPotion()
         if needHP and itemName:find("Healing Potion") and Bag.IsItemUsable(itemName) then
             Log.WriteLine('Drinking [' .. itemName .. '] for HEALTH!')
             Player.StopCast()
-            Player.UseItem(itemName)
+            Player.Use(itemName)
             return true
         end
 
@@ -1384,7 +1370,7 @@ local function DrinkPotion()
                 if Bag.IsItemUsable(itemName) then
                     Log.WriteLine('Drinking [' .. itemName .. '] for MANA!')
                     Player.StopCast()
-                    Player.UseItem(itemName)
+                    Player.Use(itemName)
                     return true
                 end
             end
@@ -1401,7 +1387,7 @@ function Conjure()
     end
 
     if ConjureCount > 7 then -- Sit stuck
-        wow.SendKey(87, 223)    -- W
+        wow.SendKey(87, 223) -- W
         ConjureCount = 0
     end
 
@@ -1737,19 +1723,6 @@ local function FindAttackableUnit()
     return found
 end
 
-function FaceUnit(unit)
-    if wow.UnitExists(unit) then
-        local ax, ay, az = Player:Position()
-        local bx, by, bz = wow.GetObjectPosition(unit)
-        local angle = wow.rad(wow.atan2(by - ay, bx - ax))
-        if angle < 0 then
-            return wow.FaceDirection(wow.rad(wow.atan2(by - ay, bx - ax) + 360))
-        else
-            return wow.FaceDirection(angle)
-        end
-    end
-end
-
 InterruptTargetGUID = nil
 StopMovingBeforeAttack = true
 
@@ -1805,7 +1778,7 @@ local function HunterRotation()
     end
 
     -- 面向目标
-    FaceUnit("target")
+    Player.FaceTarget()
 
     -- 施放假死
     if Player:Health() < 15 and Target:Health() > 15 and Player:IsInCombat() and Player.IsCastable("Feign Death") and not PvpTargeted then
@@ -1965,7 +1938,7 @@ local function Decurse()
     end
 
     for i = 1, 40 do
-        local debuff = Player.GetDebuff(i) 
+        local debuff = Player.GetDebuff(i)
         if debuff == nil then
             return false
         elseif debuff:find("Curse") or debuff:find("curse") then
@@ -1978,22 +1951,22 @@ end
 
 IgnorePolyTill = 0
 
-function MageRotation()
+local function MageRotation()
     if ForceStopNextMove then -- PRECAUTION when kiting
         ForceStopNextMove = false
-        wow.SendKey(83, 123)    -- S
+        wow.SendKey(83, 123) -- S
     end
 
     DestX, DestY, DestZ = Target:Position()
     Spell = ""
     PlayerStatus = "ATTACK"
 
-    -- 清除诅咒
+    -- 1) 清除诅咒
     if Decurse() then
         return
     end
 
-    -- 太远了, 靠近点
+    -- 2) 靠近目标
     if Target:Distance() > PULL_RANGE + 1 or (Player:IsInCombat() and Target:Distance() > PULL_RANGE) then
         Log.WriteLine('Cast Distance = TOOLARGE @' .. Target:Distance())
         MoveFacingObject("target", 2, true)
@@ -2002,210 +1975,211 @@ function MageRotation()
         return
     end
 
-
-    if Target:Distance() < PULL_RANGE + 5 then
-        CounterSpell()
-
-        -- Polymorph when 1v2+
-        local aggrCount = #AggroTable
-        if aggrCount > 1 and Player.IsCastable("Polymorph") and not IsPolymorphUsed() and wow.GetTime() > IgnorePolyTill then
-            Log.WriteLine('Polymode: 1v' .. aggrCount)
-            local closest = 9999
-            local polyTarget = nil
-            local closestTar = nil
-            local highestHP = 1
-            for i = 1, aggrCount do
-                local target = AggroTable[i]
-                Log.WriteLine(' --> ' .. target:Health())
-                if CanPoly(target) and target:Health() > 40 then
-                    if target:Health() > highestHP and target:Ditance() < 30 then    -- 30码内血量最高的
-                        highestHP = target:Health()
-                        polyTarget = target
-                    end
-                    if target:Ditance() < closest then
-                        closest = target:Ditance()
-                        closestTar = target
-                    end
-                end
-            end
-
-            -- 最近的也超过了30码, 无法施放变羊
-            if closestTar ~= nil and closest > 30 then
-                Log.WriteLine('Moving into polymorph range as closest is' .. math.ceil(closest) .. 'y away!')
-                MoveFacingObject(closestTar, 2, true)
-                Sleep(0.5)
-                return
-            end
-
-            -- 施放变羊
-            if polyTarget ~= nil then
-                Log.WriteLine('Polying Target at ' .. wow.UnitHealthPercent(polyTarget))
-                Player.Target(polyTarget)
-                Spell = "Polymorph"
-                Player.CastSpell("Polymorph", false)
-                IgnorePolyTill = wow.GetTime() + 2
-                Sleep(0.3)
-                return
-            end
-        end
-
-        -- Bandage
-        if IsPolymorphUsed() and aggrCount == 0 and Player:Health() < 70 then
-            local bandage = Bag.GetBandageName()
-            if bandage and Bag.IsItemUsable(bandage) then
-                Log.WriteLine('Using ' .. bandage)
-                Player.UserItem(bandage)
-                Sleep(1.1)
-                return
-            end
-        end
-
-        -- Evocation
-        if IsPolymorphUsed() and Player:Power() < 35 and Player.IsCastable("Evocation") then
-            Player.CastSpell("Evocation")
-            Sleep(4.2)
-        end
-
-        -- Kite/Blink
-        if KITE_ENABLED and Target:Distance() <= 7 and Target:HasDebuff("Frost Nova") then
-            MoveFacingObject("target", 0.01, false) -- 0.01 div so as to set move marker far in case tar is close
-            ForceStopNextMove = true
-            Spell = "Kiting"
-            -- if isCastable("Blink") then
-            -- DbgPrint("Blinking!")
-            -- player.CastSpell("Blink")
-            -- else
-            Sleep(0.666)
-            -- end
-        else
-            -- Evocation
-            if Player:Power() < 10 and Target:Health() > 6 and Player.IsCastable("Evocation") and not HasManaGem() then
-                Player.CastSpell("Evocation")
-                Spell = "Evocation"
-                if Player:Health() > 75 then
-                    Sleep(6.1) -- almost full duration
-                elseif Player:Health() > 50 then
-                    Sleep(4.1)
-                else
-                    Sleep(2.1)
-                end
-                return
-            elseif Player:Power() > 40 or Player:Health() < 20 then
-                ApplyBuff("Ice Barrier")
-            end
-        end
-
-        -- Ice Block
-        if Player:Health() < 15 and Player:IsInCombat() and Player.IsCastable("Ice Block") then
-            Spell = "Blocking at HP " .. Player:Health() .. " %"
-            Player.CastSpell("Ice Block")
-            Sleep(9.3)
-            return
-        end
-
-        -- Standard Rotation
-        FaceUnit("target")
-
-        if Target:Health() > WAND_BELOW then -- 0 condition is to debug :/
-            -- Cone of Cold/Nova
-            if Player:IsInCombat() and Target:Distance() < 10 and IsPolymorphUsed() == false then
-                -- ! Add Feature to stop ONLY if current cast has long time to fire
-                if Player.IsCastable("Frost Nova") then
-                    Spell = "Nova"
-                    Player.StopCast()
-                    Player.CastSpell("Frost Nova(Rank 1)")
-                    return
-                end
-                if Player.IsCastable("Cone of Cold") then
-                    Spell = "CoC"
-                    -- Player.StopCast()
-                    Player.CastSpell("Cone of Cold")
-                    return
-                end
-            end
-
-            -- Fire Blast
-            if Player:IsInCombat() and Target:Distance() <= 19.5 and Player.IsCastable("Fire Blast") then
-                Spell = "Fireblast"
-                Player.CastSpell("Fire Blast", false)
-                return
-            end
-
-            -- Frostbolt/Fireball Filler
-            if PrefFire == false and Player.IsCastable("Frostbolt") then
-                Spell = "Frostbolt"
-                Player.CastSpell("Frostbolt", false)
-                Sleep(0.25)
-                return
-            elseif Player.IsCastable("Fireball") then
-                Spell = "Fireball"
-                Player.CastSpell("Fireball", false)
-                Sleep(0.5)
-                return
-            end
-        else -- Enemy is SUPER LOW
-            if Player:Health() < 20 then -- I am super low too so rush kill w/o wand
-                if Player:IsInCombat() and Target:Distance() < 20 and Player.IsCastable("Fire Blast") then
-                    Spell = "Fireblast LOW/CRITICAL"
-                    Player.CastSpell("Fire Blast", false)
-                    return
-                end
-                if Player:IsInCombat() and Target:Distance() < 10 and Player.IsCastable("Frost Nova") then
-                    Spell = "Nova LOW/CRITICAL"
-                    Player.StopCast()
-                    Player.CastSpell("Frost Nova(Rank 1)")
-                    return
-                end
-                if Player:IsInCombat() and Target:Distance() < 10 and Player.IsCastable("Cone of Cold") and IsPolymorphUsed() == false then
-                    Spell = "CoC LOW/Critical"
-                    Player.StopCast()
-                    Player.CastSpell("Cone of Cold")
-                    return
-                end
-            end
-
-            if Target:Distance() > 29 then
-                Spell = "Moving to Wand LOW"
-                Log.WriteLine('Moving into Wanding Distance')
-                MoveFacingObject("target", 8, true)
-                Sleep(0.25)
-                return
-            end
-
-            Spell = "Wanding LOW"
-            -- Wand and player not critical
-            Player.StopCast()
-            -- print('LOW --> Wanding! '..enemyHP..' hp')
-            wow.RunMacroText("/cast !Shoot")
-            Sleep(1.2)
-            return
-        end
-
-        -- If No Mana  => WAND
-        if Player:Power() < 5 then
-            if Target:Distance() > 29 then
-                Spell = "Moving to Wand OOM"
-                Log.WriteLine('Moving into Wanding Distance')
-                MoveFacingObject("target", 8, true)
-                Sleep(0.25)
-                return
-            end
-            Player.StopCast()
-            -- print('OOM --> Wanding! '..mana..' mana')
-            Spell = "Wanding OOM"
-            wow.RunMacroText("/cast !Shoot")
-            Sleep(1.2)
-            return
-        end
-    else
+    -- 3) 太远了
+    if Target:Distance() >= PULL_RANGE + 5 then
         Spell = "TOO FAR"
         return
     end
 
+    -- 4) 反制
+    CounterSpell()
+
+    -- 5) 变羊
+    if #AggroTable > 1 and Player.IsCastable("Polymorph") and not IsPolymorphUsed() and wow.GetTime() > IgnorePolyTill then
+        Log.WriteLine('Polymode: 1v' .. #AggroTable)
+        local closest = 9999
+        local polyTarget = nil
+        local closestTar = nil
+        local highestHP = 1
+        for i = 1, #AggroTable do
+            local target = AggroTable[i]
+            Log.WriteLine(' --> ' .. target:Health())
+            if CanPoly(target) and target:Health() > 40 then
+                if target:Health() > highestHP and target:Ditance() < 30 then -- 30码内血量最高的
+                    highestHP = target:Health()
+                    polyTarget = target
+                end
+                if target:Ditance() < closest then
+                    closest = target:Ditance()
+                    closestTar = target
+                end
+            end
+        end
+
+        -- 最近的也超过了30码, 无法施放变羊
+        if closestTar ~= nil and closest > 30 then
+            Log.WriteLine('Moving into polymorph range as closest is' .. math.ceil(closest) .. 'y away!')
+            MoveFacingObject(closestTar, 2, true)
+            Sleep(0.5)
+            return
+        end
+
+        -- 施放变羊
+        if polyTarget ~= nil then
+            Log.WriteLine('Polying Target at ' .. wow.UnitHealthPercent(polyTarget))
+            Player.Target(polyTarget)
+            Spell = "Polymorph"
+            Player.CastSpell("Polymorph", false)
+            IgnorePolyTill = wow.GetTime() + 2
+            Sleep(0.3)
+            return
+        end
+    end
+
+    -- 6) 绷带
+    if IsPolymorphUsed() and #AggroTable == 0 and Player:Health() < 70 then
+        local bandage = Bag.GetBandageName()
+        if bandage and Bag.IsItemUsable(bandage) then
+            Log.WriteLine('Using ' .. bandage)
+            Player.UserItem(bandage)
+            Sleep(1.1)
+            return
+        end
+    end
+
+    -- 7) 唤醒
+    if IsPolymorphUsed() and Player:Power() < 35 and Player.IsCastable("Evocation") then
+        Player.CastSpell("Evocation")
+        Sleep(4.2)
+        return
+    end
+
+    -- 8.1) Kite/Blink
+    if KITE_ENABLED and Target:Distance() <= 7 and Target:HasDebuff("Frost Nova") then
+        MoveFacingObject("target", 0.01, false) -- 0.01 div so as to set move marker far in case tar is close
+        ForceStopNextMove = true
+        Spell = "Kiting"
+        Sleep(0.666)
+        return
+    else
+        -- 8.2) 唤醒
+        if Player:Power() < 10 and Target:Health() > 6 and Player.IsCastable("Evocation") and not HasManaGem() then
+            Player.CastSpell("Evocation")
+            Spell = "Evocation"
+            if Player:Health() > 75 then
+                Sleep(6.1) -- almost full duration
+            elseif Player:Health() > 50 then
+                Sleep(4.1)
+            else
+                Sleep(2.1)
+            end
+            return
+            -- 8.3) 冰盾
+        elseif Player:Power() > 40 or Player:Health() < 20 then
+            ApplyBuff("Ice Barrier")
+            return
+        end
+    end
+
+    -- 9) 冰箱
+    if Player:Health() < 15 and Player:IsInCombat() and Player.IsCastable("Ice Block") then
+        Spell = "Blocking at HP " .. Player:Health() .. " %"
+        Player.CastSpell("Ice Block")
+        Sleep(9.3)
+        return
+    end
+
+    -- 10) 面向目标
+    Player.FaceTarget()
+
+    if Target:Health() > WAND_BELOW then
+        -- 11.1) Cone of Cold/Nova
+        if Player:IsInCombat() and Target:Distance() < 10 and not IsPolymorphUsed() then
+            if Player.IsCastable("Frost Nova") then
+                Spell = "Nova"
+                Player.StopCast()
+                Player.CastSpell("Frost Nova(Rank 1)")
+                return
+            end
+            if Player.IsCastable("Cone of Cold") then
+                Spell = "CoC"
+                Player.CastSpell("Cone of Cold")
+                return
+            end
+        end
+
+        -- 11.2) Fire Blast
+        if Player:IsInCombat() and Target:Distance() <= 19.5 and Player.IsCastable("Fire Blast") then
+            Spell = "Fireblast"
+            Player.CastSpell("Fire Blast", false)
+            return
+        end
+
+        -- 11.3) Frostbolt / Fireball Filler
+        if not PrefFire and Player.IsCastable("Frostbolt") then
+            Spell = "Frostbolt"
+            Player.CastSpell("Frostbolt", false)
+            Sleep(0.25)
+            return
+        elseif Player.IsCastable("Fireball") then
+            Spell = "Fireball"
+            Player.CastSpell("Fireball", false)
+            Sleep(0.5)
+            return
+        end
+    else
+        if Player:Health() < 20 then
+            -- 12.1) Fire blast
+            if Player:IsInCombat() and Target:Distance() < 20 and Player.IsCastable("Fire Blast") then
+                Spell = "Fireblast LOW/CRITICAL"
+                Player.CastSpell("Fire Blast", false)
+                return
+            end
+            -- 12.2) Frost nova
+            if Player:IsInCombat() and Target:Distance() < 10 and Player.IsCastable("Frost Nova") then
+                Spell = "Nova LOW/CRITICAL"
+                Player.StopCast()
+                Player.CastSpell("Frost Nova(Rank 1)")
+                return
+            end
+            -- 12.3) Cone of cold
+            if Player:IsInCombat() and Target:Distance() < 10 and Player.IsCastable("Cone of Cold") and IsPolymorphUsed() == false then
+                Spell = "CoC LOW/Critical"
+                Player.StopCast()
+                Player.CastSpell("Cone of Cold")
+                return
+            end
+        end
+
+        -- 13) 靠近目标
+        if Target:Distance() > 29 then
+            Spell = "Moving to Wand LOW"
+            Log.WriteLine('Moving into Wanding Distance')
+            MoveFacingObject("target", 8, true)
+            Sleep(0.25)
+            return
+        end
+
+        -- 14) 丢魔杖
+        Spell = "Wanding LOW"
+        Player.StopCast()
+        wow.RunMacroText("/cast !Shoot")
+        Sleep(1.2)
+        return
+    end
+
+    -- 15) If No Mana  => WAND
+    if Player:Power() < 5 then
+        -- 15.1) 靠近目标
+        if Target:Distance() > 29 then
+            Spell = "Moving to Wand OOM"
+            Log.WriteLine('Moving into Wanding Distance')
+            MoveFacingObject("target", 8, true)
+            Sleep(0.25)
+            return
+        end
+        -- 15.2) 丢魔杖
+        Player.StopCast()
+        Spell = "Wanding OOM"
+        wow.RunMacroText("/cast !Shoot")
+        Sleep(1.2)
+        return
+    end
+
+    -- 16) 寒冰箭
     Spell = "NOTHING"
     if not Player:IsCasting() and Target:Health() > WAND_BELOW then -- Wanding bug were isOnCD always returns true when wanding unless scripts ticks at perfect time
-        local usable, nomana = wow.IsUsableSpell("Frostbolt")
-        if usable and nomana == false then
+        if Player.IsCastable("Frostbolt") then
             Spell = "Frostbolt_NOTHING"
             Player.CastSpell("Frostbolt", false)
             Sleep(0.25)
@@ -2245,7 +2219,7 @@ local function Attack(object)
     end
 
     if Player:IsMoving() and StopMovingBeforeAttack then -- Stop Movement
-        wow.SendKey(83, 123)    -- S
+        wow.SendKey(83, 123) -- S
     end
 
     if not Target:Exists() then
@@ -2257,16 +2231,17 @@ local function Attack(object)
         Player.Dismount()
     end
 
+    -- 输出循环
     if Player:IsHunter() then
-        HunterRotation()    -- 猎人循环
+        HunterRotation()
     elseif Player:IsMage() then
-        MageRotation()    -- 法师循环
+        MageRotation()
     end
 end
 
 OpenArr = {false, false, false, false, false, false, false, false, false}
 
-function Random()
+local function RandomAction()
     if Player:IsInCombat() then
         return
     end
@@ -2309,14 +2284,18 @@ function Random()
     end
 
     local rnd = math.random(1, 200)
+    -- Jump
     if rnd >= 1 and rnd <= 10 then
         if not Player:IsCasting() then
             Player.Jump()
         end
+        -- yawn
     elseif rnd == 11 then
         wow.RunMacroText("/yawn")
+        -- cheer
     elseif rnd == 12 then
         wow.RunMacroText("/cheer")
+        -- train
     elseif rnd >= 13 and rnd <= 15 then
         wow.RunMacroText("/train")
     elseif rnd >= 16 and rnd <= 20 then
@@ -2340,6 +2319,7 @@ function Random()
     elseif rnd >= 43 and rnd <= 44 then
         wow.SendKey(78) -- N
         OpenArr[7] = true
+        -- Jump
     elseif rnd > 56 and rnd < 70 then
         if not Player:IsCasting() then
             Player.Jump()
@@ -2507,8 +2487,8 @@ function Looting()
     return false
 end
 
-function DeleteRubbishItems()
-    for i = 1, #DeleteItems, 1 do
+local function DeleteRubbishItems()
+    for i = 1, #DeleteItems do
         Bag.DeleteItem(DeleteItems[i][1])
     end
 end
@@ -2763,7 +2743,7 @@ local function DrawVendorPoints()
 end
 
 -- 打开箱子, 蚌壳等物品, 具体哪些物品在OpenInBags中定义
-function OpenBoxItems()
+local function OpenBoxItems()
     for bag = 0, 4 do
         for slot = 0, Bag.GetNumSlots(bag) do
             local itemName = Bag.GetItemName(bag, slot)
@@ -2804,7 +2784,7 @@ end
 MountTries = 0
 MountTimeout = 0
 
-function MountUp()
+local function TryMountUp()
     if MountTimeout > wow.GetTime() then
         return false -- do not mount (indoor bug)
     end
@@ -2814,20 +2794,18 @@ function MountUp()
         MountTimeout = wow.GetTime() + 5
     end
 
-    local indoors = wow.IsIndoors()
-    if indoors and Player:IsInCombat() == false then
+    if Player.IsIndoor() and not Player:IsInCombat() then
         MountTries = 0
         return false -- do not mount
     end
 
-    if Player:IsInCombat() == false and Player.IsMounted() == false and indoors == false and HasMount() then
+    if not Player:IsInCombat() and not Player.IsMounted() and not Player.IsIndoor() and HasMount() then
         if Player:IsMoving() then
-            wow.SendKey(83, 222)
+            wow.SendKey(83, 222)    -- S
         end
-        wow.RunMacroText("/use " .. MOUNT_NAME)
+        Player.Use(MOUNT_NAME)
         StallBuffUp = wow.GetTime() + 8
         MountTries = MountTries + 1
-        -- print(mountTries)
         Sleep(1)
         return true
     end
@@ -2926,7 +2904,7 @@ local function onUpdate(...)
             -- 没十秒多执行一次?
             if wow.GetTime() - Ttt > TttTick then
                 -- 装备红了?
-                if DC_ON_ITEM_BREAK and GetLowestDurability() <= 1 then
+                if DC_ON_ITEM_BREAK and Player.GetLowestDurability() <= 1 then
                     Log.WriteLine('Item Break...')
                     wow.RunMacroText(".dc")
                 end
@@ -2935,7 +2913,7 @@ local function onUpdate(...)
                 OpenBoxItems()
                 if not AtVendor and not SellComplete and not TalkedToVendor and not AtStartAfterVendor then
                     DeleteRubbishItems()
-                    Random()
+                    RandomAction()
                 end
                 Ttt = wow.GetTime()
                 TttTick = math.random(10, 20)
@@ -2952,7 +2930,7 @@ local function onUpdate(...)
                     Attack(AttackObject)
                 else
                     -- MountUp just checks if it needs to Mount, if not (walking or already mounted) WILL RETURN FALSE
-                    if not MountUp() then
+                    if not TryMountUp() then
                         DebugMessage = "VENDOR_PATH"
                         if LOOT_ON_VENDOR_PATH == false then
                             VendorPath(true)
@@ -2977,7 +2955,7 @@ local function onUpdate(...)
                     DebugMessage = "TO_START_ATTACKING"
                     Attack(AttackObject)
                 else
-                    if not MountUp() then
+                    if not TryMountUp() then
                         DebugMessage = "START_PATH"
                         if LOOT_ON_VENDOR_PATH == false then
                             VendorPath(false)
@@ -3002,7 +2980,7 @@ local function onUpdate(...)
                             DebugMessage = "PREVENTING_MAGE_CAST_INTERR"
                         else
                             if TargetIsFar and MOUNT_WHILE_GRINDING and wow.IsIndoors() == false and Player.IsMounted() == false and HasMount() then
-                                if MountUp() then
+                                if TryMountUp() then
                                     DebugMessage = "MOUNTING_TO_NEXT_TARGET"
                                     Log.WriteLine('Target is far away... Mounting!')
                                 end
@@ -3042,7 +3020,7 @@ Frame:SetScript("OnEvent", function(self, event)
     if event == "MERCHANT_SHOW" then
         TalkedToVendor = true
         Log.WriteLine("Vendor Window Open!!!")
-    -- 战斗信息
+        -- 战斗信息
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and Player:IsInCombat() then
         local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = wow.CombatLogGetCurrentEventInfo()
         -- 开始施法
