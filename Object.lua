@@ -55,8 +55,8 @@ function Object:DistanceFrom(...)
         if endObject.x == nil then
             return wow.GetDistance3D(self.ObjectTag, endObject)
         else
-            local sx, sy, sz = self:Position()
-            return wow.CalculateDistance(sx, sy, sz, endObject.x, endObject.y, endObject.z)
+            local x, y, z = self:Position()
+            return wow.CalculateDistance(x, y, z, endObject.x, endObject.y, endObject.z)
         end
     elseif argNumber == 3 then -- x, y, z
         local x, y, z = self:Position()

@@ -66,6 +66,18 @@ do
             end
         end
     end
+
+    function Player.Skin(object)
+        wow.InteractUnit(object)
+    end
+
+    function Player.Loot(object)
+        wow.InteractUnit(object)
+    end
+
+    function Player.Repair(repairVendor)
+        wow.InteractUnit(repairVendor)
+    end
 end
 
 -- 各种状态
@@ -108,7 +120,7 @@ do
         return wow.IsMounted()
     end
 
-    function Player.IsIndoor()
+    function Player.IsIndoors()
         return IsIndoors()
     end
 end

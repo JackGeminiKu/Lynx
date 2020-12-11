@@ -86,6 +86,10 @@ function Bag.UseItem(bag, slot)
     wow.UseContainerItem(bag, slot)
 end
 
+function Bag.SellItem(bag, slot)
+    wow.UseContainerItem(bag, slot)
+end
+
 function Bag.IsOnCD(bag, slot)
     local startTime, duration, isEnabled = wow.GetContainerItemCooldown(bag, slot)
     return startTime ~= 0

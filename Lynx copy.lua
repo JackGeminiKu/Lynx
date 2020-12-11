@@ -699,7 +699,7 @@ function Exit(caller)
     Frame:SetScript("OnUpdate", nil)
 end
 
-function DismountCheck()
+local function DismountCheck()
     if Player.IsMounted() then
         wow.Dismount()
     end
@@ -1035,15 +1035,14 @@ local function HasManaGem()
     return Bag.Found("Mana Agate", "Mana Jade", "Mana Citrine")
 end
 
-function VendorPath(toVendor)
+local function VendorPath(toVendor)
     if Player:IsHunter() and HunterBuff ~= "Aspect of the Cheetah" and not HasMount() then
         HunterBuff = "Aspect of the Cheetah"
     end
 
     local nextPoint = VendorPoints[VendorPathIndex] -- return is imp to always assign next xyz correctly
-    -- return is imp to always assign next xyz correctly
     if nextPoint ~= nil then
-        if wow.CalculateDistance(Player:Position(), nextPoint) <= GetProximalTolerance() then
+        if Player:DistanceFrom(nextPoint[1], nextPoint[2], nextPoint[3]) <= GetProximalTolerance() then
             if toVendor and VendorPathIndex <= #VendorPoints then
                 VendorPathIndex = VendorPathIndex + 1
             elseif VendorPathIndex > 1 then
@@ -1057,7 +1056,7 @@ function VendorPath(toVendor)
         if not toVendor and action ~= nil then
             if action == "Repair" then
                 Log.WriteLine("Going to Repair Vendor...")
-                wow.InteractUnit(RepairVendor)
+                Player.Repair(RepairVendor)
                 Sleep(10)
 
                 if toVendor and VendorPathIndex <= #VendorPoints then
@@ -1089,7 +1088,7 @@ function VendorPath(toVendor)
         DestX = moveToXYZ[1] + rnd
         DestY = moveToXYZ[2] + rnd
         DestZ = moveToXYZ[3] + rnd
-        if VendorPathIndex == #VendorPoints then
+        if VendorPathIndex == #VendorPoints then    -- 最后一点
             Navigator.MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
         else
             Navigator.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
@@ -2328,8 +2327,8 @@ local function RandomAction()
 end
 
 -- https://wowwiki.fandom.com/wiki/Aggro_radius
-function IsSafeToLoot(lootObj)
-    if SAFE_LOOTING == false then
+local function IsSafeToLoot(lootObject)
+    if not SAFE_LOOTING then
         return true
     end
 
@@ -2337,11 +2336,11 @@ function IsSafeToLoot(lootObj)
     for i = 1, objCount do
         local object = Object:Get(i)
         if object ~= nil then
-            if object:IsEnemy() and object:IsDead() == false then
-                local distLootAggroObj = object:DistanceFrom(lootObj)
-                local aggroRad = (object:Level() - player:Level()) + 25 -- suppost +20 imma to be safe +5
+            if object:IsEnemy() and not object:IsDead() then
+                local distLootAggroObj = object:DistanceFrom(lootObject)
+                local aggroRad = object:Level() - Player:Level() + 25 -- suppost +20 imma to be safe +5
                 if distLootAggroObj < aggroRad then
-                    Log.WriteLine('Not looting ' .. lootObj:Name() .. ' as it is ' .. math.ceil(distLootAggroObj) .. 'y within hostile ' .. object:Name())
+                    Log.WriteLine('Not looting ' .. lootObject:Name() .. ' as it is ' .. math.ceil(distLootAggroObj) .. 'y within hostile ' .. object:Name())
                     return false
                 end
             end
@@ -2355,7 +2354,7 @@ PLAYER_NAME = Player:Name()
 SkinningTime = 0
 IgnoreSkinningTill = 0
 
-function Skinning()
+local function Skinning()
     if not Bag.Found("Skinning Knife") then
         return false
     end
@@ -2381,33 +2380,29 @@ function Skinning()
     end
 
     local closestDist = 999999
-    local skinObj = nil
-    local px, py, pz = Player:Position()
+    local skinObject = nil
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if object ~= nil then
-            local name = object:Name()
-            if name ~= "Campfire" and name ~= PLAYER_NAME and name:find("Rune of") == nil then
-                local ox, oy, oz = object:Position()
-                if object:CanBeSkinned() and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil and object:IsEnemy() then
-                    local dist = wow.CalculateDistance(px, py, pz, ox, oy, oz)
-                    if dist < closestDist and IsSafeToLoot(object) then
-                        closestDist = dist
-                        skinObj = object
+            if object:Name() ~= "Campfire" and object:Name() ~= PLAYER_NAME and object:Name():find("Rune of") == nil then
+                if object:CanBeSkinned() and not Navigator.HasBarrier(Player:Location(), object:Location()) and object:IsEnemy() then
+                    if object:Distance() < closestDist and IsSafeToLoot(object) then
+                        closestDist = object:Distance()
+                        skinObject = object
                     end
                 end
             end
         end
     end
 
-    if skinObj ~= nil and closestDist < MAX_LOOT_DIST then
-        Log.WriteLine('Skinning ' .. skinObj:Name() .. '!!!')
-        Spell = skinObj:Name()
+    if skinObject ~= nil and closestDist < MAX_LOOT_DIST then
+        Log.WriteLine('Skinning ' .. skinObject:Name() .. '!!!')
+        Spell = skinObject:Name()
 
-        Navigator.MoveTo(skinObj:Name())
-        if Player:DistanceFrom(skinObj) <= 5 then
+        Navigator.MoveTo(skinObject:Location())
+        if skinObject:Distance() <= 5 then
             DismountCheck()
-            wow.InteractUnit(skinObj)
+            Player.Skin(skinObject)
         end
 
         PlayerStatus = "SKINNING"
@@ -2428,53 +2423,47 @@ end
 LootingTime = 0
 IgnoreLootingTill = 0
 
-function Looting()
+local function Looting()
     if Player:IsCasting() then
         return false
     end
     if Bag.GetFreeSlots() <= 0 then
         return false
     end
-
     if LootingTime > 6 then
         Log.WriteLine("Stuck Looting --> SKIPPING")
         LootingTime = 0
         IgnoreLootingTill = wow.GetTime() + 30
+        return false
     end
-
     if IgnoreLootingTill > wow.GetTime() then
         return false
     end
 
     local closestDist = 999999
-    local lootObj = nil
+    local lootObject = nil
     local lootCount = 0
-    local px, py, pz = Player:Position()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if object ~= nil then
-            local ox, oy, oz = object:Position()
-            if object:IsDead() and object:CanBeLooted() and TraceLine(px, py, pz + 2.5, ox, oy, oz + 2.5, LOST_FLAGS) == nil then
+            if object:IsDead() and object:CanBeLooted() and not Navigator.HasBarrier(Player:Location(), object:Location()) then
                 lootCount = lootCount + 1
-                local dist = wow.CalculateDistance(px, py, pz, ox, oy, oz)
-                if dist < closestDist and IsSafeToLoot(object) then
-                    closestDist = dist
-                    lootObj = object
+                if object:Distance() < closestDist and IsSafeToLoot(object) then
+                    closestDist = object:Distance()
+                    lootObject = object
                 end
             end
         end
     end
 
-    if lootObj ~= nil and closestDist < MAX_LOOT_DIST then
-        local objName = lootObj:Name()
-        Log.WriteLine('Looting ' .. objName .. '!!!')
-        Spell = objName
+    if lootObject ~= nil and closestDist < MAX_LOOT_DIST then
+        Log.WriteLine('Looting ' .. lootObject:Name() .. '!!!')
+        Spell = lootObject:Name()
 
-        Navigator.MoveTo(wow.GetObjectPosition(lootObj))
-        local dist = Player:DistanceFrom(lootObj)
-        if dist <= 5 then
+        Navigator.MoveTo(lootObject:Location())
+        if lootObject:Distance() <= 5 then
             DismountCheck()
-            wow.InteractUnit(lootObj)
+            Player.Loot(lootObject)
         end
 
         PlayerStatus = "LOOTING"
@@ -2493,7 +2482,7 @@ local function DeleteRubbishItems()
     end
 end
 
-function BuyItems()
+local function BuyItems()
     if Player:IsMage() then
         return
     end
@@ -2504,7 +2493,50 @@ end
 SellTick = 0
 CanMail = false
 
-function SellBuyRepair()
+local function SellItems()
+    Log.WriteLine('Clearing Bags...')
+    for bag = 0, 4 do
+        for slot = 0, Bag.GetNumSlots(bag) do
+            local link = Bag.GetItemLink(bag, slot)
+            if link then
+                local itemName, sLink, rarity, iLevel, iMinLevel, sType, subType, iStackCount = wow.GetItemInfo(link)
+                if ArrayContains(ForcedToSell, itemName) then
+                    Log.WriteLine('Force-Selling: ' .. itemName)
+                    Bag.SellItem(bag, slot)
+
+                elseif Player:IsHunter() and (itemName == Hunter:GetAmmoName() or ArrayContains(PetFoods, itemName)) then
+                    -- DbgPrint('Keeping [Hunter Ammo/PetFood]: '..sName)
+                elseif subType == "Bag" or (Player:IsHunter() and (subType == "Quiver" or subType == "Ammo Pouch")) then
+                    -- Bug where last Bag is perceived as item in other bags for selling :/
+                elseif itemName:find("Potion") ~= nil or itemName:find("Bandage") ~= nil then
+                    -- DbgPrint('Keeping [Potion]: '..sName)
+                elseif itemName == "Hearthstone" or sType == "Projectile" or rarity >= 3 then
+                    -- DbgPrint('Keeping [HardCoded]: '..sName)
+                elseif rarity >= 2 then -- and (sSubType == "Bows" or sSubType == "Guns" or sSubType == "Two-Handed Swords" or sSubType == "Leather") then
+                    -- DbgPrint('Keeping [Rarity]: '..sName)
+                elseif ArrayContains(ToKeep, itemName) or ArrayContains(ToMail, itemName) then
+                    -- DbgPrint('Keeping [ToKeepList]: '..sName)
+                elseif itemName == MOUNT_NAME then
+                    -- DbgPrint('Keeping [Mount]: '..sName)
+                elseif ArrayContains(Foods, itemName) or ArrayContains(Drinks, itemName) then
+                    -- DbgPrint('Keeping [RegenConsumable]: '..sName)
+                else
+                    if MAIL_ENABLED and rarity < 1 then -- since we are mailing, just sell junk
+                        Log.WriteLine('Selling [Junk]: ' .. itemName)
+                        Bag.SellItem(bag, slot)
+                    else
+                        if not MAIL_ENABLED then -- since we are not mailing sell junk + whites
+                            Log.WriteLine('Selling [Space]: ' .. itemName)
+                            Bag.SellItem(bag, slot)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function SellBuyRepair()
     DeleteRubbishItems()
 
     -- Talk To Vendor
@@ -2522,8 +2554,8 @@ function SellBuyRepair()
     else
         SellItems()
         BuyItems()
-        if wow.CanMerchantRepair() then
-            wow.RepairAllItems()
+        if Merchant.CanRepair() then
+            Merchant.Repair()
         end
 
         VendorPathIndex = #VendorPoints - 1
@@ -2537,61 +2569,10 @@ function SellBuyRepair()
     end
 end
 
-function SellItems()
-    Log.WriteLine('Clearing Bags...')
-    for bag = 0, 4 do
-        for slot = 0, Bag.GetNumSlots(bag) do
-            local link = Bag.GetItemLink(bag, slot)
-            if link then
-                local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(link)
-                if ArrayContains(ForcedToSell, sName) then
-                    Log.WriteLine('Force-Selling: ' .. sName)
-                    wow.UseContainerItem(bag, slot)
-
-                elseif Player:IsHunter() and (sName == Hunter:GetAmmoName() or ArrayContains(PetFoods, sName)) then
-                    -- DbgPrint('Keeping [Hunter Ammo/PetFood]: '..sName)
-
-                elseif sSubType == "Bag" or (Player:IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
-                    -- Bug where last Bag is perceived as item in other bags for selling :/
-
-                elseif sName:find("Potion") ~= nil or sName:find("Bandage") ~= nil then
-                    -- DbgPrint('Keeping [Potion]: '..sName)
-
-                elseif sName == "Hearthstone" or sType == "Projectile" or iRarity >= 3 then
-                    -- DbgPrint('Keeping [HardCoded]: '..sName)
-
-                elseif iRarity >= 2 then -- and (sSubType == "Bows" or sSubType == "Guns" or sSubType == "Two-Handed Swords" or sSubType == "Leather") then
-                    -- DbgPrint('Keeping [Rarity]: '..sName)
-
-                elseif ArrayContains(ToKeep, sName) or ArrayContains(ToMail, sName) then
-                    -- DbgPrint('Keeping [ToKeepList]: '..sName)
-
-                elseif sName == MOUNT_NAME then
-                    -- DbgPrint('Keeping [Mount]: '..sName)
-
-                elseif ArrayContains(Foods, sName) or ArrayContains(Drinks, sName) then
-                    -- DbgPrint('Keeping [RegenConsumable]: '..sName)
-
-                else
-                    if MAIL_ENABLED and iRarity < 1 then -- since we are mailing, just sell junk
-                        Log.WriteLine('Selling [Junk]: ' .. sName)
-                        wow.UseContainerItem(bag, slot)
-                    else
-                        if not MAIL_ENABLED then -- since we are not mailing sell junk + whites
-                            Log.WriteLine('Selling [Space]: ' .. sName)
-                            wow.UseContainerItem(bag, slot)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
 LibDraw = LibStub("LibDraw-1.0")
 LibDraw.SetWidth(30)
 
-function ResetVariables()
+local function ResetVariables()
     Log.WriteLine("Resetting Vars!!!")
     GoingToVendor = false
     AtVendor = false
@@ -2794,14 +2775,14 @@ local function TryMountUp()
         MountTimeout = wow.GetTime() + 5
     end
 
-    if Player.IsIndoor() and not Player:IsInCombat() then
+    if Player.IsIndoors() and not Player:IsInCombat() then
         MountTries = 0
         return false -- do not mount
     end
 
-    if not Player:IsInCombat() and not Player.IsMounted() and not Player.IsIndoor() and HasMount() then
+    if not Player:IsInCombat() and not Player.IsMounted() and not Player.IsIndoors() and HasMount() then
         if Player:IsMoving() then
-            wow.SendKey(83, 222)    -- S
+            wow.SendKey(83, 222) -- S
         end
         Player.Use(MOUNT_NAME)
         StallBuffUp = wow.GetTime() + 8
@@ -2976,10 +2957,10 @@ local function onUpdate(...)
                         Attack(AttackObject)
                     else
                         local castingID = wow.UnitCastID("player")
-                        if castingID ~= 0 and Player:IsInCombat() == false then -- Mage problem
+                        if castingID ~= 0 and not Player:IsInCombat()then -- Mage problem
                             DebugMessage = "PREVENTING_MAGE_CAST_INTERR"
                         else
-                            if TargetIsFar and MOUNT_WHILE_GRINDING and wow.IsIndoors() == false and Player.IsMounted() == false and HasMount() then
+                            if TargetIsFar and MOUNT_WHILE_GRINDING and not Player.IsIndoors() and not Player.IsMounted() and HasMount() then
                                 if TryMountUp() then
                                     DebugMessage = "MOUNTING_TO_NEXT_TARGET"
                                     Log.WriteLine('Target is far away... Mounting!')
