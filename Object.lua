@@ -43,6 +43,10 @@ function Object:Power()
     return 100 * wow.UnitPower(self.ObjectTag) / wow.UnitPowerMax(self.ObjectTag)
 end
 
+function Object:Speed()
+    return wow.GetUnitSpeed(self.ObjectTag)
+end
+
 function Object:Distance()
     return wow.GetDiatance3D(self.ObjectTag, 'player')
 end

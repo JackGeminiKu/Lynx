@@ -17,17 +17,17 @@ function Log.Write(...)
 end
 
 function Log.WriteLine(...)
-    if lb ~= nil then
-        local messages = {...}
-        local message = ''
-        for k, v in ipairs(messages) do
-            if message == '' then
-                message = v
-            else
-                message = message .. ', ' .. v
-            end
+    local messages = {...}
+    local message = ''
+    for k, v in ipairs(messages) do
+        if message == '' then
+            message = v
+        else
+            message = message .. ', ' .. tostring(v)
         end
-        print(message)
+    end
+    print(message)
+    if lb ~= nil then
         lb.WriteFile("E:\\log-" .. lb.GetGameAccountName() .. ".txt", message .. '\n', true)
     end
 end

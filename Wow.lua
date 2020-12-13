@@ -422,6 +422,18 @@ wow.Unlock = function(method, arg1, arg2, ...)
     return lb.Unlock(method, arg1, arg2, ...)
 end
 
+function wow.LoadScript(scriptName)
+    lb.LoadScript(scriptName)
+end
+
+function wow.MoveTo(x, y, z)
+    lb.MoveTo(x, y, z)
+end
+
+function wow.StopMove()
+    lb.Navigator.Stop()
+end
+
 -- ******************
 -- * Bit opeartions *
 -- ******************
