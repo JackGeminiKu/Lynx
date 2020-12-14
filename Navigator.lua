@@ -20,15 +20,14 @@ function Navigator.MoveTo(...)
     local px, py, pz = Player:Position()
     Log.WriteLine('Current position: ' .. px .. ', ' .. py .. ', ' .. pz)
     Log.WriteLine('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
-    -- lb.Navigator.MoveTo(x, y, z, 1, 0)
     wow.MoveTo(x, y, z)
 end
 
 function Navigator.Stop()
     _waypoints = {}
     wow.StopMove()
-    lb.Unlock(MoveForwardStart)
-    lb.Unlock(MoveForwardStop)
+    wow.Unlock(MoveForwardStart)
+    wow.Unlock(MoveForwardStop)
 end
 
 function Navigator.SavePosition()
@@ -38,7 +37,7 @@ function Navigator.SavePosition()
 end
 
 function Navigator.GetWaypoints(x, y, z)
-    local waypoints =  lb.NavMgr_MoveTo(x, y, z)
+    local waypoints =  wow.NavMgr_MoveTo(x, y, z)
     local i, j = 1, #waypoints
     while i < j do
         waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
@@ -51,7 +50,7 @@ end
 function Navigator.HasBarrier(location1, location2)
     local x1, y1, z1 = location1.x, location1.y, location1.z
     local x2, y2, z2 = location2.x, location2.y, location2.z
-    return lb.Raycast(x1, y1, z1 + 2.5, x2, y2, z2 + 2.5, wow.bit.bor(0x10, 0x100)) ~= nil
+    return wow.Raycast(x1, y1, z1 + 2.5, x2, y2, z2 + 2.5, wow.bit.bor(0x10, 0x100)) ~= nil
 end
 
 function Navigator.ComparePoint(point1, point2)
@@ -113,7 +112,7 @@ local function IsNavigationReady()
         Log.WriteLine('Loading Navigation...')
         wow.LoadScript('TypescriptNavigator')
     end
-    return lb.Navigator
+    return Navigator
 end
 
 local Frame = wow.CreateFrame("Frame")

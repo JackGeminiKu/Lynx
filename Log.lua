@@ -12,7 +12,7 @@ function Log.Write(...)
             end
         end
         print(message)
-        lb.WriteFile("E:\\log-" .. lb.GetGameAccountName() .. ".txt", message, true)
+        wow.WriteFile("E:\\lynx.log", message)
     end
 end
 
@@ -28,6 +28,6 @@ function Log.WriteLine(...)
     end
     print(message)
     if lb ~= nil then
-        lb.WriteFile("E:\\log-" .. lb.GetGameAccountName() .. ".txt", message .. '\n', true)
+        wow.WriteFile("E:\\lynx.log", message .. '\n')
     end
 end

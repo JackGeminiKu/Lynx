@@ -434,6 +434,22 @@ function wow.StopMove()
     lb.Navigator.Stop()
 end
 
+-- 返回x, y, z or ni if no collision
+function wow.Raycast(x1, y1, z1, x2, y2, z2, flags)
+    return Raycast(x1, y1, z1, x2, y2, z2, flags)
+end
+
+-- 写文件, 成功返回true, 否则, 返回false
+function wow.WriteFile(path, content, append)
+    append = append or true
+    return lb.WriteFile(path, content, append)
+end
+
+-- 返回角色到目标的Nav waypoints, 角色不移动!
+function wow.NavMgr_MoveTo(x, y, z, TargetId)
+    return NavMgr_MoveTo(x, y, z, TargetId)
+end
+
 -- ******************
 -- * Bit opeartions *
 -- ******************
