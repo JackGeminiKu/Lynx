@@ -88,6 +88,10 @@ function Object:IsCorpse()
     return wow.UnitIsCorpse(self.ObjectTag)
 end
 
+function Object:IsHerbalism()
+    return wow.GameObjectHasLockType(self.ObjectTag, lb.ElockTypes.IsHerbalism)
+end
+
 function Object:IsTargeting(target)
     if target == nil then
         return false
@@ -141,16 +145,65 @@ function Object:CanBeSkinned()
     return UnitCanBeSkinned(self.ObjectTag)
 end
 
-function Object:Count()
-    local objects = wow.GetObjects()
+function Object:Count(range)
+    range = range or 30
+    local objects = wow.GetObjects(range)
     return #objects
 end
 
-function Object:Get(index)
-    local objects = wow.GetObjects()
+function Object:Get(index, range)
+    range = range or 30
+    local objects = wow.GetObjects(range)
     if index > #objects then
         return nil
     end
     return Object:New(objects[index])
     -- return objects[index]
 end
+
+_lastDrawTime = wow.GetTime()
+
+LibDraw = LibStub("LibDraw-1.0")
+LibDraw.Sync(function()
+    if wow.GetTime() - _lastDrawTime < 0.01 then
+        return
+    end
+    _lastDrawTime = wow.GetTime()
+    if lb == nil then
+        return  
+    end 
+
+    for i = 1, Object:Count(100) do
+        local object = Object:Get(i, 100)
+        local x, y, z = object:Position()
+        LibDraw.Circle(x, y, z, 0.3)
+    end
+
+    -- for k, v in pairs(_points) do
+    --     LibDraw.Circle(v.x, v.y, v.z, 0.3)
+    -- end
+
+
+    -- if _waypoints == nil then
+
+    -- end
+
+    -- if dz == nil or dy == nil or dz == nil then
+    --     return
+    -- end
+
+    -- -- lb.Navigator.MoveTo(dx, dy, dz, 1, 2)
+    -- local waypoints = Navigator.GetWaypoints(dx, dy, dz)
+    -- print(wow.GetTime() .. ': ' .. lb.NavMgr_GetPathIndex() .. ' / ' .. #waypoints)
+    -- -- print(wow.GetTime(), lb.NavMgr_GetPathIndex() .. ' / ' .. #waypoints)
+
+    -- for i = 1, #waypoints - 1 do
+    --     local point = waypoints[i]
+    --     nextPoint = waypoints[i + 1]
+    --     LibDraw.Circle(point.x, point.y, point.z, 0.3)
+    --     LibDraw.Line(point.x, point.y, point.z, nextPoint.x, nextPoint.y, nextPoint.z)
+    -- end
+    -- LibDraw.Circle(nextPoint.x, nextPoint.y, nextPoint.z, 0.3)
+end)
+
+LibDraw.Enable(0)

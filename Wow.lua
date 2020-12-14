@@ -257,7 +257,6 @@ end
 
 -- 获取周围物体, 默认距离为30
 wow.GetObjects = function(range)
-    range = range or 30
     return lb.GetObjects(range)
 end
 
@@ -447,7 +446,11 @@ end
 
 -- 返回角色到目标的Nav waypoints, 角色不移动!
 function wow.NavMgr_MoveTo(x, y, z, TargetId)
-    return NavMgr_MoveTo(x, y, z, TargetId)
+    return lb.NavMgr_MoveTo(x, y, z, TargetId)
+end
+
+function wow.GameObjectHasLockType(GUID, lockType)
+    return lb.GameObjectHasLockType(GUID, lockType)
 end
 
 -- ******************
