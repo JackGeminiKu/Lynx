@@ -146,19 +146,35 @@ function Object:CanBeSkinned()
 end
 
 function Object:Count(range)
-    range = range or 30
     local objects = wow.GetObjects(range)
     return #objects
 end
 
 function Object:Get(index, range)
-    range = range or 30
     local objects = wow.GetObjects(range)
     if index > #objects then
         return nil
     end
     return Object:New(objects[index])
     -- return objects[index]
+end
+
+function Object:GetObjects(range)
+    local guids = wow.GetObjects(range)
+    local objects = {}
+    for i = 1, #guids do
+        objects[#objects + 1] = Object:New(guids[i])
+    end
+    return objects
+end
+
+function Object:GetHerbalism(range)
+    local guids = wow.GetObjects(range, lb.ELockTypes.Herbalism)
+    local herbalism = {}
+    for i = 1, #guids do
+        herbalism[#herbalism + 1] = Object:New(guids[i])
+    end
+    return herbalism
 end
 
 _lastDrawTime = wow.GetTime()

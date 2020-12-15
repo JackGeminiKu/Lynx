@@ -257,8 +257,8 @@ wow.UnitIsDeadOrGhost = function(unit)
 end
 
 -- 获取周围物体, 默认距离为30
-wow.GetObjects = function(range)
-    return lb.GetObjects(range)
+wow.GetObjects = function(range, type1)
+    return lb.GetObjects(range, type1)
 end
 
 wow.IsIndoors = function()
