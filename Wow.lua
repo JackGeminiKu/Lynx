@@ -106,6 +106,7 @@ wow.IsRouge = function()
     return wow.UnitClass("player") == "Rogue"
 end
 
+-- Releases your ghost to the graveyard
 wow.RepopMe = function()
     RepopMe()
 end

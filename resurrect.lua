@@ -1,10 +1,7 @@
-local scriptName = 'felwood_54'
-
-local waitBeforeRevive = 10 -- overwritten
 local WAIT_BEFORE_REVIVE_IF_PEV_DEATH = 10
 local WAIT_BEFORE_REVIVE_IF_PVP_DEATH = 300
 
-local waypoints = {
+local _waypoints = {
     [1] = {3806.5395507813, -1600.2913818359, 218.83123779297},
     [2] = {3803.3322753906, -1593.3157958984, 218.27326965332},
     [3] = {3800.5979003906, -1588.7020263672, 217.22230529785},
@@ -168,67 +165,66 @@ local waypoints = {
 
 }
 
-local waypointsCount = table.getn(waypoints)
-
-local function DetermineResTime()
+local function GetDelayBeforeRevive()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if object:IsEnemy() and object:IsPlayer() and not object:IsDead() and object:Distance() < 50 then
-            waitBeforeRevive = WAIT_BEFORE_REVIVE_IF_PVP_DEATH
-            return
+            return WAIT_BEFORE_REVIVE_IF_PVP_DEATH
         end
     end
-    waitBeforeRevive = WAIT_BEFORE_REVIVE_IF_PEV_DEATH
+    return WAIT_BEFORE_REVIVE_IF_PEV_DEATH
 end
 
-DetermineResTime()
-
-local pulseDelay = 0.2
-local _startDelay = waitBeforeRevive
-local bPrint = false
+local PULSE_DELAY = 0.2
+local START_DELAY = GetDelayBeforeRevive()
 
 local frame = wow.CreateFrame("Frame")
-local bRun = true
-local canPulseAt = (wow.GetTime() + _startDelay) + pulseDelay
+local _run = true
+local _nextPuseTime = (wow.GetTime() + START_DELAY) + PULSE_DELAY
 
-local pathIdx = 1
+local function Sleep(secs)
+    local timeNow = GetTime()
+
+    if _nextPuseTime > timeNow then -- since this func may be used several times in 1 cycle
+        local overheadWait = _nextPuseTime - timeNow;
+        _nextPuseTime = timeNow + overheadWait + secs
+    else
+        _nextPuseTime = overheadWait + secs
+    end
+end
+
+local _pathIndex = 1
 local losFlags = wow.bit.bor(0x10, 0x100)
-local proximalTolerance = 4
+local PROXIMAL_TOLERANCE = 4
 
-local bSkipFarPoints = false
-local bReLoop = false
+local SKIP_FAR_POINTS = false
 
 local rndMax = 50
 
 local function ShouldExit()
     -- Needs to be called within OnUpdate itself
     if AtEnd then
-        bRun = false
+        _run = false
         Log.WriteLine("Setting bRun to FALSE")
     end
 
-    if bRun == false then
-        local exitMacro = '.loadfile _Kkona\\' .. scriptName .. '\\main.lua'
-        Log.WriteLine("Starting main.lua from resurrect.lua")
-        RunMacroText(exitMacro)
+    if not _run then
+        Log.WriteLine("Starting Lynx.lua from Resurrect.lua")
+        wow.RunMacroText('.loadfile Lynx.lua')
         frame:SetScript("OnUpdate", nil)
     end
 end
 
-local function CalculateDistance(x1, y1, z1, x2, y2, z2)
-    return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
-end
-
-local function SetIDXToClosest()
+local function SetIndexToClosest()
     local px, py, pz = ObjectPosition("player")
     local moveToIdx = 1
     local moveToDist = 9999999
     local foundSomething = false
 
-    for i = 1, waypointsCount, 1 do
-        local xyz = waypoints[i]
+    for i = 1, #_waypoints, 1 do
+        local xyz = _waypoints[i]
         if xyz ~= nil then
-            local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
+            local dist = wow.CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
 
             if dist <= moveToDist then
                 if TraceLine(px, py, pz + 2.5, xyz[1], xyz[2], xyz[3] + 2.5, losFlags) == nil then
@@ -241,8 +237,8 @@ local function SetIDXToClosest()
     end
 
     if foundSomething then
-        pathIdx = moveToIdx
-        Log.WriteLine("Starting at Ressurect path at idx " .. pathIdx)
+        _pathIndex = moveToIdx
+        Log.WriteLine("Starting at Ressurect path at idx " .. _pathIndex)
     end
 end
 
@@ -251,25 +247,17 @@ local firstTick = true
 local function StrictPathFollow()
     if firstTick == true then
         firstTick = false
-        SetIDXToClosest()
+        SetIndexToClosest()
     end
 
-    local px, py, pz = ObjectPosition("player")
-    local xyz = waypoints[pathIdx] -- return is imp to always assign next xyz correctly
-
+    local px, py, pz = Player:Position()
+    local xyz = _waypoints[_pathIndex]
     if xyz ~= nil then
-        -- Add Class Specific
-        -- !Move this to last (after movement!!!)
-        if xyz[4] ~= nil then
-            -- Define 4th Param Stuff
-        end
-
-        local dist = CalculateDistance(px, py, pz, xyz[1], xyz[2], xyz[3])
-        -- print(' = DIST: '..dist)
-        if dist <= proximalTolerance then
-            if pathIdx < waypointsCount then
-                pathIdx = pathIdx + 1
-                Log.WriteLine('Moving to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
+        local dist = Player:DistanceFrom(xyz[1], xyz[2], xyz[3])
+        if dist <= PROXIMAL_TOLERANCE then
+            if _pathIndex < #_waypoints then
+                _pathIndex = _pathIndex + 1
+                Log.WriteLine('Moving to RES idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
                 return
             else
                 AtEnd = true
@@ -278,91 +266,71 @@ local function StrictPathFollow()
     end
 
     -- Check if Stuck
-    if pathIdx == LastIndex then
+    if _pathIndex == LastIndex then
         LastIndexCount = LastIndexCount + 1
-        StuckTime = StuckTime + pulseDelay
+        StuckTime = StuckTime + PULSE_DELAY
     else
         StuckTime = 0
         LastIndexCount = 0
     end
 
-    -- Skip if stuck (forced) but never skip last post so as to trigger the appropriate fail safes
-    -- using counter in the form of lastIdxCount is mehhh coz doesnt give indication of time stuck (we vary pulseDelay all the time)
-    if LastIndexCount > 35 and (pathIdx < waypointsCount - 2) then
-        local stuckStr = 'Appears to be STUCK: at idx=' .. pathIdx
-        print(stuckStr)
-        WriteFile('_Kkona/Stuck.txt', stuckStr .. '\n', true)
-        -- local prevIdx = pathIdx
-        -- pathIdx = 1
-        -- FindNextBestPoint()
-        SendKey(' ')
-        pathIdx = pathIdx + 1
-        AtEnd = pathIdx > waypointsCount
-        if AtEnd then
-        end
+    -- Stuck!!!
+    if LastIndexCount > 35 and (_pathIndex < #_waypoints - 2) then
+        local stuckStr = 'Appears to be STUCK: at idx=' .. _pathIndex
+        Log.WriteLine(stuckStr)
+        Player.Jump()
+        _pathIndex = _pathIndex + 1
+        AtEnd = _pathIndex > #_waypoints
         return
     end
 
-    if pathIdx < 1 then
-        pathIdx = 1
-    elseif pathIdx > waypointsCount then
-        pathIdx = waypointsCount
+    if _pathIndex < 1 then
+        _pathIndex = 1
+    elseif _pathIndex > #_waypoints then
+        _pathIndex = #_waypoints
         AtEnd = true
     end
 
     -- Move
     local rnd = (math.random(-rndMax, rndMax) / 100)
-    local moveToXYZ = waypoints[pathIdx]
+    local moveToXYZ = _waypoints[_pathIndex]
     if moveToXYZ ~= nil then
         dX = moveToXYZ[1] + rnd
         dY = moveToXYZ[2] + rnd
         dZ = moveToXYZ[3] + rnd
     end
 
-    local distToNext = CalculateDistance(px, py, pz, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
-    if bSkipFarPoints == false or (bSkipFarPoints and distToNext < 50) then
-        if IgnoreLOS == true or TraceLine(px, py, pz + 2.5, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3] + 2.5, losFlags) == nil then
+    local distToNext = Player:DistanceFrom(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
+    if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then
+        if IGNORE_LOS or TraceLine(px, py, pz + 2.5, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3] + 2.5, losFlags) == nil then
             MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
         end
     else
-        if bSkipFarPoints then
-            Log.WriteLine('*Skipping* to RES idx {' .. pathIdx .. '/' .. waypointsCount .. '}')
-            pathIdx = pathIdx + 1
-            AtEnd = pathIdx > waypointsCount
+        if SKIP_FAR_POINTS then
+            Log.WriteLine('*Skipping* to RES idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
+            _pathIndex = _pathIndex + 1
+            AtEnd = _pathIndex > #_waypoints
             return
         else
             Log.WriteLine('*Waiting* for player to be close to path...')
         end
     end
 
-    LastIndex = pathIdx
+    LastIndex = _pathIndex
 end
 
 local function ResurrectPulse()
-    local name = ObjectName("player")
-    local objCount = GetObjectCount()
-    local px, py, pz = ObjectPosition("player")
-
-    for i = 1, objCount do
-        local obj = GetObjectWithIndex(i)
-        if UnitIsCorpse(obj) then
-            local oname = ObjectName(obj)
-            if name == oname then
-                local dist = GetDistanceBetweenObjects("player", obj)
-                local cx, cy, cz = ObjectPosition(obj)
-                -- if dist < 80 and TraceLine(px, py, pz+2.5, cx,cy,cz+2.5,losFlags) == nil then
-                -- MoveTo(cx,cy,cz)
-                -- return true
-                -- end
-                if dist < 35 then
-                    if GetCorpseRecoveryDelay() <= 0 then
-                        RetrieveCorpse()
-                        AtEnd = true
-                        return true
-                    else
-                        Sleepy(5)
-                        return true
-                    end
+    for i = 1, Object:Count(100) do
+        local object = Object:Get(i, 100)
+        if object:IsCorpse() and Palyer:Name() == object:Name() then
+            if object:Distance() < 35 then
+                if Player.CorpseRecoveryDelay() <= 0 then
+                    Player.RetrieveCorpse()
+                    AtEnd = true
+                    return true
+                else
+                    Sleep(5)
+                    return true
                 end
             end
         end
@@ -371,53 +339,37 @@ local function ResurrectPulse()
     return false
 end
 
-local function Pulse()
-    if UnitIsDeadOrGhost("player") and ResurrectPulse() == false then
-        StrictPathFollow()
-    else
-        AtEnd = true
-    end
-end
-
-local function CanPulse()
+local function PulseReady()
     local timeNow = GetTime()
-    if timeNow >= canPulseAt then
-        canPulseAt = timeNow + pulseDelay
+    if timeNow >= _nextPuseTime then
+        _nextPuseTime = timeNow + PULSE_DELAY
         return true
     else
         return false
     end
 end
 
-local function Sleepy(secs)
-    local timeNow = GetTime()
-
-    if canPulseAt > timeNow then -- since this func may be used several times in 1 cycle
-        local overheadWait = canPulseAt - timeNow;
-        canPulseAt = timeNow + overheadWait + secs
-    else
-        canPulseAt = overheadWait + secs
-    end
-end
-
-local _popMeTime = wow.GetTime() + (_startDelay / 10)
+local POP_ME_TIME = wow.GetTime() + (START_DELAY / 10)
 local _releasedSpirit = false
 
-Log.WriteLine('Starting Corpse Run in ' .. _startDelay .. ' seconds...')
-Log.WriteLine('Popping Spirit in in ' .. (_startDelay / 10) .. ' seconds...')
+Log.WriteLine('Starting Corpse Run in ' .. START_DELAY .. ' seconds...')
+Log.WriteLine('Popping Spirit in in ' .. (START_DELAY / 10) .. ' seconds...')
 
 frame:SetScript("OnUpdate", function(self, elapsed)
-    if not _releasedSpirit and (wow.GetTime() > _popMeTime) then
+    if not _releasedSpirit and (wow.GetTime() > POP_ME_TIME) then
         LibDraw.clearCanvas()
         _releasedSpirit = true
-        RepopMe()
+        Player.RepopMe()
         Log.WriteLine("Popping Spirit!")
-        bRun = true
+        _run = true
         AtEnd = false
     end
-    if CanPulse() == true then
-        Pulse()
+    if PulseReady() then -- every 200 ms
+        if Player:IsDeadOrGhost() and not ResurrectPulse() then
+            StrictPathFollow()
+        else
+            AtEnd = true
+        end
         ShouldExit()
     end
 end)
-

@@ -1088,7 +1088,7 @@ local function VendorPath(toVendor)
         DestX = moveToXYZ[1] + rnd
         DestY = moveToXYZ[2] + rnd
         DestZ = moveToXYZ[3] + rnd
-        if VendorPathIndex == #VendorPoints then    -- 最后一点
+        if VendorPathIndex == #VendorPoints then -- 最后一点
             Navigator.MoveTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
         else
             Navigator.MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)
@@ -2596,7 +2596,7 @@ local function MarkEnemyNpcs()
         return
     end
     LibDraw.SetColorRaw(1, 1, 1, 1)
-    for i = 1, #EnemyNpcs, 1 do
+    for i = 1, #EnemyNpcs do
         local enemyNpc = EnemyNpcs[i]
         LibDraw.Text('[' .. enemyNpc[4] .. ']', "GameFontRedSmall", enemyNpc[1], enemyNpc[2], enemyNpc[3] + 2)
     end
@@ -2606,7 +2606,7 @@ local function MarkEnemyPlayers()
     if #EnemyPlayers == 0 then
         return
     end
-    for i = 1, #EnemyPlayers, 1 do
+    for i = 1, #EnemyPlayers do
         local enemyPlayer = EnemyPlayers[i]
         local enemyLevel = enemyPlayer[4]
         if enemyLevel == nil then
@@ -2624,15 +2624,16 @@ local function MarkEnemyPlayers()
 end
 
 local function DrawDebugMessage()
-    if DebugMessage ~= "" then
-        local pX, pY, pZ = Player:Position()
-        local debugMessage = DebugMessage
-        if Spell ~= "" and PlayerStatus == "ATTACK" or PlayerStatus == "SKINNING" then
-            debugMessage = debugMessage .. " [" .. Spell .. "]"
-        end
-        LibDraw.SetColorRaw(0, 0, 1, 1)
-        LibDraw.Text(debugMessage, "GameFontRedSmall", pX, pY, pZ + 4)
+    if DebugMessage == "" then
+        return
     end
+    local pX, pY, pZ = Player:Position()
+    local debugMessage = DebugMessage
+    if Spell ~= "" and PlayerStatus == "ATTACK" or PlayerStatus == "SKINNING" then
+        debugMessage = debugMessage .. " [" .. Spell .. "]"
+    end
+    LibDraw.SetColorRaw(0, 0, 1, 1)
+    LibDraw.Text(debugMessage, "GameFontRedSmall", pX, pY, pZ + 4)
 end
 
 local function DrawStatus()
@@ -2684,7 +2685,7 @@ local function DrawWaypoints()
     end
     LibDraw.SetColorRaw(0, 1, 0, 1)
     local beforePoint = nil
-    for i = 1, #Waypoints, 1 do
+    for i = 1, #Waypoints do
         local newPoint = Waypoints[i]
         if newPoint ~= nil then
             if beforePoint ~= nil then
@@ -2699,19 +2700,19 @@ local function DrawVendorPoints()
     if #VendorPoints == 0 then
         return
     end
-    local startVendorPoint = VendorPoints[1]
-    local endVendorPoint = VendorPoints[#VendorPoints]
-    if startVendorPoint ~= nil then
+    local startPoint = VendorPoints[1]
+    local endPoint = VendorPoints[#VendorPoints]
+    if startPoint ~= nil then
         -- 标记起点和终点
         LibDraw.SetColorRaw(0.25, 0.5, 0.75, 1)
-        LibDraw.Circle(startVendorPoint[1], startVendorPoint[2], startVendorPoint[3], 2)
-        LibDraw.Text('Vendor Route', "GameFontRedSmall", startVendorPoint[1], startVendorPoint[2], startVendorPoint[3] + 1)
-        LibDraw.Text('Vendor', "GameFontRedSmall", endVendorPoint[1], endVendorPoint[2], endVendorPoint[3] + 1)
+        LibDraw.Circle(startPoint[1], startPoint[2], startPoint[3], 2)
+        LibDraw.Text('Vendor Route', "GameFontRedSmall", startPoint[1], startPoint[2], startPoint[3] + 1)
+        LibDraw.Text('Vendor', "GameFontRedSmall", endPoint[1], endPoint[2], endPoint[3] + 1)
 
         -- 中间各点
         local beforePoint = nil
         LibDraw.SetColorRaw(1, 1, 1, 1)
-        for i = 1, #VendorPoints, 1 do
+        for i = 1, #VendorPoints do
             local newPoint = VendorPoints[i]
             if newPoint ~= nil then
                 if beforePoint ~= nil then
@@ -2827,7 +2828,7 @@ end
 DeadTime = 0
 
 local function onUpdate(...)
-    if ReadyToDraw() then
+    if ReadyToDraw() then -- every 50 ms
         LibDraw.clearCanvas()
         MarkEnemyPlayers()
         MarkEnemyNpcs()
@@ -2838,12 +2839,12 @@ local function onUpdate(...)
         DrawStatus()
     end
 
-    if not ReadyToPulse() then
+    if not ReadyToPulse() then    -- every 250 ms
         return
     end
 
     if Player:IsDead() then
-        Log.WriteLine('Dead at time: ' .. wow.GetTime())
+        Log.WriteLine('Player dead at time: ' .. wow.GetTime())
         if Player:IsDeadOrGhost() then
             Log.WriteLine("Running Resurrect Script")
             wow.RunMacroText(wow.ReadFile('Resurrect.lua'))
@@ -2957,7 +2958,7 @@ local function onUpdate(...)
                         Attack(AttackObject)
                     else
                         local castingID = wow.UnitCastID("player")
-                        if castingID ~= 0 and not Player:IsInCombat()then -- Mage problem
+                        if castingID ~= 0 and not Player:IsInCombat() then -- Mage problem
                             DebugMessage = "PREVENTING_MAGE_CAST_INTERR"
                         else
                             if TargetIsFar and MOUNT_WHILE_GRINDING and not Player.IsIndoors() and not Player.IsMounted() and HasMount() then

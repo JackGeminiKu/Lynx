@@ -78,6 +78,11 @@ do
     function Player.Repair(repairVendor)
         wow.InteractUnit(repairVendor)
     end
+
+    -- Releases your ghost to the graveyard
+    function Player.RepopMe()
+        wow.RepopMe()
+    end
 end
 
 -- 各种状态
