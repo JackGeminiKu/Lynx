@@ -13,12 +13,12 @@ local KeptItems = {"Hearthstone", "Brown Horse Bridle", "Skinning Knife", "Stron
 
 local _waypoints = {}
 
-local pulseDelay = 0.2
-local startDelay = 1
+local PULSE_DELAY = 0.2
+local START_DELAY = 1
 
 local frame = wow.CreateFrame("Frame")
 local bRun = true
-local canPulseAt = (wow.GetTime() + startDelay) + pulseDelay
+local _nextPulseTime = (wow.GetTime() + START_DELAY) + PULSE_DELAY
 
 local _pathIndex = 1
 local losFlags = wow.bit.bor(0x10, 0x100)
@@ -54,16 +54,16 @@ end
 
 local function Sleep(secs)
     local timeNow = wow.GetTime()
-    if canPulseAt > timeNow then -- since this func may be used several times in 1 cycle
-        local overheadWait = canPulseAt - timeNow;
-        canPulseAt = timeNow + overheadWait + secs
+    if _nextPulseTime > timeNow then -- since this func may be used several times in 1 cycle
+        local overheadWait = _nextPulseTime - timeNow;
+        _nextPulseTime = timeNow + overheadWait + secs
     else
-        canPulseAt = overheadWait + secs
+        _nextPulseTime = overheadWait + secs
     end
 end
 
 local function ArrayContains(array, value)
-    for i = 1, #array, 1 do
+    for i = 1, #array do
         if array[i] == value then
             return true
         end
@@ -97,7 +97,7 @@ local function SendMail()
             local l = wow.GetContainerItemLink(b, s)
             if l then
                 local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(l)
-                if not IsSoulbound(b, s)  and not ArrayContains(KeptItems, sName) then
+                if not IsSoulbound(b, s) and not ArrayContains(KeptItems, sName) then
                     if Player:IsHunter() and (sType == "Projectile" or ArrayContains(PetFood, sName)) then
                         -- Log.WriteLine('Keeping [Hunter Stuff]: '..sName)
                     elseif wow.IsRogue() and sName:find("Throwing") ~= nil then
@@ -133,14 +133,14 @@ local function SendMail()
     end
 end
 
-local function ShouldExit()
+local function TryExit()
     -- Needs to be called within OnUpdate itself
     if AtEndthen then
         bRun = false
     end
 
     if bRun == false then
-        local exitMacro = '.loadfile _Lynx\\' .. scriptName .. '\\main.lua'
+        local exitMacro = '.loadfile Lynx.lua'
         Log.WriteLine("Starting main.lua from mail.lua")
         wow.RunMacroText(exitMacro)
         frame:SetScript("OnUpdate", nil)
@@ -169,8 +169,8 @@ local function SetIndexToClosest()
 
     if closestDist > 100 then
         Log.WriteLine("Closest Mailbox path is " .. math.ceil(closestDist) .. " yard away ==> TERMINATING")
-        AtEnd= true
-        ShouldExit()
+        AtEnd = true
+        TryExit()
     end
 
     if foundIndex then
@@ -197,7 +197,7 @@ local function MoveToClosestWaypoint()
                 Log.WriteLine('Moving to MAIL idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
                 return
             else
-                AtEnd= true
+                AtEnd = true
             end
         end
     end
@@ -205,7 +205,7 @@ local function MoveToClosestWaypoint()
     -- Check if Stuck
     if _pathIndex == LastIndex then
         LastIndexCount = LastIndexCount + 1
-        StuckTime = StuckTime + pulseDelay
+        StuckTime = StuckTime + PULSE_DELAY
     else
         StuckTime = 0
         LastIndexCount = 0
@@ -215,7 +215,7 @@ local function MoveToClosestWaypoint()
         Log.WriteLine(stuckStr)
         Player.Jump()
         _pathIndex = _pathIndex + 1
-        AtEnd= _pathIndex > #_waypoints
+        AtEnd = _pathIndex > #_waypoints
         return
     end
 
@@ -223,7 +223,7 @@ local function MoveToClosestWaypoint()
         _pathIndex = 1
     elseif _pathIndex > #_waypoints then
         _pathIndex = #_waypoints
-        AtEnd= true
+        AtEnd = true
     end
 
     -- Move
@@ -231,14 +231,14 @@ local function MoveToClosestWaypoint()
     local nextWaypoint = _waypoints[_pathIndex]
     local distToNext = wow.CalculateDistance(px, py, pz, nextWaypoint[1], nextWaypoint[2], nextWaypoint[3])
     if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then
-        if IGNORE_LOS== true or TraceLine(px, py, pz + 2.5, nextWaypoint[1], nextWaypoint[2], nextWaypoint[3] + 2.5, losFlags) == nil then
+        if IGNORE_LOS == true or TraceLine(px, py, pz + 2.5, nextWaypoint[1], nextWaypoint[2], nextWaypoint[3] + 2.5, losFlags) == nil then
             Navigator.MoveToeTo(nextWaypoint[1] + rnd, nextWaypoint[2] + rnd, nextWaypoint[3] + rnd)
         end
     else
         if SKIP_FAR_POINTS then
             Log.WriteLine('*Skipping* to MAIL idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
             _pathIndex = _pathIndex + 1
-            AtEnd= _pathIndex > #_waypoints
+            AtEnd = _pathIndex > #_waypoints
             return
         else
             Log.WriteLine('*Waiting* for player to be close to path...')
@@ -248,14 +248,14 @@ local function MoveToClosestWaypoint()
     LastIndex = _pathIndex
 end
 
-local mailboxOpened = false
+local _mailboxOpened = false
 local function Pulse()
-    if IsAtMailbox() and not mailboxOpened then
+    if IsAtMailbox() and not _mailboxOpened then
         OpenMailBox()
-        mailboxOpened = true
+        _mailboxOpened = true
         Sleep(3)
         return
-    elseif mailboxOpened == true then
+    elseif _mailboxOpened then
         if SendMail() then
             Sleep(2)
         end
@@ -264,10 +264,10 @@ local function Pulse()
     end
 end
 
-local function CanPulse()
+local function PulseReady()
     local timeNow = wow.GetTime()
-    if timeNow >= canPulseAt then
-        canPulseAt = timeNow + pulseDelay
+    if timeNow >= _nextPulseTime then
+        _nextPulseTime = timeNow + PULSE_DELAY
         return true
     else
         return false
@@ -277,9 +277,9 @@ end
 Log.WriteLine('Mailing items to ' .. recipient)
 
 frame:SetScript("OnUpdate", function(self, elapsed)
-    if CanPulse() == true then
+    if PulseReady() then
         LibDraw.clearCanvas()
         Pulse()
-        ShouldExit()
+        TryExit()
     end
 end)
