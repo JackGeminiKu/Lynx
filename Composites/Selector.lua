@@ -1,4 +1,3 @@
-require("Base/Composite")
 BT.Selector = {
     base = BT.Composite
 }

@@ -57,7 +57,6 @@ function Navigator.ComparePoint(point1, point2)
     return point1.x == point2.x and point1.y == point2.y and point1.z == point2.z
 end
 
-
 -- 地图导航
 _waypoints = {} 
 

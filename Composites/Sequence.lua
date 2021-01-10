@@ -1,4 +1,3 @@
-require("Base/Composite")
 BT.Sequence = {
     base = BT.Composite
 }

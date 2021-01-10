@@ -1,4 +1,3 @@
-require("Base/Action")
 BT.Buy = {
     Base = BT.Action
 }
@@ -13,6 +12,6 @@ function BT.Buy:New(name)
 end
 
 function BT.Buy:OnUpdate()
-    print('buy')
+    Player.Interact(Target)
     return BT.ETaskStatus.Success
 end

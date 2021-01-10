@@ -1,5 +1,3 @@
-require("BTReq")
--- require("Test/Lua1")
 Test = {}
 local this = Test
 

@@ -42,7 +42,7 @@ do
     end
 
     function Player.Interact(object)
-        return wow.ObjectInteract(object.ObjectTag)
+        return wow.InteractUnit(object.ObjectTag)
     end
 
     function Player.RetrieveCorpse()

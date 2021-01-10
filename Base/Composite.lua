@@ -1,5 +1,3 @@
-require("Base/ParentTask")
-
 BT.Composite = {
     base = BT.ParentTask
 }

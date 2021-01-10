@@ -1,4 +1,3 @@
-require("Base/Conditional")
 BT.BoolComparison = {
     base = BT.Conditional
 }

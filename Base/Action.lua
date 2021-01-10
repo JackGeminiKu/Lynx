@@ -1,4 +1,3 @@
-require("Base/Task")
 BT.Action = {
     base = BT.Task
 }

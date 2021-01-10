@@ -1,4 +1,3 @@
-require("Base/Action")
 BT.Log = {
     base = BT.Action
 }

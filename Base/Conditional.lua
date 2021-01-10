@@ -1,5 +1,3 @@
-require("Base/Task")
-
 BT.Conditional = {
     base = BT.Task
 }

@@ -1,4 +1,3 @@
-require("Base/Composite")
 BT.Parallel = {
     base = BT.Composite
 }

@@ -1,10 +1,3 @@
-require("Base/BTManager")
-require("Base/Task")
-require("Base/ParentTask")
-require("Base/Composite")
-require("Base/Conditional")
-require("Base/Shared")
-
 -- region Reevaluate
 BT.Reevaluate = {}
 BT.Reevaluate.__index = BT.Reevaluate

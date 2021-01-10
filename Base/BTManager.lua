@@ -1,6 +1,3 @@
-require("Common/Common")
-require("Base/Shared")
-
 BT.Mgr = {
     treeList = {},
     globalSharedData = BT.Shared:New()

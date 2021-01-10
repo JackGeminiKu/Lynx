@@ -1,5 +1,3 @@
-require("Common/Common")
-
 BT.Task = {
     bTree = nil,
     base = nil

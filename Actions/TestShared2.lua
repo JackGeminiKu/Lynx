@@ -1,4 +1,4 @@
-require("Base/Action")
+
 BT.TestShared2 = {
     base = BT.Action
 }

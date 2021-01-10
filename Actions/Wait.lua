@@ -1,4 +1,4 @@
-require("Base/Action")
+
 BT.Wait = {
     base = BT.Action
 }

@@ -22,6 +22,7 @@ Const = {
     Empty = "none"
 }
 
+BT = {}
 BT.EBTreeStatus = {
     None = "None",
     Pause = "Pause",
