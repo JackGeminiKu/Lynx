@@ -42,7 +42,7 @@ function Test:Run()
     -- bt5 = this:CreateBT5()
     -- bt5:EnabledBT()
 
-    local bt = this:CreateBT6()
+    local bt = this:CreateLynx()
     bt:EnabledBT()
     for i = 1, 100 do
         print('Update ' .. i)
