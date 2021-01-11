@@ -12,6 +12,6 @@ function BT.Move:New(name)
 end
 
 function BT.Move:OnUpdate()
-    Navigator.MoveTo(-9466.423828125, 0.061252001672983, 56.951366424561)
+    -- Navigator.MoveTo(-9466.423828125, 0.061252001672983, 56.951366424561)
     return BT.ETaskStatus.Success
 end

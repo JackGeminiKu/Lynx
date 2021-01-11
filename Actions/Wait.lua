@@ -10,7 +10,7 @@ setmetatable(this, this.base)
 function BT.Wait:New(name, time)
     local o = this.base:New(name)
     o.fTime = time or 1
-    o.fStartTime = 0
+    o.fStartTime = wow.GetTime()
     setmetatable(o, this)
     return o
 end
@@ -20,9 +20,7 @@ function BT.Wait:OnStart()
 end
 
 function BT.Wait:OnUpdate()
-    self.fStartTime = self.fStartTime + 0.1
-    -- print(self.sName .. ': ' .. self.fStartTime)
-    if self.fStartTime >= self.fTime then
+    if wow.GetTime() - self.fStartTime >= self.fTime then
         return BT.ETaskStatus.Success
     else
         return BT.ETaskStatus.Running

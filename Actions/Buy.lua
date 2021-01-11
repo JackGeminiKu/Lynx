@@ -5,17 +5,21 @@ setmetatable(this, this.Base)
 
 function BT.Buy:New(name)
     local o = this.Base:New(name)
-    o.nextTime = os.time()
+    o.nextTime = wow.GetTime()
     o.count = 3
     setmetatable(o, this)
     return o
 end
 
 function BT.Buy:OnUpdate()
-    if os.time() > self.nextTime then
-        print('[buy] ' .. os.time())
+    -- Player.Buy(1)
+    -- return BT.ETaskStatus.Success
+
+    if wow.GetTime() > self.nextTime then
+        Log.WriteLine(wow.GetTime() .. ": buy index 1")
+        Player.Buy(1)
         self.count = self.count - 1
-        self.nexttime = os.time() + math.random(1, 3)
+        self.nexttime = wow.GetTime() + math.random(100, 900) / 1000
     end
 
     if self.count == 0 then
@@ -23,5 +27,4 @@ function BT.Buy:OnUpdate()
     else
         return BT.ETaskStatus.Running
     end
-    -- Player.Interact(Target)
 end

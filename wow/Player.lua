@@ -75,6 +75,10 @@ do
         wow.InteractUnit(object)
     end
 
+    function Player.Buy(index)
+        wow.BuyMerchantItem(index)
+    end
+
     function Player.Repair(repairVendor)
         wow.InteractUnit(repairVendor)
     end

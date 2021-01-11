@@ -1,4 +1,6 @@
 SLASH_LYNX_TEST_AAA1 = '/lynx-test-aaa'
+SLASH_LYNX_START1 = "/lynx-start"
+SLASH_LYNX_STOP1 = "/lynx-stop"
 
 SlashCmdList['LYNX_TEST_AAA'] = function()
     Test:Run()
@@ -10,8 +12,8 @@ local this = Test
 function Test:Run()
     local bt = this:CreateLynx()
     bt:EnabledBT()
-    for i = 1, 100 do
-        print('Update ' .. i)
+    for i = 1, 10000 do
+        Log.WriteLine('Update ' .. i)
         if bt:Update() ~= BT.ETaskStatus.Running then
             break
         end
@@ -30,4 +32,47 @@ function Test:CreateLynx()
     seq1001:AddChildList{move, wait1, buy, wait2}
 
     return btree
+end
+
+Frame = wow.CreateFrame("Frame")
+Frame.elapsed = 1
+
+PULSE_DELAY = 0.25
+START_DELAY = 0.0
+LastPulseTime = wow.GetTime() + START_DELAY
+NextPulseTime = LastPulseTime + PULSE_DELAY
+
+local function ReadyToPulse()
+    local timeNow = wow.GetTime()
+    if timeNow < NextPulseTime then
+        return false
+    end
+    LastPulseTime = timeNow
+    NextPulseTime = LastPulseTime + PULSE_DELAY
+    return true
+end
+
+local bt = this:CreateLynx()
+bt:EnabledBT()
+
+local function onUpdate(...)
+    if not ReadyToPulse() then    -- every 249 ms
+        return
+    end
+
+    if bt:Update() ~= BT.ETaskStatus.Running then
+        Log.WriteLine("Lynx stop!")
+        Frame:SetScript("OnUpdate", nil)
+    end
+end
+
+SlashCmdList["LYNX_START"] = function()
+    bt:RestartBT()
+    Log.WriteLine("Lynx start!")
+    Frame:SetScript("OnUpdate", onUpdate)
+end
+
+SlashCmdList["LYNX_STOP"] = function()
+    Log.WriteLine("Lynx stop!")
+    Frame:SetScript("OnUpdate", nil)
 end
