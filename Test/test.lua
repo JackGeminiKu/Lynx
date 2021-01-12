@@ -308,7 +308,7 @@ function Test:CreateLynx()
 
     local move = BT.Move:New("move")
     local wait1 = BT.Wait:New("wait1.5", 1.5)
-    local buy = BT.Buy:New("buy")
+    local buy = BT.BuySupplies:New("buy")
     local wait2 = BT.Wait:New("wait2.5", 2.5)
     seq1001:AddChildList{move, wait1, buy, wait2}
 

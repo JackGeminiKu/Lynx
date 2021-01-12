@@ -1,11 +1,3 @@
-SLASH_LYNX_TEST_AAA1 = '/lynx-test-aaa'
-SLASH_LYNX_START1 = "/lynx-start"
-SLASH_LYNX_STOP1 = "/lynx-stop"
-
-SlashCmdList['LYNX_TEST_AAA'] = function()
-    Test:Run()
-end
-
 Test = {}
 local this = Test
 
@@ -27,7 +19,7 @@ function Test:CreateLynx()
 
     local move = BT.Move:New("move")
     local wait1 = BT.Wait:New("wait1.5", 1.5)
-    local buy = BT.Buy:New("buy")
+    local buy = BT.BuySupplies:New("buy")
     local wait2 = BT.Wait:New("wait2.5", 2.5)
     seq1001:AddChildList{move, wait1, buy, wait2}
 
@@ -66,6 +58,15 @@ local function onUpdate(...)
     end
 end
 
+-- region 插件命令
+SLASH_LYNX_TEST_AAA1 = '/lynx-test-aaa'
+SLASH_LYNX_START1 = "/lynx-start"
+SLASH_LYNX_STOP1 = "/lynx-stop"
+
+SlashCmdList['LYNX_TEST_AAA'] = function()
+    Test:Run()
+end
+
 SlashCmdList["LYNX_START"] = function()
     bt:RestartBT()
     Log.WriteLine("Lynx start!")
@@ -76,3 +77,4 @@ SlashCmdList["LYNX_STOP"] = function()
     Log.WriteLine("Lynx stop!")
     Frame:SetScript("OnUpdate", nil)
 end
+-- endregion

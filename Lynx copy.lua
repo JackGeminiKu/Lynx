@@ -33,7 +33,7 @@ function Hunter:BuyDrinks()
         Log.WriteLine('Buying ' .. needToBuy .. ' ' .. Drinks[2]);
         local div = needToBuy / 5
         for i = 1, div do
-            wow.BuyMerchantItem(drinkSlot);
+            Player.Buy(drinkSlot);
         end
         Sleep(1) -- ammo takes a ton of time to appear	
     end
@@ -58,7 +58,7 @@ function Hunter:BuyAmmo()
     Log.WriteLine('Buying ' .. needToBuy .. ' ' .. self:GetAmmoName());
     local div = needToBuy / 200
     for i = 1, div do
-        wow.BuyMerchantItem(vendorSlot);
+        Player.Buy(vendorSlot);
     end
 
     Sleep(1) -- ammo takes a ton of time to appear
