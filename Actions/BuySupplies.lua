@@ -16,12 +16,10 @@ end
 function BT.BuySupplies:OnUpdate()
     if #self.supplyList == 0 then
         self.supplyList = GetSupplyList()
-    end
-
-    for i = #self.supplyList, 1, -1 do
+    else
         if wow.GetTime() > self.nextTime then
-            Player.Buy(self.supplyList[i])
-            self.supplyList[i] = nil
+            Player.Buy(self.supplyList[#self.supplyList])
+            self.supplyList[#self.supplyList] = nil
             self.nexttime = wow.GetTime() + math.random(100, 500) / 1000
         end
     end

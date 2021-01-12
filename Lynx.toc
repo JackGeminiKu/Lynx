@@ -35,7 +35,7 @@ Actions\TestShared1.lua
 Actions\TestShared2.lua
 Actions\Wait.lua
 Actions\Move.lua
-Actions\Buy.lua
+Actions\BuySupplies.lua
 
 Composites\Parallel.lua
 Composites\Selector.lua
