@@ -46,10 +46,10 @@ BT.ETaskType = {
 }
 
 BT.EAbortType = {
-    None = "None",
-    Self = "Self",
-    LowerPriority = "LowerPriority",
-    Both = "Both"
+    None = 0,
+    Self = 1,
+    LowerPriority = 2,
+    Both = 3,
 }
 
 BT.ErrorRet = {
