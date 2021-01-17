@@ -30,8 +30,11 @@ end
 
 -- 施放魔法
 wow.CastSpell = function(spellName, onSelf)
-    local onSelf = onSelf or true
-    lb.Unlock(CastSpellByname, spellName, onSelf)
+    local target = 'target'
+    if onSelf then
+        target = 'player'
+    end
+    lb.Unlock(CastSpellByName, spellName, target)
 end
 
 -- 获取物品数量
@@ -460,4 +463,29 @@ end
 wow.bit = {}
 wow.bit.bor = function(b1, b2, ...)
     return bit.bor(b1, b2, ...)
+end
+
+
+-- Get Angle from Object to another, you can pass this either an array of positions (Not an object) or a GUID.
+-- @returns [number, number] X/Y Axis angle, Z angle.
+function AngleTo(Object1, Object2)
+   local X1, Y1, Z1
+   local X2, Y2, Z2
+   if type(Object1) == "string" then
+      X1, Y1, Z1 = lb.ObjectPosition(Object1)
+   else 
+      X1, Y1, Z1 = Object1[1], Object1[2], Object1[3]
+   end
+   if type(Object2) == "string" then
+      X2, Y2, Z2 = lb.ObjectPosition(Object2)
+   else 
+      X2, Y2, Z2 = Object2[1], Object2[2], Object2[3]
+   end
+   if X1 == nil or X2 == nil then
+    return nil
+   end
+
+      local Angle = math.sqrt(math.pow(X1 - X2, 2) + math.pow(Y1 - Y2, 2))
+      if Angle == 0 then Angle = 1 end
+      return math.atan2(Y2 - Y1, X2 - X1) % (math.pi * 2), math.atan((Z1 - Z2) / Angle) % math.pi
 end

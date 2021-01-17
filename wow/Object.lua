@@ -130,7 +130,7 @@ function Object:GetDebuff(index)
 end
 
 function Object:HasTarget()
-    return wow.UnitTarget(self.ObjectTag)
+    return wow.UnitExists('target')
 end
 
 function Object:CanAttack()

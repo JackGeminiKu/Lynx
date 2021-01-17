@@ -4,12 +4,10 @@ local this = Test
 function Test:Run()
     local bt = this:CreateLynx()
     bt:EnabledBT()
-    for i = 1, 10000 do
-        Log.WriteLine('Update ' .. i)
-        if bt:Update() ~= BT.ETaskStatus.Running then
-            break
-        end
-    end
+    local status
+    repeat
+        status = bt:Update()
+    until status ~= BT.ETaskStatus.Running
 end
 
 function Test:CreateLynx()
@@ -17,11 +15,8 @@ function Test:CreateLynx()
     local seq1001 = BT.Sequence:New("seq1001")
     btree:AddRoot(seq1001)
 
-    local move = BT.Move:New("move")
-    local wait1 = BT.Wait:New("wait1.5", 1.5)
-    local buy = BT.BuySupplies:New("buy")
-    local wait2 = BT.Wait:New("wait2.5", 2.5)
-    seq1001:AddChildList{move, wait1, buy, wait2}
+    local attack = BT.Attack:New("attack")
+    seq1001:AddChildList{attack}
 
     return btree
 end
@@ -48,7 +43,7 @@ local bt = this:CreateLynx()
 bt:EnabledBT()
 
 local function onUpdate(...)
-    if not ReadyToPulse() then    -- every 249 ms
+    if not ReadyToPulse() then    -- every 250 ms
         return
     end
 

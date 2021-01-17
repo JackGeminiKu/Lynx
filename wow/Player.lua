@@ -8,10 +8,9 @@ do
 
     -- 返回true, false, 代表施放成功还是失败
     function Player.CastSpell(spellName, onSelf)
-        if Player.IsCastable(spellName) then
+        if not Player.IsCastable(spellName) then
             return false
         end
-        local onSelf = onSelf or true
         if onSelf then
             wow.CastSpell(spellName, onSelf)
             return true
