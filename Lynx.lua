@@ -24,7 +24,7 @@ end
 Frame = wow.CreateFrame("Frame")
 Frame.elapsed = 1
 
-PULSE_DELAY = 0.25
+PULSE_DELAY = 0.1
 START_DELAY = 0.0
 LastPulseTime = wow.GetTime() + START_DELAY
 NextPulseTime = LastPulseTime + PULSE_DELAY
@@ -43,7 +43,7 @@ local bt = this:CreateLynx()
 bt:EnabledBT()
 
 local function onUpdate(...)
-    if not ReadyToPulse() then    -- every 250 ms
+    if not ReadyToPulse() then
         return
     end
 

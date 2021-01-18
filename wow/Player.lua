@@ -56,7 +56,7 @@ do
     function Player.FaceTarget()
         if wow.UnitExists('target') then
             local ax, ay, az = Player:Position()
-            local bx, by, bz = wow.GetObjectPosition('target')
+            local bx, by, bz = Target:Position()
             local angle = wow.rad(wow.atan2(by - ay, bx - ax))
             if angle < 0 then
                 return wow.FaceDirection(wow.rad(wow.atan2(by - ay, bx - ax) + 360))
@@ -64,6 +64,10 @@ do
                 return wow.FaceDirection(angle)
             end
         end
+    end
+
+    Player.SetAngle = function(angle)
+        lb.SetPlayerAngles(angle)
     end
 
     function Player.Skin(object)

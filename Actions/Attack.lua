@@ -18,6 +18,11 @@ function BT.Attack:OnUpdate()
         self.spellList = {}
         return BT.ETaskStatus.Success
     end
+    local angle = wow.GetAngle('player', 'target')
+    Log.WriteLine('angle = ' .. angle)
+    if angle > math.pi / 2 then
+        Player.SetAngle(angle)
+    end
     if wow.GetTime() > self.nextSpellTime then
         local spellName, time = self:GetNextSpell()
         self:CastSpell(spellName)
@@ -35,10 +40,10 @@ function BT.Attack:GetNextSpell()
     local spell, time
     if #self.spellList == 0 then
         spell = '炎爆术'
-        time =4.5
+        time = 4.4
     else
         spell = '寒冰箭'
-        time = 2.1
+        time = 2.0
     end
     return spell, time
 end
