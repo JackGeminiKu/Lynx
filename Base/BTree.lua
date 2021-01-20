@@ -220,13 +220,11 @@ function BT.BTree:ConditionalReevaluate()
                         break
                     end
                     -- 如果运行节点和reevaluate的conditional处于同一个并行节点的不同分支上，不能被打断
-                    if stackIndex ~= reevalute.stackIndex and
-                        self.tTaskList[self:LCA(reevalute.index, runIndex)]:CanExcuteParallel() then
+                    if stackIndex ~= reevalute.stackIndex and self.tTaskList[self:LCA(reevalute.index, runIndex)]:CanExcuteParallel() then
                         break
                     end
 
-                    if reevalute.abortType == BT.EAbortType.LowerPriority and
-                        self.tParentCompositeIndex[reevalute.index] == self.tParentCompositeIndex[runIndex] then
+                    if reevalute.abortType == BT.EAbortType.LowerPriority and self.tParentCompositeIndex[reevalute.index] == self.tParentCompositeIndex[runIndex] then
                         break
                     end
 
@@ -308,9 +306,7 @@ function BT.BTree:PopTask(stackIndex, status)
     if task:CheckType(BT.Conditional) then
         if parentComposite ~= nil and parentComposite.abortType ~= BT.EAbortType.None then
             if self.tConditionalReevaluateDic[taskIndex] == nil then
-                local reevaluate = BT.Reevaluate:New(taskIndex, status, stackIndex, parentComposite.abortType ==
-                                       BT.EAbortType.LowerPriority and 0 or parentCompositeIndex,
-                                       parentComposite.abortType)
+                local reevaluate = BT.Reevaluate:New(taskIndex, status, stackIndex, parentComposite.abortType == BT.EAbortType.LowerPriority and 0 or parentCompositeIndex, parentComposite.abortType)
                 table.insert(self.tConditionalReevaluate, reevaluate)
                 self.tConditionalReevaluateDic[taskIndex] = reevaluate
             end
@@ -346,17 +342,13 @@ function BT.BTree:PopTask(stackIndex, status)
             for i = 1, #self.tConditionalReevaluate do
                 local reevalute = self.tConditionalReevaluate[i]
                 if reevalute.compositeIndex == taskIndex then
-                    if lam_BothOrOther(task, BT.EAbortType.Self) and
-                        lam_BothOrOther(parentComposite, BT.EAbortType.Self) and
-                        lam_BothOrOther(reevalute, BT.EAbortType.Self) or
-                        lam_BothOrOther(task, BT.EAbortType.LowerPriority) and
-                        lam_BothOrOther(reevalute, BT.EAbortType.LowerPriority) then
+                    if lam_BothOrOther(task, BT.EAbortType.Self) and lam_BothOrOther(parentComposite, BT.EAbortType.Self) and lam_BothOrOther(reevalute, BT.EAbortType.Self) or
+                        lam_BothOrOther(task, BT.EAbortType.LowerPriority) and lam_BothOrOther(reevalute, BT.EAbortType.LowerPriority) then
                         reevalute.compositeIndex = parentCompositeIndex
                         if reevalute.abortType == BT.EAbortType.Both then
                             if task.abortType == BT.EAbortType.Self or parentComposite.abortType == BT.EAbortType.Self then
                                 reevalute.abortType = BT.EAbortType.Self
-                            elseif task.abortType == BT.EAbortType.LowerPriority or parentComposite.abortType ==
-                                BT.EAbortType.LowerPriority then
+                            elseif task.abortType == BT.EAbortType.LowerPriority or parentComposite.abortType == BT.EAbortType.LowerPriority then
                                 reevalute.abortType = BT.EAbortType.LowerPriority
                             end
                         end
