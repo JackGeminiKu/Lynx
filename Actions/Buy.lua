@@ -1,11 +1,11 @@
-BT.BuySupplies = {
+BT.Buy = {
     Base = BT.Action
 }
-local this = BT.BuySupplies
+local this = BT.Buy
 this.__index = this
 setmetatable(this, this.Base)
 
-function BT.BuySupplies:New(name)
+function BT.Buy:New(name)
     local o = this.Base:New(name)
     o.nextTime = wow.GetTime()
     o.supplyList = {}
@@ -13,7 +13,7 @@ function BT.BuySupplies:New(name)
     return o
 end
 
-function BT.BuySupplies:OnUpdate()
+function BT.Buy:OnUpdate()
     if #self.supplyList == 0 then
         self.supplyList = GetSupplyList()
     else

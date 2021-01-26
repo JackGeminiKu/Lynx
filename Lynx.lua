@@ -1,26 +1,21 @@
-Test = {}
-local this = Test
-
-function Test:Run()
-    local bt = this:CreateLynx()
-    bt:EnabledBT()
-    local status
-    repeat
-        status = bt:Update()
-    until status ~= BT.ETaskStatus.Running
-end
-
-function Test:CreateLynx()
+-- region btree
+local function CreateLynx()
     local btree = BT.BTree:New(nil, "Lynx")
-    local seq1001 = BT.Sequence:New("seq1001")
-    btree:AddRoot(seq1001)
+    local seq_buy = BT.Sequence:New("sequence buy")
+    btree:AddRoot(seq_buy)
 
-    local attack = BT.Attack:New("attack")
-    seq1001:AddChildList{attack}
+    local selectVendor = BT.SelectVendor:New("select vendor")
+    local move = BT.Move:New("move")
+    local buy = BT.Buy:New("buy")
+    seq_buy:AddChildList{selectVendor, move, buy}
 
     return btree
 end
+local bt = CreateLynx()
+bt:EnabledBT()
+-- endregion
 
+-- region onUpdate
 Frame = wow.CreateFrame("Frame")
 Frame.elapsed = 1
 
@@ -38,10 +33,6 @@ local function ReadyToPulse()
     NextPulseTime = LastPulseTime + PULSE_DELAY
     return true
 end
-
-local bt = this:CreateLynx()
-bt:EnabledBT()
-
 local function onUpdate(...)
     if not ReadyToPulse() then
         return
@@ -52,15 +43,11 @@ local function onUpdate(...)
         Frame:SetScript("OnUpdate", nil)
     end
 end
+-- endregion
 
 -- region 插件命令
-SLASH_LYNX_TEST_AAA1 = '/lynx-test-aaa'
 SLASH_LYNX_START1 = "/lynx-start"
 SLASH_LYNX_STOP1 = "/lynx-stop"
-
-SlashCmdList['LYNX_TEST_AAA'] = function()
-    Test:Run()
-end
 
 SlashCmdList["LYNX_START"] = function()
     bt:RestartBT()
