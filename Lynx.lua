@@ -11,6 +11,7 @@ local function CreateLynx()
 
     return btree
 end
+
 local bt = CreateLynx()
 bt:EnabledBT()
 -- endregion
@@ -33,6 +34,7 @@ local function ReadyToPulse()
     NextPulseTime = LastPulseTime + PULSE_DELAY
     return true
 end
+
 local function onUpdate(...)
     if not ReadyToPulse() then
         return

@@ -1,6 +1,6 @@
 Navigator = {}
 
--- 移动到某个位置
+-- region Nav api
 function Navigator.MoveTo(...)
     local x, y, z
     if select('#', ...) == 3 then
@@ -21,13 +21,6 @@ function Navigator.MoveTo(...)
     Log.WriteLine('Current position: ' .. px .. ', ' .. py .. ', ' .. pz)
     Log.WriteLine('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
     wow.MoveTo(x, y, z)
-end
-
-function Navigator.Stop()
-    _waypoints = {}
-    wow.StopMove()
-    wow.Unlock(MoveForwardStart)
-    wow.Unlock(MoveForwardStop)
 end
 
 function Navigator.SavePosition()
@@ -56,11 +49,21 @@ end
 function Navigator.ComparePoint(point1, point2)
     return point1.x == point2.x and point1.y == point2.y and point1.z == point2.z
 end
+-- endregion
+
+
+
+function Navigator.Stop()
+    _waypoints = {}
+    wow.StopMove()
+    wow.Unlock(MoveForwardStart)
+    wow.Unlock(MoveForwardStop)
+end
 
 -- 地图导航
-_waypoints = {} 
+local _waypoints = {} 
 
-function Navigator.MoveToLocation(location)
+local function MoveToLocation(location)
     Log.WriteLine("Initialize waypoints")
     Log.WriteLine('Target position: ' .. location.x .. ', ' .. location.y .. ', ' .. location.z)
 
@@ -80,23 +83,16 @@ function Navigator.MoveToLocation(location)
     end
 end
 
-function NextWaypoint()
+local function NextWaypoint()
     if #_waypoints == 0 then
         return nil
     end
     return _waypoints[#_waypoints]
 end
 
-local function DeleteWaypoint()
-    if #_waypoints ~= 0 then
-        _waypoints[#_waypoints] = nil
-    end
-end
-
 local _lastUpdateTime = wow.GetTime() 
-_lastMoveTime = 0
-_lastDistance = 0
-local _proximityTolerance = 2
+local _lastMoveTime = 0
+local _lastDistance = 0
 local _navInitialized = false
 
 local function IsNavigationReady()
@@ -111,7 +107,7 @@ local function IsNavigationReady()
         Log.WriteLine('Loading Navigation...')
         wow.LoadScript('TypescriptNavigator')
     end
-    return Navigator
+    return true
 end
 
 local Frame = wow.CreateFrame("Frame")
