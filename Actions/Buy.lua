@@ -13,22 +13,26 @@ function BT.Buy:New(name)
     return o
 end
 
+function BT.Buy:OnStart()
+    self.supplyList = GetSupplyList()
+end
+
 function BT.Buy:OnUpdate()
-    if #self.supplyList == 0 then
-        self.supplyList = GetSupplyList()
-    else
-        if wow.GetTime() > self.nextTime then
-            Player.Buy(self.supplyList[#self.supplyList])
-            self.supplyList[#self.supplyList] = nil
-            self.nexttime = wow.GetTime() + math.random(100, 500) / 1000
-        end
-    end
+    -- interact
+
+    -- buy
 
     if #self.supplyList == 0 then
         return BT.ETaskStatus.Success
-    else
-        return BT.ETaskStatus.Running
     end
+
+    if wow.GetTime() > self.nextTime then
+        Player.Buy(self.supplyList[#self.supplyList])
+        self.supplyList[#self.supplyList] = nil
+        self.nextTime = wow.GetTime() + math.random(100, 500) / 1000
+    end
+
+    return BT.ETaskStatus.Running
 end
 
 function GetSupplyList()

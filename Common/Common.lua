@@ -22,7 +22,7 @@ Const = {
     Empty = "none"
 }
 
-BT = {}
+DeleteCurrentWaypoint = {}
 BT.EBTreeStatus = {
     None = "None",
     Pause = "Pause",

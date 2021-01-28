@@ -1,4 +1,5 @@
 local PROXIMITY_TOLERANCE = 2
+local STUCK_TOLERANCE = 0.1
 
 BT.Move = {
     Base = BT.Action
@@ -10,10 +11,8 @@ setmetatable(this, this.Base)
 function BT.Move:New(name)
     local o = this.base:New(name)
     setmetatable(o, this)
-    o.location = {}
     o.waypoints = {}
-    o.lastMoveTime = 0
-    o.lastMoveDistance = 1000
+    o.lastLocation = {}
     return o
 end
 
@@ -28,36 +27,13 @@ function BT.Move:OnStart()
     end
 
     Log.WriteLine("New waypoints")
-    for k, w in pairs(_waypoints) do
+    for k, w in pairs(self.waypoints) do
         local rnd = math.random(-100, 100) / 100
         w.x = w.x + rnd
         w.y = w.y + rnd
         w.z = w.z + rnd
         Log.WriteLine(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
     end
-end
-
-function BT.Move:IsFinished()
-    return self:NextWaypoint() == nil
-end
-
-function BT.Move:NextWaypoint()
-    if #self.waypoints == 0 then
-        return nil
-    end
-    return self.waypoints[#self.waypoints]
-end
-
-function BT.Move:DeleteCurrentWaypoint()
-    if #self.waypoints ~= 0 then
-        self.waypoints[#self.waypoints] = nil
-    end
-end
-
-function BT.Move:MoveTo(x, y, z)
-    self.lastMoveTime = wow.GetTime()
-    self.lastMoveDistance = Player:DistanceFrom(self:NextWaypoint())
-    Navigator.MoveTo(x, y, z)
 end
 
 function BT.Move:OnUpdate()
@@ -73,12 +49,10 @@ function BT.Move:OnUpdate()
     if dist < PROXIMITY_TOLERANCE then
         self:DeleteWaypoint()
         if self:NextWaypoint() ~= nil then
-            self.lastMoveTime = wow.GetTime()
-            self.lastMoveDistance = Player:DistanceFrom(self:NextWaypoint())
             Navigator.MoveTo(self:NextWaypoint())
         end
     else
-        if wow.GetTime() - self.lastMoveTime > 1 and math.abs(self.lastMoveDistance - dist) < 0.1 then
+        if self:IsStucked() then
             Log.WriteLine('Stuck!!!')
             Player:Jump()
 
@@ -88,11 +62,43 @@ function BT.Move:OnUpdate()
             --     _waypoints[#_waypoints + 1] = waypoints[i]
             -- end
 
-            self.lastMoveTime = wow.GetTime()
-            self.lastMoveDistance = Player:DistanceFrom(self:NextWaypoint())
             Navigator.MoveTo(self:NextWaypoint())
         end
+
+        self.lastLocation = Player:Location()
     end
 
     return BT.ETaskStatus.Running
+end
+
+function BT.Move:IsFinished()
+    return #self.waypoints == 0
+end
+
+function BT.Move:NextWaypoint()
+    if #self.waypoints == 0 then
+        return nil
+    end
+    return self.waypoints[#self.waypoints]
+end
+
+function BT.Move:DeleteCurrentWaypoint()
+    if #self.waypoints ~= 0 then
+        self.waypoints[#self.waypoints] = nil
+    end
+end
+
+function BT.Move:IsStucked()
+    if self.lastLocation == nil then
+        return false
+    else
+        local currentLocation = Player:Location()
+        if math.abs(currentLocation.x - self.lastLocation.x) < STUCK_TOLERANCE and
+            math.abs(currentLocation.y - self.lastLocation.y) < STUCK_TOLERANCE and
+            math.abs(currentLocation.z - self.lastLocation.z) < STUCK_TOLERANCE then
+            return true
+        else
+            return false
+        end
+    end
 end
