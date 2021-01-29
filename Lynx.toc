@@ -33,11 +33,15 @@ Base\Decorator.lua
 Actions\Log.lua
 Actions\TestShared1.lua
 Actions\TestShared2.lua
+
 Actions\Wait.lua
-Actions\Move.lua
-Actions\Buy.lua
 Actions\Attack.lua
-Actions\SelectVendor.lua
+
+Actions\SelectMerchant.lua
+Actions\Move.lua
+Actions\Target.lua
+Actions\Interact.lua
+Actions\Buy.lua
 
 Composites\Parallel.lua
 Composites\Selector.lua

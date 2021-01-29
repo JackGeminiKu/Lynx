@@ -1,14 +1,15 @@
 -- region btree
 local function CreateLynx()
     local btree = BT.BTree:New(nil, "Lynx")
-    local seq_buy = BT.Sequence:New("sequence buy")
-    btree:AddRoot(seq_buy)
+    local seqBuy = BT.Sequence:New("sequence buy")
+    btree:AddRoot(seqBuy)
 
-    local selectVendor = BT.SelectVendor:New("select vendor")
+    local selectMerchant = BT.SelectMerchant:New("select merchant")
     local move = BT.Move:New("move")
+    local target = BT.Target:New("target")
+    local interact = BT.Interact:New("interact")
     local buy = BT.Buy:New("buy")
-    seq_buy:AddChildList{selectVendor, move, buy}
-
+    seqBuy:AddChildList{selectMerchant, move, target, interact, buy}
     return btree
 end
 
@@ -17,13 +18,13 @@ bt:EnabledBT()
 -- endregion
 
 -- region onUpdate
-Frame = wow.CreateFrame("Frame")
+local Frame = wow.CreateFrame("Frame")
 Frame.elapsed = 1
 
-PULSE_DELAY = 0.1
-START_DELAY = 0.0
-LastPulseTime = wow.GetTime() + START_DELAY
-NextPulseTime = LastPulseTime + PULSE_DELAY
+local PULSE_DELAY = 0.1
+local START_DELAY = 0.0
+local LastPulseTime = wow.GetTime() + START_DELAY
+local NextPulseTime = LastPulseTime + PULSE_DELAY
 
 local function ReadyToPulse()
     local timeNow = wow.GetTime()

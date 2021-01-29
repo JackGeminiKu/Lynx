@@ -14,14 +14,11 @@ function BT.Buy:New(name)
 end
 
 function BT.Buy:OnStart()
+    -- 计算要买什么东西?
     self.supplyList = GetSupplyList()
 end
 
 function BT.Buy:OnUpdate()
-    -- interact
-
-    -- buy
-
     if #self.supplyList == 0 then
         return BT.ETaskStatus.Success
     end
