@@ -7,9 +7,20 @@ local function CreateLynx()
     local selectMerchant = BT.SelectMerchant:New("select merchant")
     local move = BT.Move:New("move")
     local target = BT.Target:New("target")
+    local wait1 = BT.Wait:New("wait_after_target", 1) 
     local interact = BT.Interact:New("interact")
+    local wait2 = BT.Wait:New("wait_after_interact", 1)
     local buy = BT.Buy:New("buy")
-    seqBuy:AddChildList{selectMerchant, move, target, interact, buy}
+    seqBuy:AddChildList{
+        selectMerchant, 
+        move, 
+        target, 
+        wait1,
+        interact, 
+        wait2,
+        buy
+    }
+    -- seqBuy:AddChildList{selectMerchant, move, target, interact, buy}
     return btree
 end
 

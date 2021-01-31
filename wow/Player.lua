@@ -40,8 +40,8 @@ do
         wow.Dismount()
     end
 
-    function Player.Interact(object)
-        return wow.InteractUnit(object.ObjectTag)
+    function Player.Interact()
+        return wow.InteractUnit("target")
     end
 
     function Player.RetrieveCorpse()
@@ -50,7 +50,11 @@ do
 
     -- 选中object作为当前目标
     function Player.Target(object)
-        wow.TargetUnit(object.ObjectTag)
+        if type(object) == "table" then
+            wow.TargetUnit(object.ObjectTag)
+        else
+            wow.TargetUnit(object)
+        end
     end
 
     function Player.FaceTarget()

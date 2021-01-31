@@ -16,7 +16,7 @@ function BT.Wait:New(name, time)
 end
 
 function BT.Wait:OnStart()
-    self.fStartTime = 0
+    self.fStartTime = wow.GetTime()
 end
 
 function BT.Wait:OnUpdate()

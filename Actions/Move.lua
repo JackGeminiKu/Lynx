@@ -11,16 +11,16 @@ setmetatable(this, this.Base)
 function BT.Move:New(name)
     local o = this.base:New(name)
     setmetatable(o, this)
-    o.waypoints = {}
-    o.lastLocation = {}
+    o.waypoints = nil 
+    o.lastLocation = nil
     return o
 end
 
 function BT.Move:OnStart()
-    local x, y, z = self.btree.sharedData:GetData('destination')
-    Log.WriteLine(string.format('Get destination: %d, %d, %d', x, y, z))
+    local dest = self.bTree.sharedData:GetData('destination').val
+    Log.WriteLine(string.format('Get destination: %d, %d, %d', dest.x, dest.y, dest.z))
 
-    self.waypoints = Navigator.GetWaypoints(x, y, z)
+    self.waypoints = Navigator.GetWaypoints(dest.x, dest.y, dest.z)
     Log.WriteLine("Mesh waypoints")
     for k, w in pairs(self.waypoints) do
         Log.WriteLine(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
@@ -47,7 +47,7 @@ function BT.Move:OnUpdate()
 
     local dist = Player:DistanceFrom(self:NextWaypoint())
     if dist < PROXIMITY_TOLERANCE then
-        self:DeleteWaypoint()
+        self:DeleteLastWaypoint()
         if self:NextWaypoint() ~= nil then
             Navigator.MoveTo(self:NextWaypoint())
         end
@@ -56,11 +56,11 @@ function BT.Move:OnUpdate()
             Log.WriteLine('Stuck!!!')
             Player:Jump()
 
-            -- local waypoints = Navigator.GetWaypoints(NextWaypoint().x, NextWaypoint().y, NextWaypoint().z)
-            -- for i = 1, #waypoints do
-            --     Log.WriteLine('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
-            --     _waypoints[#_waypoints + 1] = waypoints[i]
-            -- end
+            local waypoints = Navigator.GetWaypoints(self:NextWaypoint().x, self:NextWaypoint().y, self:NextWaypoint().z)
+            for i = 1, #waypoints do
+                Log.WriteLine('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
+                self.waypoints[#self.waypoints + 1] = waypoints[i]
+            end
 
             Navigator.MoveTo(self:NextWaypoint())
         end
@@ -82,7 +82,7 @@ function BT.Move:NextWaypoint()
     return self.waypoints[#self.waypoints]
 end
 
-function BT.Move:DeleteCurrentWaypoint()
+function BT.Move:DeleteLastWaypoint()
     if #self.waypoints ~= 0 then
         self.waypoints[#self.waypoints] = nil
     end

@@ -24,6 +24,7 @@ function BT.Buy:OnUpdate()
     end
 
     if wow.GetTime() > self.nextTime then
+        -- print("buy: " .. self.supplyList[#self.supplyList])
         Player.Buy(self.supplyList[#self.supplyList])
         self.supplyList[#self.supplyList] = nil
         self.nextTime = wow.GetTime() + math.random(100, 500) / 1000

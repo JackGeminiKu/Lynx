@@ -14,7 +14,7 @@ function BT.Interact:New(name)
 end
 
 function BT.Interact:OnStart()
-    self.target = self.btree.sharedData:GetData('target')
+    self.target = self.bTree.sharedData:GetData('target').val
 end
 
 function BT.Interact:OnUpdate()

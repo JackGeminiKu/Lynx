@@ -23,6 +23,9 @@ Const = {
 }
 
 DeleteCurrentWaypoint = {}
+
+BT = {}
+
 BT.EBTreeStatus = {
     None = "None",
     Pause = "Pause",

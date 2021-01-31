@@ -135,7 +135,9 @@ wow.PickupContainerItem = function(bagId, slot)
 end
 
 wow.TargetUnit = function(unit)
-    TargetUnit(unit)
+    Log.WriteLine("Set target: " .. unit)
+    lb.UnitTagHandler(TargetUnit, unit)
+    -- lb.Unlock(TargetUnit, unit)
 end
 
 wow.UnitCreatureType = function(unit)
