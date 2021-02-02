@@ -195,6 +195,10 @@ wow.UnitExists = function(unit)
     return UnitExists(unit)
 end
 
+function wow.ObjectExists(guid)
+    return lb.ObjectExists(guid)
+end
+
 wow.IsUsableSpell = function(spellName)
     return IsUsableSpell(spellName)
 end
