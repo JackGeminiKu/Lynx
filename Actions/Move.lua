@@ -17,7 +17,7 @@ function BT.Move:New(name)
 end
 
 function BT.Move:OnStart()
-    local dest = self.bTree.sharedData:GetData('destination').val
+    local dest = self.bTree.sharedData:GetData('destination').value
     Log.WriteLine(string.format('Get destination: %d, %d, %d', dest.x, dest.y, dest.z))
 
     self.waypoints = Navigator.GetWaypoints(dest.x, dest.y, dest.z)

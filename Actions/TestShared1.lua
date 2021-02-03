@@ -10,19 +10,19 @@ setmetatable(this, this.base)
 function BT.TestShared1:New(name)
     local o = this.base:New(name)
     setmetatable(o, this)
-    o.sharedVal = Const.Empty
-    o.val = Const.Empty
+    o.shared.value = Const.Empty
+    o.value = Const.Empty
     return o
 end
 
 function BT.TestShared1:OnStart()
-    self.sharedVal = self.bTree.sharedData:GetData("testVal")
-    self.val = "init1"
+    self.shared.value = self.bTree.sharedData:GetData("testVal")
+    self.value = "init1"
 end
 
 function BT.TestShared1:OnUpdate()
-    self.sharedVal.val = "sharedVal: by TestShared1"
-    self.val = "val: by TestShared1"
-    LogMgr.Normal("1: " .. (self.sharedVal.val and self.sharedVal.val or Const.Empty) .. " " .. self.val)
+    self.sharedVal.value = "sharedVal: by TestShared1"
+    self.value = "val: by TestShared1"
+    LogMgr.Normal("1: " .. (self.sharedVal.value and self.sharedVal.value or Const.Empty) .. " " .. self.val)
     return BT.ETaskStatus.Success
 end

@@ -19,10 +19,15 @@ function BT.GatherHerb:OnStart()
 end
 
 function BT.GatherHerb:OnUpdate()
-    local herbGuid = self.herbGuid.val
-    if herbGuid == nil or not wow.ObjectExists(herbGuid) then
-        return BT.ETaskStatus.Success
+    local herbGuid = self.herbGuid.value
+    if herbGuid == nil then
+        Log.WriteLine("采集草药失败, 没有设定采药点!")
+        return BT.ETaskStatus.Failure
     end
-    lb.UnitTagHandler(InteractUnit, guid)
+    if not wow.ObjectExists(herbGuid) then
+        Log.WriteLine("采集草药失败, 采药没了!")
+        return BT.ETaskStatus.Failure
+    end
+    wow.GatherHerb(herbGuid)
     return BT.ETaskStatus.Success
 end

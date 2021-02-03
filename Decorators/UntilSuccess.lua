@@ -18,7 +18,7 @@ end
 
 function BT.UntilSuccess:OnChildExcuted(status)
     if status == BT.ETaskStatus.Success then
-        self.eStatus = status
+        self.eStatus = BT.ETaskStatus.Success
     else
         self.eStatus = BT.ETaskStatus.Running
     end

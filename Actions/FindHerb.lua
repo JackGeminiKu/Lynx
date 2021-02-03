@@ -19,7 +19,7 @@ function BT.FindHerb:OnStart()
 end
 
 function BT.FindHerb:OnUpdate()
-    self.herbGuid.val = "herb guid"
-    self.destination.val = "herb destination"
+    self.herbGuid.value = "herb guid"
+    self.destination.value = "herb destination"
     return BT.ETaskStatus.Success
 end

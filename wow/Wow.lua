@@ -471,7 +471,6 @@ wow.bit.bor = function(b1, b2, ...)
     return bit.bor(b1, b2, ...)
 end
 
-
 -- Get Angle from Object to another, you can pass this either an array of positions (Not an object) or a GUID.
 -- @returns [number, number] X/Y Axis angle, Z angle.
 wow.GetAngle = function(Object1, Object2)
@@ -479,12 +478,12 @@ wow.GetAngle = function(Object1, Object2)
     local X2, Y2, Z2
     if type(Object1) == "string" then
         X1, Y1, Z1 = lb.ObjectPosition(Object1)
-    else 
+    else
         X1, Y1, Z1 = Object1[1], Object1[2], Object1[3]
     end
     if type(Object2) == "string" then
         X2, Y2, Z2 = lb.ObjectPosition(Object2)
-    else 
+    else
         X2, Y2, Z2 = Object2[1], Object2[2], Object2[3]
     end
     if X1 == nil or X2 == nil then
@@ -492,6 +491,16 @@ wow.GetAngle = function(Object1, Object2)
     end
 
     local Angle = math.sqrt(math.pow(X1 - X2, 2) + math.pow(Y1 - Y2, 2))
-    if Angle == 0 then Angle = 1 end
+    if Angle == 0 then
+        Angle = 1
+    end
     return math.atan2(Y2 - Y1, X2 - X1) % (math.pi * 2), math.atan((Z1 - Z2) / Angle) % math.pi
+end
+
+wow.GatherHerb = function(guid)
+    lb.UnitTagHandler(InteractUnit, guid)
+end
+
+wow.GatherMine = function(guid)
+    lb.UnitTagHandler(InteractUnit, guid)
 end

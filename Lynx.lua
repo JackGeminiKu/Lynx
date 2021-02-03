@@ -7,24 +7,49 @@ local function CreateLynx()
     local selectMerchant = BT.SelectMerchant:New("select merchant")
     local move = BT.Move:New("move")
     local target = BT.Target:New("target")
-    local wait1 = BT.Wait:New("wait_after_target", 1) 
+    local wait1 = BT.Wait:New("wait_after_target", 1)
     local interact = BT.Interact:New("interact")
     local wait2 = BT.Wait:New("wait_after_interact", 1)
     local buy = BT.Buy:New("buy")
-    seqBuy:AddChildList{
+    seqBuy:AddChildList({
         selectMerchant, 
         move, 
         target, 
-        wait1,
+        wait1, 
         interact, 
-        wait2,
+        wait2, 
         buy
-    }
+    })
     -- seqBuy:AddChildList{selectMerchant, move, target, interact, buy}
     return btree
 end
 
-local bt = CreateLynx()
+local function CreateHerbBt()
+    local seqGather = BT.Sequence:New("sequence gather")
+    seqGather:AddChidList({
+        BT.GatherHerb:New("gather herb"),
+        BT.Wait:New("wait", 2000)
+    })
+
+    local ufGather = BT.UntilFailure:New("gather until fail")
+    ufGather:AddChild(seqGather)
+
+    local invGather = BT.Inverter:New("inverter gather")
+    invGather:AddChild(ufGather)
+
+    local seqRoot = BT.Sequence:New("herb root")
+    seqRoot:AddChildList({
+        BT.FindHerb:New("find herb"),
+        BT.Move:New("move to herb"),
+        invGather
+    })
+
+    local btree = BT.BTree:New(nil, "herb bt")
+    btree:AddRoot(seqRoot)
+    return btree
+end
+
+local bt = CreateHerbBt()
 bt:EnabledBT()
 -- endregion
 
