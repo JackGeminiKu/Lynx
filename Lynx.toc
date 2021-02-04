@@ -42,6 +42,8 @@ Actions\Move.lua
 Actions\Target.lua
 Actions\Interact.lua
 Actions\Buy.lua
+Actions\FindHerb.lua
+Actions\GatherHerb.lua
 
 Composites\Parallel.lua
 Composites\Selector.lua

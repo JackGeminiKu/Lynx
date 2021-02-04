@@ -24,8 +24,9 @@ function BT.GatherHerb:OnUpdate()
         Log.WriteLine("采集草药失败, 没有设定采药点!")
         return BT.ETaskStatus.Failure
     end
+    Log.WriteLine(herbGuid .. ": " .. tostring(wow.ObjectExists(herbGuid)))
     if not wow.ObjectExists(herbGuid) then
-        Log.WriteLine("采集草药失败, 采药没了!")
+        Log.WriteLine("采集草药失败, 草药没了!")
         return BT.ETaskStatus.Failure
     end
     wow.GatherHerb(herbGuid)

@@ -19,7 +19,14 @@ function BT.FindHerb:OnStart()
 end
 
 function BT.FindHerb:OnUpdate()
-    self.herbGuid.value = "herb guid"
-    self.destination.value = "herb destination"
-    return BT.ETaskStatus.Success
+    for _, guid in ipairs(lb.GetObjects(100)) do
+        local objectName = wow.ObjectName(guid)
+        if objectName == "宁神花" or objectName == "石南草" or objectName == "魔皇草" then
+            self.herbGuid.value = guid
+            local x, y, z = wow.ObjectPosition(guid)
+            self.herbLocation.value = {x = x, y = y, z = z}
+            return BT.ETaskStatus.Success
+        end
+    end
+    return BT.ETaskStatus.Running
 end

@@ -30,9 +30,9 @@ end
 
 local function CreateBtHerb()
     local seqGather = BT.Sequence:New("sequence gather")
-    seqGather:AddChidList({
+    seqGather:AddChildList({
         BT.GatherHerb:New("gather herb"),
-        BT.Wait:New("wait", 2000)
+        BT.Wait:New("wait", 2)
     })
 
     local ufGather = BT.UntilFailure:New("gather until fail")
@@ -82,6 +82,7 @@ local function onUpdate(...)
 
     if _bt:Update() ~= BT.ETaskStatus.Running then
         Log.WriteLine("Lynx stop!")
+        _bt:DisabledBT()
         _frame:SetScript("OnUpdate", nil)
     end
 end
