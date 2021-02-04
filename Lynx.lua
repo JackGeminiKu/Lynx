@@ -1,5 +1,5 @@
 -- region btree
-local function CreateLynx()
+local function CreateBtBuy()
     local btree = BT.BTree:New(nil, "Lynx")
     local seqBuy = BT.Sequence:New("sequence buy")
     btree:AddRoot(seqBuy)
@@ -24,7 +24,11 @@ local function CreateLynx()
     return btree
 end
 
-local function CreateHerbBt()
+local function CreateBtFight()
+
+end
+
+local function CreateBtHerb()
     local seqGather = BT.Sequence:New("sequence gather")
     seqGather:AddChidList({
         BT.GatherHerb:New("gather herb"),
@@ -49,26 +53,25 @@ local function CreateHerbBt()
     return btree
 end
 
-local bt = CreateHerbBt()
-bt:EnabledBT()
--- endregion
+local _bt = CreateBtHerb()
+-- endregion btree
 
 -- region onUpdate
-local Frame = wow.CreateFrame("Frame")
-Frame.elapsed = 1
+local _frame = wow.CreateFrame("Frame")
+_frame.elapsed = 1
 
 local PULSE_DELAY = 0.1
 local START_DELAY = 0.0
-local LastPulseTime = wow.GetTime() + START_DELAY
-local NextPulseTime = LastPulseTime + PULSE_DELAY
+local _lastPulseTime = wow.GetTime() + START_DELAY
+local _nextPulseTime = _lastPulseTime + PULSE_DELAY
 
 local function ReadyToPulse()
     local timeNow = wow.GetTime()
-    if timeNow < NextPulseTime then
+    if timeNow < _nextPulseTime then
         return false
     end
-    LastPulseTime = timeNow
-    NextPulseTime = LastPulseTime + PULSE_DELAY
+    _lastPulseTime = timeNow
+    _nextPulseTime = _lastPulseTime + PULSE_DELAY
     return true
 end
 
@@ -77,25 +80,26 @@ local function onUpdate(...)
         return
     end
 
-    if bt:Update() ~= BT.ETaskStatus.Running then
+    if _bt:Update() ~= BT.ETaskStatus.Running then
         Log.WriteLine("Lynx stop!")
-        Frame:SetScript("OnUpdate", nil)
+        _frame:SetScript("OnUpdate", nil)
     end
 end
--- endregion
+-- endregion onUpdate
 
 -- region 插件命令
 SLASH_LYNX_START1 = "/lynx-start"
 SLASH_LYNX_STOP1 = "/lynx-stop"
 
 SlashCmdList["LYNX_START"] = function()
-    bt:RestartBT()
     Log.WriteLine("Lynx start!")
-    Frame:SetScript("OnUpdate", onUpdate)
+    _bt:EnabledBT()
+    _frame:SetScript("OnUpdate", onUpdate)
 end
 
 SlashCmdList["LYNX_STOP"] = function()
     Log.WriteLine("Lynx stop!")
-    Frame:SetScript("OnUpdate", nil)
+    _bt:DisabledBT()
+    _frame:SetScript("OnUpdate", nil)
 end
--- endregion
+-- endregion 插件命令
