@@ -10,12 +10,16 @@ function BT.GatherHerb:New(name)
     local o = self.base:New(name)
     setmetatable(o, this)
     o.herbGuid = nil
+    o.herbName = nil
+    o.herbCount = 0
     o.gatherTime = 3000
     return o
 end
 
 function BT.GatherHerb:OnStart()
-    self.herbGuid = self.bTree.sharedData:GetData("herbGuid")
+    self.herbGuid = self.bTree.sharedData:GetData("herb guid")
+    self.herbName = self.bTree.sharedData:GetData("herb name")
+    self.herbCount = Bag.GetItemCount(self.herbName)
 end
 
 function BT.GatherHerb:OnUpdate()
@@ -24,11 +28,20 @@ function BT.GatherHerb:OnUpdate()
         Log.WriteLine("采集草药失败, 没有设定采药点!")
         return BT.ETaskStatus.Failure
     end
-    Log.WriteLine(herbGuid .. ": " .. tostring(wow.ObjectExists(herbGuid)))
     if not wow.ObjectExists(herbGuid) then
         Log.WriteLine("采集草药失败, 草药没了!")
         return BT.ETaskStatus.Failure
     end
+
     wow.GatherHerb(herbGuid)
+    --wait 2000
+
+    local herbCount = Bag.GetItemCount(self.herbName)
+    if herbCount > self.herbCount then
+        return BT.ETaskStatus.Success
+    else
+        return BT.ETaskStatus.Running
+    end
+
     return BT.ETaskStatus.Success
 end
