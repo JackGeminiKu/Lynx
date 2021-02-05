@@ -24,24 +24,19 @@ end
 
 function BT.GatherHerb:OnUpdate()
     local herbGuid = self.herbGuid.value
-    if herbGuid == nil then
-        Log.WriteLine("采集草药失败, 没有设定采药点!")
-        return BT.ETaskStatus.Failure
-    end
     if not wow.ObjectExists(herbGuid) then
-        Log.WriteLine("采集草药失败, 草药没了!")
-        return BT.ETaskStatus.Failure
-    end
-
-    wow.GatherHerb(herbGuid)
-    --wait 2000
-
-    local herbCount = Bag.GetItemCount(self.herbName)
-    if herbCount > self.herbCount then
+        Log.WriteLine("草药不见了!")
         return BT.ETaskStatus.Success
-    else
-        return BT.ETaskStatus.Running
     end
 
+    for i = 1, 3 do
+        wow.GatherHerb(herbGuid)
+        --wait 2000
+
+        local herbCount = Bag.GetItemCount(self.herbName)
+        if herbCount > self.herbCount then
+            return BT.ETaskStatus.Success
+        end
+    end
     return BT.ETaskStatus.Success
 end
