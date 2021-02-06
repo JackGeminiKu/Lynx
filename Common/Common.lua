@@ -22,8 +22,6 @@ Const = {
     Empty = "none"
 }
 
-DeleteCurrentWaypoint = {}
-
 BT = {}
 
 BT.EBTreeStatus = {
@@ -52,7 +50,7 @@ BT.EAbortType = {
     None = 0,
     Self = 1,
     LowerPriority = 2,
-    Both = 3,
+    Both = 3
 }
 
 BT.ErrorRet = {

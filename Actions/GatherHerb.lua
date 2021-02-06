@@ -1,3 +1,7 @@
+local MAX_GATHER_COUNT = 3
+local GATHER_TIME = 3
+
+
 BT.GatherHerb = {
     base = BT.Action
 }
@@ -11,32 +15,42 @@ function BT.GatherHerb:New(name)
     setmetatable(o, this)
     o.herbGuid = nil
     o.herbName = nil
-    o.herbCount = 0
-    o.gatherTime = 3000
+    o.gatherCount = 0
+    o.lastHerbCount = 0
+    o.lastGatherTime = 0
     return o
 end
 
 function BT.GatherHerb:OnStart()
     self.herbGuid = self.bTree.sharedData:GetData("herb guid")
     self.herbName = self.bTree.sharedData:GetData("herb name")
-    self.herbCount = Bag.GetItemCount(self.herbName)
+    self.lastHerbCount = Bag.GetItemCount(self.herbName)
+    self.lastGatherTime = 0
 end
 
 function BT.GatherHerb:OnUpdate()
     local herbGuid = self.herbGuid.value
+    if herbGuid == nil then
+        Log.Error("没有设置草药GUID!")
+        return BT.ETaskStatus.Success
+    end
     if not wow.ObjectExists(herbGuid) then
-        Log.WriteLine("草药不见了!")
+        Log.Debug("草药不见了!")
         return BT.ETaskStatus.Success
     end
 
-    for i = 1, 3 do
+    if wow.GetTime() - self.lastGatherTime > GATHER_TIME then
+        self.lastGatherTime = wow.GetTime()
+        self.gatherCount = self.gatherCount + 1
+        if self.gatherCount > MAX_GATHER_COUNT then
+            return BT.ETaskStatus.Success
+        end
         wow.GatherHerb(herbGuid)
-        --wait 2000
-
-        local herbCount = Bag.GetItemCount(self.herbName)
-        if herbCount > self.herbCount then
+    else
+        if Bag.GetItemCount(self.herbName) > self.lastHerbCount then
             return BT.ETaskStatus.Success
         end
     end
-    return BT.ETaskStatus.Success
+
+    return BT.ETaskStatus.Running
 end

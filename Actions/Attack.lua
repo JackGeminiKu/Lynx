@@ -19,7 +19,7 @@ function BT.Attack:OnUpdate()
         return BT.ETaskStatus.Success
     end
     local angle = wow.GetAngle('player', 'target')
-    Log.WriteLine('angle = ' .. angle)
+    Log.Debug('angle = ' .. angle)
     if angle > math.pi / 2 then
         Player.SetAngle(angle)
     end

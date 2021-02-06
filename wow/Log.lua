@@ -1,35 +1,24 @@
 Log = {}
+LogType = {
+    Debug = "debug",
+    Error = "error"
+}
 
-function Log.Write(...)
-    local messages = {...}
-    local message = ''
-    for k, v in ipairs(messages) do
-        if message == '' then
-            message = v
-        else
-            message = message .. ', ' .. tostring(v)
-        end
-    end
-    message = "[" .. wow.GetTime() .. "] " .. message
-    print(message)
-    if lb ~= nil then
-        wow.WriteFile("E:\\lynx.log", message)
-    end
-end
-
-function Log.WriteLine(...)
-    local messages = {...}
-    local message = ''
-    for k, v in ipairs(messages) do
-        if message == '' then
-            message = v
-        else
-            message = message .. ', ' .. tostring(v)
-        end
-    end
-    message = "[" .. wow.GetTime() .. "] " .. message
+local function WriteLine(type, message)
+    message = string.format("[%.3f] [%s]: %s", wow.GetTime(), type, message)
     print(message)
     if lb ~= nil then
         wow.WriteFile("E:\\lynx.log", message .. "\n")
+        if type == LogType.Error then
+            wow.WriteFile("E:\\lynx_error.log", message .. "\n")
+        end
     end
+end
+
+function Log.Debug(message)
+    WriteLine(LogType.Debug, message)
+end
+
+function Log.Error(message)
+    WriteLine(LogType.Error, message)
 end

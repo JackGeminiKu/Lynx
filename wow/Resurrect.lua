@@ -205,11 +205,11 @@ local function ShouldExit()
     -- Needs to be called within OnUpdate itself
     if AtEnd then
         _run = false
-        Log.WriteLine("Setting bRun to FALSE")
+        Log.Debug("Setting bRun to FALSE")
     end
 
     if not _run then
-        Log.WriteLine("Starting Lynx.lua from Resurrect.lua")
+        Log.Debug("Starting Lynx.lua from Resurrect.lua")
         wow.RunMacroText('.loadfile Lynx.lua')
         frame:SetScript("OnUpdate", nil)
     end
@@ -238,7 +238,7 @@ local function SetIndexToClosest()
 
     if foundSomething then
         _pathIndex = moveToIdx
-        Log.WriteLine("Starting at Ressurect path at idx " .. _pathIndex)
+        Log.Debug("Starting at Ressurect path at idx " .. _pathIndex)
     end
 end
 
@@ -257,7 +257,7 @@ local function StrictPathFollow()
         if dist <= PROXIMAL_TOLERANCE then
             if _pathIndex < #_waypoints then
                 _pathIndex = _pathIndex + 1
-                Log.WriteLine('Moving to RES idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
+                Log.Debug('Moving to RES idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
                 return
             else
                 AtEnd = true
@@ -277,7 +277,7 @@ local function StrictPathFollow()
     -- Stuck!!!
     if LastIndexCount > 35 and (_pathIndex < #_waypoints - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. _pathIndex
-        Log.WriteLine(stuckStr)
+        Log.Debug(stuckStr)
         Player.Jump()
         _pathIndex = _pathIndex + 1
         AtEnd = _pathIndex > #_waypoints
@@ -307,12 +307,12 @@ local function StrictPathFollow()
         end
     else
         if SKIP_FAR_POINTS then
-            Log.WriteLine('*Skipping* to RES idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
+            Log.Debug('*Skipping* to RES idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
             _pathIndex = _pathIndex + 1
             AtEnd = _pathIndex > #_waypoints
             return
         else
-            Log.WriteLine('*Waiting* for player to be close to path...')
+            Log.Debug('*Waiting* for player to be close to path...')
         end
     end
 
@@ -352,15 +352,15 @@ end
 local POP_ME_TIME = wow.GetTime() + (START_DELAY / 10)
 local _releasedSpirit = false
 
-Log.WriteLine('Starting Corpse Run in ' .. START_DELAY .. ' seconds...')
-Log.WriteLine('Popping Spirit in in ' .. (START_DELAY / 10) .. ' seconds...')
+Log.Debug('Starting Corpse Run in ' .. START_DELAY .. ' seconds...')
+Log.Debug('Popping Spirit in in ' .. (START_DELAY / 10) .. ' seconds...')
 
 frame:SetScript("OnUpdate", function(self, elapsed)
     if not _releasedSpirit and (wow.GetTime() > POP_ME_TIME) then
         LibDraw.clearCanvas()
         _releasedSpirit = true
         Player.RepopMe()
-        Log.WriteLine("Popping Spirit!")
+        Log.Debug("Popping Spirit!")
         _run = true
         AtEnd = false
     end

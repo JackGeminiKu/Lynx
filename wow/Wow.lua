@@ -135,7 +135,7 @@ wow.PickupContainerItem = function(bagId, slot)
 end
 
 wow.TargetUnit = function(unit)
-    Log.WriteLine("Set target: " .. unit)
+    Log.Debug("Set target: " .. unit)
     lb.UnitTagHandler(TargetUnit, unit)
     -- lb.Unlock(TargetUnit, unit)
 end
@@ -418,7 +418,7 @@ wow.ApplyBuff = function(buff, unit)
     for i = 1, 15 do
         local name = wow.UnitAura(unit, i)
         if name == nil then -- when name is nil we looped thru all auras 
-            Log.WriteLine('Applying Buff: ' .. buff)
+            Log.Debug('Applying Buff: ' .. buff)
             Player.CastSpell(buff, onSelf)
             return
         elseif name == buff then

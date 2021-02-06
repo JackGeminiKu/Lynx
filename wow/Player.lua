@@ -83,7 +83,7 @@ do
     end
 
     function Player.Buy(index)
-        Log.WriteLine("Buy index " .. index)
+        Log.Debug("Buy index " .. index)
         wow.BuyMerchantItem(index)
     end
 

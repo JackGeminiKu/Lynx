@@ -99,23 +99,23 @@ local function SendMail()
                 local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = wow.GetItemInfo(l)
                 if not IsSoulbound(b, s) and not ArrayContains(KeptItems, sName) then
                     if Player:IsHunter() and (sType == "Projectile" or ArrayContains(PetFood, sName)) then
-                        -- Log.WriteLine('Keeping [Hunter Stuff]: '..sName)
+                        -- Log.Debug('Keeping [Hunter Stuff]: '..sName)
                     elseif wow.IsRogue() and sName:find("Throwing") ~= nil then
-                        -- Log.WriteLine('Keeping [Rogue Thrown]: '..sName)
+                        -- Log.Debug('Keeping [Rogue Thrown]: '..sName)
                     elseif sSubType == "Bag" or (Player:IsHunter() and (sSubType == "Quiver" or sSubType == "Ammo Pouch")) then
                         -- Bug where last Bag is perceived as item in other bags for selling :/
                     elseif sName:find("Recipe:") == nil and (sName:find("Potion") ~= nil or sName:find("Bandage") ~= nil) then
-                        -- Log.WriteLine('Keeping [Potion/Bandage]: '..sName)
+                        -- Log.Debug('Keeping [Potion/Bandage]: '..sName)
                     elseif ArrayContains(Food, sName) or ArrayContains(Drinks, sName) then
-                        -- Log.WriteLine('Keeping [Food/Drink]: '..sName)
+                        -- Log.Debug('Keeping [Food/Drink]: '..sName)
                     else
                         if iRarity >= 1 then
-                            Log.WriteLine('Sending: ' .. l)
+                            Log.Debug('Sending: ' .. l)
                             wow.UseContainerItem(b, s)
                         end
                     end
                 else
-                    -- Log.WriteLine('Keeping [Soulbound/ToKeep]: '..sName)
+                    -- Log.Debug('Keeping [Soulbound/ToKeep]: '..sName)
                 end
             end
         end
@@ -124,7 +124,7 @@ local function SendMail()
     local name, texture, count, quality = wow.GetSendMailItem(1)
     if name == nil or name == "" then -- if there is not attached mail
         bRun = false
-        Log.WriteLine('Finished Sending Mail')
+        Log.Debug('Finished Sending Mail')
         wow.RunMacroText('/run SendMailCancelButton:Click()')
         return false
     else
@@ -141,7 +141,7 @@ local function TryExit()
 
     if bRun == false then
         local exitMacro = '.loadfile Lynx.lua'
-        Log.WriteLine("Starting main.lua from mail.lua")
+        Log.Debug("Starting main.lua from mail.lua")
         wow.RunMacroText(exitMacro)
         frame:SetScript("OnUpdate", nil)
     end
@@ -168,14 +168,14 @@ local function SetIndexToClosest()
     end
 
     if closestDist > 100 then
-        Log.WriteLine("Closest Mailbox path is " .. math.ceil(closestDist) .. " yard away ==> TERMINATING")
+        Log.Debug("Closest Mailbox path is " .. math.ceil(closestDist) .. " yard away ==> TERMINATING")
         AtEnd = true
         TryExit()
     end
 
     if foundIndex then
         _pathIndex = closestIndex
-        Log.WriteLine("Starting at mail path at idx " .. _pathIndex)
+        Log.Debug("Starting at mail path at idx " .. _pathIndex)
     end
 end
 
@@ -194,7 +194,7 @@ local function MoveToClosestWaypoint()
         if dist <= PROXIMAL_TOLERANCE then
             if _pathIndex < #_waypoints then
                 _pathIndex = _pathIndex + 1
-                Log.WriteLine('Moving to MAIL idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
+                Log.Debug('Moving to MAIL idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
                 return
             else
                 AtEnd = true
@@ -212,7 +212,7 @@ local function MoveToClosestWaypoint()
     end
     if LastIndexCount > 35 and (_pathIndex < #_waypoints - 2) then
         local stuckStr = 'Appears to be STUCK: at idx=' .. _pathIndex
-        Log.WriteLine(stuckStr)
+        Log.Debug(stuckStr)
         Player.Jump()
         _pathIndex = _pathIndex + 1
         AtEnd = _pathIndex > #_waypoints
@@ -236,12 +236,12 @@ local function MoveToClosestWaypoint()
         end
     else
         if SKIP_FAR_POINTS then
-            Log.WriteLine('*Skipping* to MAIL idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
+            Log.Debug('*Skipping* to MAIL idx {' .. _pathIndex .. '/' .. #_waypoints .. '}')
             _pathIndex = _pathIndex + 1
             AtEnd = _pathIndex > #_waypoints
             return
         else
-            Log.WriteLine('*Waiting* for player to be close to path...')
+            Log.Debug('*Waiting* for player to be close to path...')
         end
     end
 
@@ -274,7 +274,7 @@ local function PulseReady()
     end
 end
 
-Log.WriteLine('Mailing items to ' .. recipient)
+Log.Debug('Mailing items to ' .. recipient)
 
 frame:SetScript("OnUpdate", function(self, elapsed)
     if PulseReady() then

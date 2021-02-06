@@ -111,7 +111,7 @@ function Bag.DeleteItem(itemName)
     for bag = 0, 4 do
         for slot = 0, Bag.GetNumSlots(bag) do
             if Bag.GetItemName(bag, slot) == itemName then
-                Log.WriteLine('DELETING ' .. itemName .. '!!!')
+                Log.Debug('DELETING ' .. itemName .. '!!!')
                 wow.PickupContainerItem(bag, slot)
                 wow.DeleteCursorItem()
             end

@@ -23,7 +23,7 @@ function BT.SelectMerchant:OnUpdate()
     local x = -10659.661132812
     local y = 1000.5242919922
     local z = 32.876110076904
-    Log.WriteLine(string.format("Set destination: %d, %d, %d", x, y, z))
+    Log.Debug(string.format("Set destination: %d, %d, %d", x, y, z))
     self.destination.value = {x = x, y = y, z = z}
     self.target.value = 'Creature-0-3045-0-55-843-000015775A'
     return BT.ETaskStatus.Success

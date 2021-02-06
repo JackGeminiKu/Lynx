@@ -29,23 +29,11 @@ local function CreateBtFight()
 end
 
 local function CreateBtHerb()
-    local seqGather = BT.Sequence:New("sequence gather")
-    seqGather:AddChildList({
-        BT.GatherHerb:New("gather herb"),
-        BT.Wait:New("wait", 2)
-    })
-
-    local ufGather = BT.UntilFailure:New("gather until fail")
-    ufGather:AddChild(seqGather)
-
-    local invGather = BT.Inverter:New("inverter gather")
-    invGather:AddChild(ufGather)
-
     local seqRoot = BT.Sequence:New("herb root")
     seqRoot:AddChildList({
         BT.FindHerb:New("find herb"),
         BT.Move:New("move to herb"),
-        invGather
+        BT.GatherHerb:New("gather herb")
     })
 
     local btree = BT.BTree:New(nil, "herb bt")
@@ -81,7 +69,7 @@ local function onUpdate(...)
     end
 
     if _bt:Update() ~= BT.ETaskStatus.Running then
-        Log.WriteLine("Lynx stop!")
+        Log.Debug("Lynx stop!")
         _bt:DisabledBT()
         _frame:SetScript("OnUpdate", nil)
     end
@@ -93,13 +81,13 @@ SLASH_LYNX_START1 = "/lynx-start"
 SLASH_LYNX_STOP1 = "/lynx-stop"
 
 SlashCmdList["LYNX_START"] = function()
-    Log.WriteLine("Lynx start!")
+    Log.Debug("Lynx start!")
     _bt:EnabledBT()
     _frame:SetScript("OnUpdate", onUpdate)
 end
 
 SlashCmdList["LYNX_STOP"] = function()
-    Log.WriteLine("Lynx stop!")
+    Log.Debug("Lynx stop!")
     _bt:DisabledBT()
     _frame:SetScript("OnUpdate", nil)
 end
