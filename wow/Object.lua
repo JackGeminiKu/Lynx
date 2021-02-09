@@ -9,7 +9,7 @@ function Object:Id()
 end
 
 function Object:Name()
-    return wow.ObjectName(self.ObjectTag)
+    return wow.GetObjectName(self.ObjectTag)
 end
 
 function Object:GUID()
@@ -21,11 +21,11 @@ function Object:Level()
 end
 
 function Object:Position()
-    return wow.ObjectPosition(self.ObjectTag)
+    return wow.GetObjectPosition(self.ObjectTag)
 end
 
 function Object:Location()
-    local x, y, z = wow.ObjectPosition(self.ObjectTag)
+    local x, y, z = wow.GetObjectPosition(self.ObjectTag)
     return {x = x, y = y, z = z}
 end
 

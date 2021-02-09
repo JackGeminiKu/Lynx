@@ -48,12 +48,12 @@ wow.UnitCastingInfo = function(unit)
 end
 
 -- 获取物体名字
-wow.ObjectName = function(object)
+wow.GetObjectName = function(object)
     return lb.ObjectName(object)
 end
 
 -- 返回物体的坐标: x, y, z
-wow.ObjectPosition = function(object)
+wow.GetObjectPosition = function(object)
     return lb.ObjectPosition(object)
 end
 
@@ -407,7 +407,7 @@ wow.UseContainerItem = function(bagId, slot)
     return lb.Unlock(UseContainerItem, bagId, slot)
 end
 
-wow.ObjectName = function(object)
+wow.GetObjectName = function(object)
     if lb ~= nil then
         return lb.ObjectName(object)
     end

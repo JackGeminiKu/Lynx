@@ -18,17 +18,19 @@ function BT.Shared:GetData(name)
     return self.data[name]
 end
 
+function BT.Shared:GetValue(name, defaultValue)
+    if self.data[name] == nil then
+        self.data[name] = {
+            name = name,
+            value = defaultValue
+        }
+    end
+    return self.data[name].value
+end
+
 function BT.Shared:GetNullData(name)
     if self.data[name] ~= nil then
         return nil
     end
     return self:GetData(name)
-end
-
-function BT.Shared:SetDestination(x, y, z) 
-
-end
-
-function BT.Shared:GetDestination()
-
 end
