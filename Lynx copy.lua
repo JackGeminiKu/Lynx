@@ -2643,7 +2643,7 @@ local function DrawStatus()
         local attackStatus = 'Attacking...'
         if AttackObject ~= nil then
             local odist = Player:DistanceFrom(AttackObject)
-            attackStatus = wow.ObjectName(AttackObject) .. ' [' .. wow.UnitHealthPercent(AttackObject) .. '%] {' .. math.ceil(odist) .. 'y}'
+            attackStatus = wow.GetObjectName(AttackObject) .. ' [' .. wow.UnitHealthPercent(AttackObject) .. '%] {' .. math.ceil(odist) .. 'y}'
         end
         LibDraw.Text(attackStatus, "GameFontNormal", pX, pY, pZ + 3)
 

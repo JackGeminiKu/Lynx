@@ -14,6 +14,7 @@ Wow\Target.lua
 Wow\Pet.lua
 Wow\Merchant.lua
 Wow\Navigator.lua
+Wow\Bag.lua
 
 Common\Common.lua
 Common\Set.lua

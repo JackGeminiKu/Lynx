@@ -33,6 +33,7 @@ local function CreateBtHerb()
     seqRoot:AddChildList({
         BT.FindHerb:New("find herb"),
         BT.Move:New("move to herb"),
+        BT.Wait:New("wait after move", 0.1),
         BT.GatherHerb:New("gather herb")
     })
 
