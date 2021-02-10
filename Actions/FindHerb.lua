@@ -29,7 +29,10 @@ local _herbList = {
 }
 
 local CanGather = function(guid)
-    -- TBD: 如果玩家名字是"宁神花", 怎么办?
+    if wow.IsPlayer(guid) then
+        return false
+    end
+
     local objectName = wow.GetObjectName(guid)
     local playerSkill = 0
     for herbName, herbSkill in ipairs(_herbList) do

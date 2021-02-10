@@ -41,7 +41,7 @@ function BT.GatherHerb:OnUpdate()
         return BT.ETaskStatus.Success
     end
     if not wow.ObjectExists(herbGuid) then
-        Log.Debug("草药不见了!")
+        Log.Debug("草药不见了, 可能被别人采了!")
         return BT.ETaskStatus.Success
     end
 
@@ -49,6 +49,7 @@ function BT.GatherHerb:OnUpdate()
         self.lastGatherTime = wow.GetTime()
         self.gatherCount = self.gatherCount + 1
         if self.gatherCount > MAX_GATHER_COUNT then
+            Log.Error("采集次数已达上限, 放弃吧!")
             return BT.ETaskStatus.Success
         end
         wow.GatherHerb(herbGuid)
