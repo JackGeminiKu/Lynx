@@ -104,7 +104,7 @@ local function IsNavigationReady()
     if not _navInitialized then
         _navInitialized = true
         Log.Debug('Loading Navigation...')
-        wow.LoadScript('TypescriptNavigator')
+        lb.LoadScript('TypescriptNavigator')
     end
     return true
 end

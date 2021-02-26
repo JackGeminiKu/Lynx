@@ -5,17 +5,32 @@ wow = {}
 -- **************
 
 function wow.Raycast(x1, y1, z1, x2, y2, z2, flags)
-    return lb.Raycast(x1, y1, z1, x2, y2, z2, flags)
+    if wmbapi then
+        return wmbapi.Raycast(x1, y1, z1, x2, y2, z2, flags)
+    end
+    if lb then
+        return lb.Raycast(x1, y1, z1, x2, y2, z2, flags)
+    end
 end
 
 -- 返回Object的GUID或者nil(如果不是有效的Object)
 wow.UnitTarget = function(unitTag)
-    return lb.UnitTarget(unitTag)
+    if wmbapi then
+        return wmbapi.UnitTarget(unitTag)
+    end
+    if lb then
+        return lb.UnitTarget(unitTag)
+    end
 end
 
 -- 获取Object的Id
 wow.ObjectId = function(objectTag)
-    return lb.ObjectId(objectTag)
+    if wmbapi then
+        return wmbapi.ObjectId(objectTag)
+    end
+    if lb then
+        return lb.ObjectId(objectTag)
+    end
 end
 
 -- 是否在坐骑上
@@ -34,7 +49,11 @@ wow.CastSpell = function(spellName, onSelf)
     if onSelf then
         target = 'player'
     end
-    lb.Unlock(CastSpellByName, spellName, target)
+    if wmbapi then
+        CastSepllByName(spellName, target)
+    elseif lb then
+        lb.Unlock(CastSpellByName, spellName, target)
+    end
 end
 
 -- 获取物品数量
@@ -49,12 +68,22 @@ end
 
 -- 获取物体名字
 wow.GetObjectName = function(object)
-    return lb.ObjectName(object)
+    if wmbapi then
+        return UnitName(object)
+    end
+    if lb then
+        return lb.ObjectName(object)
+    end
 end
 
 -- 返回物体的坐标: x, y, z
 wow.GetObjectPosition = function(object)
-    return lb.ObjectPosition(object)
+    if wmbapi then
+        return wmbapi.ObjectPosition(object)
+    end
+    if lb then
+        return lb.ObjectPosition(object)
+    end
 end
 
 -- 计算两点或两者间距离
@@ -76,7 +105,12 @@ end
 
 -- 获取两者之间的距离. 例如: Player 和 Target
 wow.GetDistance3D = function(startObject, endObject)
-    return lb.GetDistance3D(startObject, endObject)
+    if wmbapi then
+        return wmbapi.GetDistanceBetweenObjects(startObject, endObject)
+    end
+    if lb then
+        return lb.GetDistance3D(startObject, endObject)
+    end
 end
 
 wow.HasDebuff = function(name, obj)
@@ -135,6 +169,7 @@ wow.PickupContainerItem = function(bagId, slot)
 end
 
 wow.TargetUnit = function(unit)
+    -- TBD
     Log.Debug("Set target: " .. unit)
     lb.UnitTagHandler(TargetUnit, unit)
     -- lb.Unlock(TargetUnit, unit)
@@ -196,7 +231,12 @@ wow.UnitExists = function(unit)
 end
 
 function wow.ObjectExists(guid)
-    return lb.ObjectExists(guid)
+    if wmbapi then
+        return wmbapi.ObjectExists(guid)
+    end
+    if lb then
+        return lb.ObjectExists(guid)
+    end
 end
 
 wow.IsUsableSpell = function(spellName)
@@ -240,7 +280,12 @@ wow.UnitGUID = function(unit)
 end
 
 wow.UnitTarget = function(unit)
-    return lb.UnitTarget(unit)
+    if wmbapi then
+        return wmbapi.UnitTarget(unit)
+    end
+    if lb then
+        return lb.UnitTarget(unit)
+    end
 end
 
 wow.UnitAffectingCombat = function(unit)
@@ -267,7 +312,16 @@ end
 
 -- 获取周围物体, 默认距离为30
 wow.GetObjects = function(range, type1)
-    return lb.GetObjects(range, type1)
+    if wmbapi then
+        local objects = {}
+        for i = 1, wmbapi.GetObjectCount() do
+            tinsert(objects, wmbapi.GetObjectWithIndex(i))
+        end
+        return objects
+    end
+    if lb then
+        return lb.GetObjects(range, type1)
+    end
 end
 
 wow.IsIndoors = function()
@@ -354,28 +408,58 @@ wow.IsInCombat = function(unit)
 end
 
 wow.ObjectID = function(object)
-    return lb.ObjectId(object)
+    if wmbapi then
+        return wmbapi.ObjectId(object)
+    end
+    if lb then
+        return lb.ObjectId(object)
+    end
 end
 
 wow.InteractUnit = function(unit)
-    return lb.ObjectInteract(unit)
+    if wmbapi then
+        return InteractUnit(unit)
+    end
+    if lb then
+        return lb.ObjectInteract(unit)
+    end
 end
 
 wow.ReadFile = function(path)
-    return lb.ReadFile(path)
+    if wmbapi then
+        return wmbapi.ReadFile(path)
+    end
+    if lb then
+        return lb.ReadFile(path)
+    end
 end
 
-wow.RunMacroText = function(marco)
-    lb.Unlock(wow.RunMacroText, marco)
+wow.RunMacroText = function(macro)
+    if wmbapi then
+        RunMarcoText(macro)
+    end
+    if lb then
+        lb.Unlock(wow.RunMacroText, macro)
+    end
 end
 
 wow.GetDistanceBetweenObjects = function(object1, object2)
-    return lb.GetDistance3D(object1, object2)
+    if wmbapi then
+        return wmbapi.GetDistanceBetweenObjects(object1, object2)
+    end
+    if lb then
+        return lb.GetDistance3D(object1, object2)
+    end
 end
 
 -- 返回x, y, z
 wow.GetObjectPosition = function(object)
-    return lb.ObjectPosition(object)
+    if wmbapi then
+        return wmbapi.ObjectPosition(object)
+    end
+    if lb then
+        return lb.ObjectPosition(object)
+    end
 end
 
 wow.SendKey = function(key, released)
@@ -383,7 +467,14 @@ wow.SendKey = function(key, released)
 end
 
 wow.FaceDirection = function(facing)
-    lb.SetPlayerAngles(facing)
+    if wmbapi then
+        wmbapi.FaceDirection(facing)
+        return
+    end
+    if lb then
+        lb.SetPlayerAngles(facing)
+        return
+    end
 end
 
 wow.GetObjectWithGUID = function(guid)
@@ -395,20 +486,38 @@ wow.UnitCanBeSkinned = function(unit)
 end
 
 wow.UnitCanBeLooted = function(unit)
-    return lb.UnitIsLootable(unit)
+    if wmbapi then
+        return wmbapi.UnitIsLootable(unit)
+    end
+    if lb then
+        return lb.UnitIsLootable(unit)
+    end
 end
 
 wow.UnitCastID = function(unit)
-    local spellId = lb.UnitCastingInfo(unit)
-    return spellId
+    if wmbapi then
+        return select(7, GetSpellInfo(UnitCastingInfo(unit))), wmbapi.UnitCastingTarget
+    end
+    if lb then
+        local spellId = lb.UnitCastingInfo(unit)
+        return spellId
+    end
 end
 
 wow.UseContainerItem = function(bagId, slot)
-    return lb.Unlock(UseContainerItem, bagId, slot)
+    if wmbapi then
+        return UseContainerItem(bagId, slot)
+    end
+    if lb then
+        return lb.Unlock(UseContainerItem, bagId, slot)
+    end
 end
 
 wow.GetObjectName = function(object)
-    if lb ~= nil then
+    if wmbapi then
+        return UnitName(object)
+    end
+    if lb then
         return lb.ObjectName(object)
     end
 end
@@ -427,20 +536,47 @@ wow.ApplyBuff = function(buff, unit)
     end
 end
 
-wow.Unlock = function(method, arg1, arg2, ...)
-    return lb.Unlock(method, arg1, arg2, ...)
-end
-
-function wow.LoadScript(scriptName)
-    lb.LoadScript(scriptName)
-end
+-- wow.Unlock = function(method, arg1, arg2, ...)
+--     return lb.Unlock(method, arg1, arg2, ...)
+-- end
 
 function wow.MoveTo(x, y, z)
-    lb.MoveTo(x, y, z)
+    if wmbapi then
+        wmbapi.MoveTo(x, y, z)
+        return
+    end
+    if lb then
+        lb.MoveTo(x, y, z)
+        return
+    end
 end
 
 function wow.StopMove()
-    lb.Navigator.Stop()
+    if wmbapi then
+        MoveAndSteerStop()
+        MoveForwardStop()
+        MoveBackwardStop()
+        PitchDownStop()
+        PitchUpStop()
+        StrafeLeftStop()
+        StrafeRightStop()
+        TurnLeftStop()
+        TurnOrActionStop()
+        TurnRightStop()
+        if GetUnitSpeed("player") > 0 then
+            MoveForwardStart()
+            MoveForwardStop()
+        end
+        if GetKeyState(0x02) then
+            TurnOrActionStart()
+        elseif GetKeyState(0x01) then
+            CameraOrSelectOrMoveStart()
+        end
+        return
+    end
+    if lb then
+        lb.Navigator.Stop()
+    end
 end
 
 -- 返回x, y, z or ni if no collision
@@ -451,15 +587,28 @@ end
 -- 写文件, 成功返回true, 否则, 返回false
 function wow.WriteFile(path, content, append)
     append = append or true
-    return lb.WriteFile(path, content, append)
+    if wmbapi then
+        return wmbapi.WriteFile(path, content, append)
+    end
+    if lb then
+        return lb.WriteFile(path, content, append)
+    end
 end
 
 -- 返回角色到目标的Nav waypoints, 角色不移动!
-function wow.NavMgr_MoveTo(x, y, z, TargetId)
-    return lb.NavMgr_MoveTo(x, y, z, TargetId)
+function wow.GetWaypoints(x, y, z, TargetId)
+    if wmbapi then
+        -- TBD
+        Log.Error("TDB: GetWaypoints")
+        return
+    end
+    if lb then
+        return lb.NavMgr_MoveTo(x, y, z, TargetId)
+    end
 end
 
 function wow.GameObjectHasLockType(GUID, lockType)
+    -- TBD
     return lb.GameObjectHasLockType(GUID, lockType)
 end
 
@@ -477,12 +626,12 @@ wow.GetAngle = function(Object1, Object2)
     local X1, Y1, Z1
     local X2, Y2, Z2
     if type(Object1) == "string" then
-        X1, Y1, Z1 = lb.ObjectPosition(Object1)
+        X1, Y1, Z1 = wow.ObjectPosition(Object1)
     else
         X1, Y1, Z1 = Object1[1], Object1[2], Object1[3]
     end
     if type(Object2) == "string" then
-        X2, Y2, Z2 = lb.ObjectPosition(Object2)
+        X2, Y2, Z2 = wow.ObjectPosition(Object2)
     else
         X2, Y2, Z2 = Object2[1], Object2[2], Object2[3]
     end
@@ -498,9 +647,23 @@ wow.GetAngle = function(Object1, Object2)
 end
 
 wow.GatherHerb = function(guid)
-    lb.UnitTagHandler(InteractUnit, guid)
+    if wmbapi then
+        InteractUnit(guid)
+        return
+    end
+    if lb then
+        lb.UnitTagHandler(InteractUnit, guid)
+        return
+    end
 end
 
 wow.GatherMine = function(guid)
-    lb.UnitTagHandler(InteractUnit, guid)
+    if wmbapi then
+        InteractUnit(guid)
+        return
+    end
+    if lb then
+        lb.UnitTagHandler(InteractUnit, guid)
+        return
+    end
 end
