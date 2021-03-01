@@ -29,7 +29,7 @@ function Navigator.SavePosition()
 end
 
 function Navigator.GetWaypoints(x, y, z)
-    local waypoints =  wow.NavMgr_MoveTo(x, y, z)
+    local waypoints =  wow.GetWaypoints(x, y, z)
     local i, j = 1, #waypoints
     while i < j do
         waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
