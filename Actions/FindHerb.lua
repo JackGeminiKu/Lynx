@@ -29,13 +29,13 @@ local _herbList = {
 }
 
 local CanGather = function(guid)
-    if wow.IsPlayer(guid) then
+    if wow.UnitIsPlayer(guid) then
         return false
     end
 
     local objectName = wow.GetObjectName(guid)
     local playerSkill = 0
-    for herbName, herbSkill in ipairs(_herbList) do
+    for herbName, herbSkill in pairs(_herbList) do
         if objectName == herbName and playerSkill >= herbSkill then
             return true
         end
@@ -44,10 +44,11 @@ local CanGather = function(guid)
 end
 
 function BT.FindHerb:OnUpdate()
-    for _, guid in ipairs(lb.GetObjects(100)) do
+    for _, guid in ipairs(wow.GetObjects(100)) do
         -- TBD: 草药被采集后, 一定时间能lb.GetObjects还是能返回它的GUID. 如果被别人采了, 怎么办?
         if self.herbHistory[guid] == nil or self.herbHistory[guid] - wow.GetTime() > 60 then
             if CanGather(guid) then
+                Log.Debug(wow.GetObjectName(guid))
                 self.herbGuid.value = guid
                 self.herbName.value = wow.GetObjectName(guid)
                 local x, y, z = wow.GetObjectPosition(guid)

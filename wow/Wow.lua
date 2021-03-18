@@ -311,7 +311,7 @@ wow.UnitIsDeadOrGhost = function(unit)
 end
 
 -- 获取周围物体, 默认距离为30
-wow.GetObjects = function(range, type1)
+wow.GetObjects = function(range)
     if wmbapi then
         local objects = {}
         for i = 1, wmbapi.GetObjectCount() do
@@ -320,7 +320,7 @@ wow.GetObjects = function(range, type1)
         return objects
     end
     if lb then
-        return lb.GetObjects(range, type1)
+        return lb.GetObjects(range)
     end
 end
 

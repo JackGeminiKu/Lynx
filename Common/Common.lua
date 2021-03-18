@@ -35,7 +35,7 @@ BT.ETaskStatus = {
     Inactive = "Inactive",
     Failure = "Failure",
     Success = "Success",
-    Running = "Running" 
+    Running = "Running"
 }
 
 BT.ETaskType = {
