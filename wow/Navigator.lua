@@ -1,5 +1,10 @@
 Navigator = {}
 
+local function LogDebug(formatstring, ...)
+    local message = "<navigator> " .. string.format(formatstring, ...)
+    Log.Debug(message)
+end
+
 -- region Nav api
 function Navigator.MoveTo(...)
     local x, y, z
@@ -18,14 +23,14 @@ function Navigator.MoveTo(...)
         end
     end
     local px, py, pz = Player:Position()
-    Log.Debug('Current position: ' .. px .. ', ' .. py .. ', ' .. pz)
-    Log.Debug('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
+    LogDebug('Current position: ' .. px .. ', ' .. py .. ', ' .. pz)
+    LogDebug('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
     wow.MoveTo(x, y, z)
 end
 
 function Navigator.SavePosition()
     local x, y, z = Player:Position()
-    Log.Debug(string.format("%s: %d, %d, %d", "Current Position", x, y, z))
+    LogDebug("Current Position: %f, %f, %f", x, y, z)
 end
 
 function Navigator.GetWaypoints(x, y, z)
@@ -63,22 +68,22 @@ end
 local _waypoints = {} 
 
 local function MoveToLocation(location)
-    Log.Debug("Initialize waypoints")
-    Log.Debug('Target position: ' .. location.x .. ', ' .. location.y .. ', ' .. location.z)
+    LogDebug("Initialize waypoints")
+    LogDebug('Target position: ' .. location.x .. ', ' .. location.y .. ', ' .. location.z)
 
     _waypoints = Navigator.GetWaypoints(location.x, location.y, location.z)
-    Log.Debug("Mesh waypoints")
+    LogDebug("Mesh waypoints")
     for k, v in pairs(_waypoints) do
-        Log.Debug(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
+        LogDebug(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
     end
 
-    Log.Debug("New waypoints")
+    LogDebug("New waypoints")
     for k, v in pairs(_waypoints) do
         local rnd = math.random(-100, 100) / 100
         v.x = v.x + rnd
         v.y = v.y + rnd
         v.z = v.z + rnd
-        Log.Debug(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
+        LogDebug(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
     end
 end
 
@@ -103,7 +108,7 @@ local function IsNavigationReady()
     end
     if not _navInitialized then
         _navInitialized = true
-        Log.Debug('Loading Navigation...')
+        LogDebug('Loading Navigation...')
         lb.LoadScript('TypescriptNavigator')
     end
     return true
@@ -130,8 +135,8 @@ Frame:SetScript("OnUpdate", function()
     end
 
     local dist = Player:DistanceFrom(NextWaypoint())
-    Log.Debug(dist, wow.GetTime() - _lastMoveTime, math.abs(_lastDistance - dist), #_waypoints)
-    -- Log.Debug(dist)
+    LogDebug(dist, wow.GetTime() - _lastMoveTime, math.abs(_lastDistance - dist), #_waypoints)
+    -- LogDebug(dist)
     if dist < _proximityTolerance then
         DeleteWaypoint()
         if NextWaypoint() ~= nil then
@@ -140,12 +145,12 @@ Frame:SetScript("OnUpdate", function()
         end
     else
         if wow.GetTime() - _lastMoveTime > 1 and math.abs(_lastDistance - dist) < 0.1 and NextWaypoint() ~= nil then
-            Log.Debug('Stuck!!!')
+            LogDebug('Stuck!!!')
             Player:Jump()
 
             -- local waypoints = Navigator.GetWaypoints(NextWaypoint().x, NextWaypoint().y, NextWaypoint().z)
             -- for i = 1, #waypoints do
-            --     Log.Debug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
+            --     LogDebug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
             --     _waypoints[#_waypoints + 1] = waypoints[i]
             -- end
 

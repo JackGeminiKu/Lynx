@@ -18,21 +18,20 @@ end
 
 function BT.Move:OnStart()
     local dest = self.bTree.sharedData:GetData('destination').value
-    Log.Debug(string.format('Get destination: %d, %d, %d', dest.x, dest.y, dest.z))
-
+    self:LogDebug("目的地: %.3f, %.3f, %.3f", dest.x, dest.y, dest.z)
     self.waypoints = Navigator.GetWaypoints(dest.x, dest.y, dest.z)
-    Log.Debug("Mesh waypoints")
+    self:LogDebug("Mesh waypoints")
     for k, w in pairs(self.waypoints) do
-        Log.Debug(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
+        self:LogDebug(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
     end
 
-    Log.Debug("New waypoints")
+    self:LogDebug("New waypoints")
     for k, w in pairs(self.waypoints) do
         local rnd = math.random(-100, 100) / 100
         w.x = w.x + rnd
         w.y = w.y + rnd
         w.z = w.z + rnd
-        Log.Debug(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
+        self:LogDebug(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
     end
 end
 
@@ -53,12 +52,12 @@ function BT.Move:OnUpdate()
         end
     else
         if self:IsStucked() then
-            Log.Debug('Stuck!!!')
+            self:LogDebug('Stuck!!!')
             Player:Jump()
 
             local waypoints = Navigator.GetWaypoints(self:NextWaypoint().x, self:NextWaypoint().y, self:NextWaypoint().z)
             for i = 1, #waypoints do
-                Log.Debug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
+                self:LogDebug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
                 self.waypoints[#self.waypoints + 1] = waypoints[i]
             end
 

@@ -385,7 +385,8 @@ function BT.BTree:RunTask(taskIndex, stackIndex)
     else
         status = task:OnUpdate()
     end
-    Log.Debug('>>>' .. task.sName .. ', ' .. status)
+    local taskName = string.gsub(task.sName, " ", "_")
+    Log.Debug('[%s] %s', taskName, status)
 
     if status ~= BT.ETaskStatus.Running then
         self:PopTask(stackIndex, status)

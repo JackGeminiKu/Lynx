@@ -598,9 +598,20 @@ end
 -- 返回角色到目标的Nav waypoints, 角色不移动!
 function wow.GetWaypoints(x, y, z, TargetId)
     if wmbapi then
-        -- TBD
-        Log.Error("TDB: GetWaypoints")
-        return
+        local mapId = wmbapi.GetCurrentMapInfo()
+        local px, py, pz = Player:Position()
+        -- Log.Debug("Get waypoints: %d (%f,%f,%f) --> (%f,%f,%f)", mapId, px, py, pz, x, y, z)
+        print(px, py, pz, x, y, z)
+        local points, polygons = wmbapi.FindPath(mapId, px, py, pz, x, y, z)
+        local waypoints = {}
+        for k, v in ipairs(points) do
+            waypoints[#waypoints + 1] = {
+                x = v[1],
+                y = v[2],
+                z = v[3]
+            }
+        end
+        return waypoints
     end
     if lb then
         return lb.NavMgr_MoveTo(x, y, z, TargetId)

@@ -54,3 +54,8 @@ end
 
 function BT.Task:OnConditionalAbort()
 end
+
+function BT.Task:LogDebug(formatstring, ...)
+    local taskName = string.gsub(self.sName, " ", "_")
+    Log.Debug("[%s] %s", taskName, string.format(formatstring, ...))
+end

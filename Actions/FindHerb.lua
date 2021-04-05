@@ -10,7 +10,7 @@ function BT.FindHerb:New(name)
     setmetatable(o, this)
     o.herbGuid = nil
     o.herbName = nil
-    o.destination = nil
+    o.herbLocation = nil
     o.herbHistory = nil
     return o
 end
@@ -24,8 +24,10 @@ end
 
 local _herbList = {
     ["宁神花"] = 0,
+    ["银叶草"] = 0,
     ["石南草"] = 0,
-    ["魔皇草"] = 75
+    ["魔皇草"] = 75,
+    ["地根草"] = 75
 }
 
 local CanGather = function(guid)
@@ -34,7 +36,7 @@ local CanGather = function(guid)
     end
 
     local objectName = wow.GetObjectName(guid)
-    local playerSkill = 0
+    local playerSkill = 103
     for herbName, herbSkill in pairs(_herbList) do
         if objectName == herbName and playerSkill >= herbSkill then
             return true
@@ -48,15 +50,14 @@ function BT.FindHerb:OnUpdate()
         -- TBD: 草药被采集后, 一定时间能lb.GetObjects还是能返回它的GUID. 如果被别人采了, 怎么办?
         if self.herbHistory[guid] == nil or self.herbHistory[guid] - wow.GetTime() > 60 then
             if CanGather(guid) then
-                Log.Debug(wow.GetObjectName(guid))
+                local herbName = wow.GetObjectName(guid)
                 self.herbGuid.value = guid
-                self.herbName.value = wow.GetObjectName(guid)
+                self.herbName.value = herbName
                 local x, y, z = wow.GetObjectPosition(guid)
-                self.herbLocation = {
-                    x = x,
-                    y = y,
-                    z = z
-                }
+                self:LogDebug("找到草药: %s (%f,%f,%f)", herbName, x, y, z)
+                self.herbLocation.x = x
+                self.herbLocation.y = y
+                self.herbLocation.z = z
                 return BT.ETaskStatus.Success
             end
         end

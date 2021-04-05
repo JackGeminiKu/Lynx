@@ -1,5 +1,5 @@
 local MAX_GATHER_COUNT = 3
-local GATHER_TIME = 3
+local GATHER_TIME = 7
 
 BT.GatherHerb = {
     base = BT.Action
@@ -22,8 +22,8 @@ function BT.GatherHerb:New(name)
 end
 
 function BT.GatherHerb:OnStart()
-    self.herbGuid = self.bTree.sharedData:GetData("herb guid")
-    self.herbName = self.bTree.sharedData:GetData("herb name")
+    self.herbGuid = self.bTree.sharedData:GetValue("herb guid")
+    self.herbName = self.bTree.sharedData:GetValue("herb name")
     self.herbHistory = self.bTree.sharedData:GetValue("herb history", {})
     self.gatherCount = 0
     self.lastHerbCount = Bag.GetItemCount(self.herbName)
@@ -31,7 +31,7 @@ function BT.GatherHerb:OnStart()
 end
 
 function BT.GatherHerb:OnUpdate()
-    local herbGuid = self.herbGuid.value
+    local herbGuid = self.herbGuid
     if herbGuid == nil then
         Log.Error("没有设置草药GUID!")
         return BT.ETaskStatus.Success
@@ -45,6 +45,12 @@ function BT.GatherHerb:OnUpdate()
         return BT.ETaskStatus.Success
     end
 
+    if Bag.GetItemCount(self.herbName) > self.lastHerbCount then
+        Log.Debug("存入背包: %s", self.herbName)
+        self.herbHistory[herbGuid] = wow.GetTime()
+        return BT.ETaskStatus.Success
+    end
+
     if wow.GetTime() - self.lastGatherTime > GATHER_TIME then
         self.lastGatherTime = wow.GetTime()
         self.gatherCount = self.gatherCount + 1
@@ -52,13 +58,8 @@ function BT.GatherHerb:OnUpdate()
             Log.Error("采集次数已达上限, 放弃吧!")
             return BT.ETaskStatus.Success
         end
+        Log.Debug("开始采集: %s", self.herbName)
         wow.GatherHerb(herbGuid)
-    else
-        if Bag.GetItemCount(self.herbName) > self.lastHerbCount then
-            self.herbHistory[herbGuid] = wow.GetTime()
-            return BT.ETaskStatus.Success
-        end
     end
-
     return BT.ETaskStatus.Running
 end
