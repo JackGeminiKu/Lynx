@@ -134,7 +134,7 @@ Frame:SetScript("OnUpdate", function()
         Player:Jump()
     end
 
-    local dist = Player:DistanceFrom(NextWaypoint())
+    local dist = Player:DistanceTo(NextWaypoint())
     LogDebug(dist, wow.GetTime() - _lastMoveTime, math.abs(_lastDistance - dist), #_waypoints)
     -- LogDebug(dist)
     if dist < _proximityTolerance then
@@ -159,5 +159,5 @@ Frame:SetScript("OnUpdate", function()
         end
     end
 
-    _lastDistance = Player:DistanceFrom(NextWaypoint())
+    _lastDistance = Player:DistanceTo(NextWaypoint())
 end)

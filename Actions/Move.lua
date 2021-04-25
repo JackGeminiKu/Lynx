@@ -44,7 +44,7 @@ function BT.Move:OnUpdate()
         return BT.ETaskStatus.Success
     end
 
-    local dist = Player:DistanceFrom(self:NextWaypoint())
+    local dist = Player:DistanceTo(self:NextWaypoint())
     if dist < PROXIMITY_TOLERANCE then
         self:DeleteLastWaypoint()
         if self:NextWaypoint() ~= nil then
@@ -64,7 +64,7 @@ function BT.Move:OnUpdate()
             Navigator.MoveTo(self:NextWaypoint())
         end
 
-        self.lastLocation = Player:Location()
+        self.lastLocation = Player:Position()
     end
 
     return BT.ETaskStatus.Running
@@ -91,7 +91,7 @@ function BT.Move:IsStucked()
     if self.lastLocation == nil then
         return false
     else
-        local currentLocation = Player:Location()
+        local currentLocation = Player:Position()
         if math.abs(currentLocation.x - self.lastLocation.x) < STUCK_TOLERANCE and
             math.abs(currentLocation.y - self.lastLocation.y) < STUCK_TOLERANCE and
             math.abs(currentLocation.z - self.lastLocation.z) < STUCK_TOLERANCE then

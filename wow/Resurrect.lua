@@ -253,7 +253,7 @@ local function StrictPathFollow()
     local px, py, pz = Player:Position()
     local xyz = _waypoints[_pathIndex]
     if xyz ~= nil then
-        local dist = Player:DistanceFrom(xyz[1], xyz[2], xyz[3])
+        local dist = Player:DistanceTo(xyz[1], xyz[2], xyz[3])
         if dist <= PROXIMAL_TOLERANCE then
             if _pathIndex < #_waypoints then
                 _pathIndex = _pathIndex + 1
@@ -300,7 +300,7 @@ local function StrictPathFollow()
         dZ = moveToXYZ[3] + rnd
     end
 
-    local distToNext = Player:DistanceFrom(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
+    local distToNext = Player:DistanceTo(moveToXYZ[1], moveToXYZ[2], moveToXYZ[3])
     if not SKIP_FAR_POINTS or (SKIP_FAR_POINTS and distToNext < 50) then
         if IGNORE_LOS or TraceLine(px, py, pz + 2.5, moveToXYZ[1], moveToXYZ[2], moveToXYZ[3] + 2.5, losFlags) == nil then
             MoveTo(moveToXYZ[1] + rnd, moveToXYZ[2] + rnd, moveToXYZ[3] + rnd)

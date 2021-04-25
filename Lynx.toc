@@ -45,12 +45,14 @@ Actions\Interact.lua
 Actions\Buy.lua
 Actions\FindHerb.lua
 Actions\GatherHerb.lua
+Actions\FindMonster.lua
 
 Composites\Parallel.lua
 Composites\Selector.lua
 Composites\Sequence.lua
 
 Conditionals\BoolComparison.lua
+Conditionals\IsAttacked.lua
 
 Decorators\Inverter.lua
 Decorators\Repeater.lua

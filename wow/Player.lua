@@ -33,7 +33,24 @@ do
     end
 
     function Player.Jump()
-        wow.Unlock(JumpOrAscendStart)
+        if wmbapi ~= nil then
+            JumpOrAscendStart()
+        end
+        if lb ~= nil then
+            wow.Unlock(JumpOrAscendStart)
+        end
+    end
+
+    function Player.StopMove()
+        wow.StopMove()
+    end
+
+    function Player.TurnLeftStart()
+        wow.TurnStart()
+    end
+
+    function Player.TurnStop()
+        wow.TurnStop()
     end
 
     function Player.Dismount()
@@ -57,13 +74,22 @@ do
         end
     end
 
+    function Player.FaceDirection(angle)
+        Log.Debug("Face direction: %d °", math.deg(angle))
+        if wmbapi ~= nil then
+            wmbapi.FaceDirection(angle)
+        elseif lb ~= nil then
+            lb.SetPlayerAngles(angle)
+        end
+    end
+
     function Player.FaceTarget()
         if wow.UnitExists('target') then
-            local ax, ay, az = Player:Position()
-            local bx, by, bz = Target:Position()
-            local angle = wow.rad(wow.atan2(by - ay, bx - ax))
+            local px, py, pz = Player:Position()
+            local tx, ty, tz = Target:Position()
+            local angle = wow.rad(wow.atan2(ty - py, tx - px))
             if angle < 0 then
-                return wow.FaceDirection(wow.rad(wow.atan2(by - ay, bx - ax) + 360))
+                return wow.FaceDirection(wow.rad(wow.atan2(ty - py, tx - px) + 360))
             else
                 return wow.FaceDirection(angle)
             end

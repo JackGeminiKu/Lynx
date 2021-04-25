@@ -920,7 +920,7 @@ local function MoveToNextWaypoint()
     -- 移动到位了?
     local nextPoint = Waypoints[PathIndex]
     if nextPoint ~= nil then
-        if Player:DistanceFrom(nextPoint) <= GetProximalTolerance() then
+        if Player:DistanceTo(nextPoint) <= GetProximalTolerance() then
             if PathIndex < #Waypoints then
                 PathIndex = PathIndex + 1
                 Log.Debug('Moving to idx {' .. PathIndex .. '/' .. #Waypoints .. '}')
@@ -1042,7 +1042,7 @@ local function VendorPath(toVendor)
 
     local nextPoint = VendorPoints[VendorPathIndex] -- return is imp to always assign next xyz correctly
     if nextPoint ~= nil then
-        if Player:DistanceFrom(nextPoint[1], nextPoint[2], nextPoint[3]) <= GetProximalTolerance() then
+        if Player:DistanceTo(nextPoint[1], nextPoint[2], nextPoint[3]) <= GetProximalTolerance() then
             if toVendor and VendorPathIndex <= #VendorPoints then
                 VendorPathIndex = VendorPathIndex + 1
             elseif VendorPathIndex > 1 then
@@ -1118,7 +1118,7 @@ local function EmptyBagsSetup()
         for i = 1, #VendorPoints do
             local vendorPoint = VendorPoints[i]
             if vendorPoint ~= nil then
-                local dist = Player:DistanceFrom(vendorPoint[1], vendorPoint[2], vendorPoint[3])
+                local dist = Player:DistanceTo(vendorPoint[1], vendorPoint[2], vendorPoint[3])
                 if dist < closestDist then
                     closestDist = dist
                     VendorPathIndex = i
@@ -1160,7 +1160,7 @@ function IsTargeting(obj, tar)
     if obj == nil or tar == nil then
         return false
     end
-    local unitTarget = wow.UnitTarget(obj)
+    local unitTarget = wow.GetTarget(obj)
     if unitTarget == nil then
         return false
     end
@@ -1652,7 +1652,7 @@ local function FindAttackableUnit()
                     end
                 end
 
-                if not object:IsPlayer() and not Navigator.HasBarrier(Player:Location(), object:Location()) and not AggrodToAnotherPlayer(object) then
+                if not object:IsPlayer() and not Navigator.HasBarrier(Player:Position(), object:Position()) and not AggrodToAnotherPlayer(object) then
                     if object:IsInCombat() and targetingMe then -- Targetting me so auto fook him up
                         table.insert(AggroTable, object)
                     elseif not ArrayContains(AvoidNPCs, object:Name()) then -- 不是要避开的NPC
@@ -2337,7 +2337,7 @@ local function IsSafeToLoot(lootObject)
         local object = Object:Get(i)
         if object ~= nil then
             if object:IsEnemy() and not object:IsDead() then
-                local distLootAggroObj = object:DistanceFrom(lootObject)
+                local distLootAggroObj = object:DistanceTo(lootObject)
                 local aggroRad = object:Level() - Player:Level() + 25 -- suppost +20 imma to be safe +5
                 if distLootAggroObj < aggroRad then
                     Log.Debug('Not looting ' .. lootObject:Name() .. ' as it is ' .. math.ceil(distLootAggroObj) .. 'y within hostile ' .. object:Name())
@@ -2385,7 +2385,7 @@ local function Skinning()
         local object = Object:Get(i)
         if object ~= nil then
             if object:Name() ~= "Campfire" and object:Name() ~= PLAYER_NAME and object:Name():find("Rune of") == nil then
-                if object:CanBeSkinned() and not Navigator.HasBarrier(Player:Location(), object:Location()) and object:IsEnemy() then
+                if object:CanBeSkinned() and not Navigator.HasBarrier(Player:Position(), object:Position()) and object:IsEnemy() then
                     if object:Distance() < closestDist and IsSafeToLoot(object) then
                         closestDist = object:Distance()
                         skinObject = object
@@ -2399,7 +2399,7 @@ local function Skinning()
         Log.Debug('Skinning ' .. skinObject:Name() .. '!!!')
         Spell = skinObject:Name()
 
-        Navigator.MoveTo(skinObject:Location())
+        Navigator.MoveTo(skinObject:Position())
         if skinObject:Distance() <= 5 then
             DismountCheck()
             Player.Skin(skinObject)
@@ -2446,7 +2446,7 @@ local function Looting()
     for i = 1, Object:Count() do
         local object = Object:Get(i)
         if object ~= nil then
-            if object:IsDead() and object:CanBeLooted() and not Navigator.HasBarrier(Player:Location(), object:Location()) then
+            if object:IsDead() and object:CanBeLooted() and not Navigator.HasBarrier(Player:Position(), object:Position()) then
                 lootCount = lootCount + 1
                 if object:Distance() < closestDist and IsSafeToLoot(object) then
                     closestDist = object:Distance()
@@ -2460,7 +2460,7 @@ local function Looting()
         Log.Debug('Looting ' .. lootObject:Name() .. '!!!')
         Spell = lootObject:Name()
 
-        Navigator.MoveTo(lootObject:Location())
+        Navigator.MoveTo(lootObject:Position())
         if lootObject:Distance() <= 5 then
             DismountCheck()
             Player.Loot(lootObject)
@@ -2642,7 +2642,7 @@ local function DrawStatus()
     if PlayerStatus == "ATTACK" then -- Attacking
         local attackStatus = 'Attacking...'
         if AttackObject ~= nil then
-            local odist = Player:DistanceFrom(AttackObject)
+            local odist = Player:DistanceTo(AttackObject)
             attackStatus = wow.GetObjectName(AttackObject) .. ' [' .. wow.UnitHealthPercent(AttackObject) .. '%] {' .. math.ceil(odist) .. 'y}'
         end
         LibDraw.Text(attackStatus, "GameFontNormal", pX, pY, pZ + 3)

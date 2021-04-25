@@ -4,7 +4,7 @@ wow = {}
 -- * 魔兽世界API *
 -- **************
 
-function wow.Raycast(x1, y1, z1, x2, y2, z2, flags)
+wow.Raycast = function(x1, y1, z1, x2, y2, z2, flags)
     if wmbapi then
         return wmbapi.Raycast(x1, y1, z1, x2, y2, z2, flags)
     end
@@ -13,8 +13,8 @@ function wow.Raycast(x1, y1, z1, x2, y2, z2, flags)
     end
 end
 
--- 返回Object的GUID或者nil(如果不是有效的Object)
-wow.UnitTarget = function(unitTag)
+-- 返回物体的目标或者nil(如果不是有效的Object)
+wow.GetTarget = function(unitTag)
     if wmbapi then
         return wmbapi.UnitTarget(unitTag)
     end
@@ -49,8 +49,9 @@ wow.CastSpell = function(spellName, onSelf)
     if onSelf then
         target = 'player'
     end
+    Log.Debug("释放法术: %s", spellName)
     if wmbapi then
-        CastSepllByName(spellName, target)
+        CastSpellByName(spellName, target)
     elseif lb then
         lb.Unlock(CastSpellByName, spellName, target)
     end
@@ -90,9 +91,9 @@ end
 wow.CalculateDistance = function(...)
     local x1, y1, z1, x2, y2, z2
     if select("#", ...) == 6 then
-        x1, y1, z1, x2, y2, z2 = ...
+        x1, y1, z1, x2, y2, z2 = ...    -- x1, y1, z1, x2, y2, z2
     else
-        local point1, point2 = ...
+        local point1, point2 = ...    -- {x1, y1, z1}, {x2, y2, z2}
         x1 = point1[1]
         y1 = point1[2]
         z1 = point1[3]
@@ -103,16 +104,17 @@ wow.CalculateDistance = function(...)
     return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
 end
 
--- 获取两者之间的距离. 例如: Player 和 Target
-wow.GetDistance3D = function(startObject, endObject)
+-- 计算两个object之间的距离. 例如: Player 和 Target
+wow.GetDistanceBetweenObjects = function(object1, object2)
     if wmbapi then
-        return wmbapi.GetDistanceBetweenObjects(startObject, endObject)
+        return wmbapi.GetDistanceBetweenObjects(object1, object2)
     end
     if lb then
-        return lb.GetDistance3D(startObject, endObject)
+        return lb.GetDistanceBetweenObjects(object1, object2)
     end
 end
 
+-- 检查object是否有某个debuff
 wow.HasDebuff = function(name, obj)
     for i = 1, 40 do
         local debuff = wow.UnitDebuff(obj, i)
@@ -139,6 +141,7 @@ wow.HasAura = function(object, aura)
     end
 end
 
+-- 检查是否是盗贼
 wow.IsRouge = function()
     return wow.UnitClass("player") == "Rogue"
 end
@@ -279,7 +282,7 @@ wow.UnitGUID = function(unit)
     return UnitGUID(unit)
 end
 
-wow.UnitTarget = function(unit)
+wow.GetTarget = function(unit)
     if wmbapi then
         return wmbapi.UnitTarget(unit)
     end
@@ -436,19 +439,10 @@ end
 
 wow.RunMacroText = function(macro)
     if wmbapi then
-        RunMarcoText(macro)
+        RunMacroText(macro)
     end
     if lb then
         lb.Unlock(wow.RunMacroText, macro)
-    end
-end
-
-wow.GetDistanceBetweenObjects = function(object1, object2)
-    if wmbapi then
-        return wmbapi.GetDistanceBetweenObjects(object1, object2)
-    end
-    if lb then
-        return lb.GetDistance3D(object1, object2)
     end
 end
 
@@ -536,11 +530,17 @@ wow.ApplyBuff = function(buff, unit)
     end
 end
 
+wow.GetFacing = function(object)
+    if wmbapi ~= nil then
+        return wmbapi.ObjectFacing(object)
+    end
+end
+
 -- wow.Unlock = function(method, arg1, arg2, ...)
 --     return lb.Unlock(method, arg1, arg2, ...)
 -- end
 
-function wow.MoveTo(x, y, z)
+wow.MoveTo = function(x, y, z)
     if wmbapi then
         wmbapi.MoveTo(x, y, z)
         return
@@ -551,7 +551,7 @@ function wow.MoveTo(x, y, z)
     end
 end
 
-function wow.StopMove()
+wow.StopMove = function()
     if wmbapi then
         MoveAndSteerStop()
         MoveForwardStop()
@@ -567,9 +567,9 @@ function wow.StopMove()
             MoveForwardStart()
             MoveForwardStop()
         end
-        if GetKeyState(0x02) then
+        if wmbapi.GetKeyState(0x02) then
             TurnOrActionStart()
-        elseif GetKeyState(0x01) then
+        elseif wmbapi.GetKeyState(0x01) then
             CameraOrSelectOrMoveStart()
         end
         return
@@ -580,12 +580,12 @@ function wow.StopMove()
 end
 
 -- 返回x, y, z or ni if no collision
-function wow.Raycast(x1, y1, z1, x2, y2, z2, flags)
+wow.Raycast = function(x1, y1, z1, x2, y2, z2, flags)
     return Raycast(x1, y1, z1, x2, y2, z2, flags)
 end
 
 -- 写文件, 成功返回true, 否则, 返回false
-function wow.WriteFile(path, content, append)
+wow.WriteFile = function(path, content, append)
     append = append or true
     if wmbapi then
         return wmbapi.WriteFile(path, content, append)
@@ -596,7 +596,7 @@ function wow.WriteFile(path, content, append)
 end
 
 -- 返回角色到目标的Nav waypoints, 角色不移动!
-function wow.GetWaypoints(x, y, z, TargetId)
+wow.GetWaypoints = function(x, y, z, TargetId)
     if wmbapi then
         local mapId = wmbapi.GetCurrentMapInfo()
         local px, py, pz = Player:Position()
@@ -618,17 +618,17 @@ function wow.GetWaypoints(x, y, z, TargetId)
     end
 end
 
-function wow.GameObjectHasLockType(GUID, lockType)
+wow.GameObjectHasLockType = function(GUID, lockType)
     -- TBD
     return lb.GameObjectHasLockType(GUID, lockType)
 end
 
--- ******************
--- * Bit opeartions *
--- ******************
-wow.bit = {}
-wow.bit.bor = function(b1, b2, ...)
-    return bit.bor(b1, b2, ...)
+-- Bit opeartions
+do
+    wow.bit = {}
+    wow.bit.bor = function(b1, b2, ...)
+        return bit.bor(b1, b2, ...)
+    end
 end
 
 -- Get Angle from Object to another, you can pass this either an array of positions (Not an object) or a GUID.
@@ -676,5 +676,19 @@ wow.GatherMine = function(guid)
     if lb then
         lb.UnitTagHandler(InteractUnit, guid)
         return
+    end
+end
+
+wow.TurnStart = function()
+    Log.Debug("Turn start")
+    if wmbapi ~= nil then
+        TurnLeftStart()
+    end
+end
+
+wow.TurnStop = function()
+    Log.Debug("Turn stop")
+    if wmbapi ~= nil then
+        TurnLeftStop()
     end
 end

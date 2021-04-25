@@ -1,5 +1,5 @@
 local MAX_GATHER_COUNT = 3
-local GATHER_TIME = 7
+local GATHER_TIME = 5.1
 
 BT.GatherHerb = {
     base = BT.Action

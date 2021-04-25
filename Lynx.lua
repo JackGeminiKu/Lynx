@@ -11,38 +11,54 @@ local function CreateBtBuy()
     local interact = BT.Interact:New("interact")
     local wait2 = BT.Wait:New("wait_after_interact", 1)
     local buy = BT.Buy:New("buy")
-    seqBuy:AddChildList({
-        selectMerchant, 
-        move, 
-        target, 
-        wait1, 
-        interact, 
-        wait2, 
-        buy
-    })
+    seqBuy:AddChildList({selectMerchant, move, target, wait1, interact, wait2, buy})
     -- seqBuy:AddChildList{selectMerchant, move, target, interact, buy}
     return btree
 end
 
-local function CreateBtFight()
+local function CreateBtAttactMonster()
+    local attackNode = BT.Sequence:New("attack node")
+    attackNode:AddChildList({BT.FindMonster:New("find monster"), BT.Attack:New("attack")})
+    -- root
+    local root = BT.Selector:New("root")
+    root:AddChildList({attackNode})
 
-end
-
-local function CreateBtHerb()
-    local seqRoot = BT.Sequence:New("herb root")
-    seqRoot:AddChildList({
-        BT.FindHerb:New("find herb"),
-        BT.Move:New("move to herb"),
-        BT.Wait:New("wait after move", 0.1),
-        BT.GatherHerb:New("gather herb")
-    })
-
-    local btree = BT.BTree:New(nil, "herb bt")
-    btree:AddRoot(seqRoot)
+    -- tree
+    local btree = BT.BTree:New(nil, "monster bt")
+    btree:AddRoot(root)
     return btree
 end
 
-local _bt = CreateBtHerb()
+local function CreateBtHerb()
+    -- 攻击
+    local attackNode = BT.Sequence:New("attack node")
+    attackNode:SetAbortType(BT.EAbortType.LowerPriority)
+    attackNode:AddChildList({BT.IsAttacked:New("attacked", true), BT.Attack:New("attack")})
+
+    -- 采集
+    local herbNode = BT.Sequence:New("herb node")
+    herbNode:AddChildList({BT.FindHerb:New("find herb"), BT.Move:New("move to herb"),
+                           BT.Wait:New("wait after move", 0.1), BT.GatherHerb:New("gather herb")})
+
+    -- root
+    local root = BT.Selector:New("root")
+    root:AddChildList({attackNode, herbNode})
+
+    -- tree
+    local btree = BT.BTree:New(nil, "herb bt")
+    btree:AddRoot(root)
+    return btree
+end
+
+local function CreateAttackTree()
+    local root = BT.Sequence:New("attack root")
+    root:AddChildList({BT.Attack:New("attack mob")})
+    local btree = BT.BTree:New(nil, "herb bt")
+    btree:AddRoot(root)
+    return btree
+end
+
+local _bt = CreateBtAttactMonster() -- create behavior tree
 -- endregion btree
 
 -- region onUpdate

@@ -21,10 +21,6 @@ function Object:Level()
 end
 
 function Object:Position()
-    return wow.GetObjectPosition(self.ObjectTag)
-end
-
-function Object:Location()
     local x, y, z = wow.GetObjectPosition(self.ObjectTag)
     return {x = x, y = y, z = z}
 end
@@ -47,20 +43,25 @@ function Object:Speed()
     return wow.GetUnitSpeed(self.ObjectTag)
 end
 
+function Object:Facing()
+    return wow.GetFacing(self.ObjectTag)
+end
+
+-- 获取目标和玩家的距离
 function Object:Distance()
     return wow.GetDiatance3D(self.ObjectTag, 'player')
 end
 
 -- 已作废, 请见使用Object:Distance()
-function Object:DistanceFrom(...)
+function Object:DistanceTo(...)
     local argNumber = select('#', ...)
     if argNumber == 1 then -- Player, Target ...
         local endObject = ...
         if endObject.x == nil then
-            return wow.GetDistance3D(self.ObjectTag, endObject)
+            return wow.GetDistanceBetweenObjects(self.ObjectTag, endObject)    -- target
         else
             local x, y, z = self:Position()
-            return wow.CalculateDistance(x, y, z, endObject.x, endObject.y, endObject.z)
+            return wow.CalculateDistance(x, y, z, endObject.x, endObject.y, endObject.z)    -- {x, y, z}
         end
     elseif argNumber == 3 then -- x, y, z
         local x, y, z = self:Position()
@@ -96,7 +97,7 @@ function Object:IsTargeting(target)
     if target == nil then
         return false
     end
-    local objectTarget = wow.UnitTarget(self.ObjectTag)
+    local objectTarget = wow.GetTarget(self.ObjectTag)
     if objectTarget == nil then
         return false
     end
