@@ -36,7 +36,6 @@ Actions\TestShared1.lua
 Actions\TestShared2.lua
 
 Actions\Wait.lua
-Actions\Attack.lua
 
 Actions\SelectMerchant.lua
 Actions\Move.lua
@@ -46,6 +45,9 @@ Actions\Buy.lua
 Actions\FindHerb.lua
 Actions\GatherHerb.lua
 Actions\FindMonster.lua
+
+Actions\Attack\MageAttackMonster.lua
+Actions\Attack\RougeAttackMonster.lua
 
 Composites\Parallel.lua
 Composites\Selector.lua

@@ -1,11 +1,11 @@
-BT.Attack = {
+BT.MageAttackMonster = {
     Base = BT.Action
 }
-local this = BT.Attack
+local this = BT.MageAttackMonster
 this.__index = this
 setmetatable(this, this.Base)
 
-function BT.Attack:New(name)
+function BT.MageAttackMonster:New(name)
     local o = this.base:New(name)
     o.nextSpellTime = wow.GetTime()
     o.spellList = {}
@@ -14,7 +14,7 @@ function BT.Attack:New(name)
     return o
 end
 
-function BT.Attack:OnUpdate()
+function BT.MageAttackMonster:OnUpdate()
     if not Player:HasTarget() or Target:IsDead() then
         self.spellList = {}
         return BT.ETaskStatus.Success
@@ -64,7 +64,7 @@ function BT.Attack:OnUpdate()
     return BT.ETaskStatus.Running
 end
 
-function BT.Attack:CastSpell(spellName)
+function BT.MageAttackMonster:CastSpell(spellName)
     self.spellList[#self.spellList + 1] = spellName
     Player.CastSpell(spellName, false)
 end
@@ -119,7 +119,7 @@ function FaceTarget()
     Player.FaceDirection(angle)
 end
 
-function BT.Attack:GetNextSpell()
+function BT.MageAttackMonster:GetNextSpell()
     local spell, time
     if #self.spellList == 0 then
         spell = '火球术'

@@ -18,7 +18,7 @@ end
 
 local function CreateBtAttactMonster()
     local attackNode = BT.Sequence:New("attack node")
-    attackNode:AddChildList({BT.FindMonster:New("find monster"), BT.Attack:New("attack")})
+    attackNode:AddChildList({BT.FindMonster:New("find monster"), BT.MageAttackMonster:New("attack")})
 
     -- root
     local root = BT.Selector:New("root")
@@ -34,7 +34,7 @@ local function CreateBtHerb()
     -- 攻击
     local attackNode = BT.Sequence:New("attack node")
     attackNode:SetAbortType(BT.EAbortType.LowerPriority)
-    attackNode:AddChildList({BT.IsAttacked:New("attacked", true), BT.Attack:New("attack")})
+    attackNode:AddChildList({BT.IsAttacked:New("attacked", true), BT.MageAttackMonster:New("attack")})
 
     -- 采集
     local herbNode = BT.Sequence:New("herb node")
@@ -53,7 +53,7 @@ end
 
 local function CreateAttackTree()
     local root = BT.Sequence:New("attack root")
-    root:AddChildList({BT.Attack:New("attack mob")})
+    root:AddChildList({BT.MageAttackMonster:New("attack mob")})
     local btree = BT.BTree:New(nil, "herb bt")
     btree:AddRoot(root)
     return btree
