@@ -22,8 +22,8 @@ function Navigator.MoveTo(...)
             z = point[3]
         end
     end
-    local px, py, pz = Player:Position()
-    LogDebug('Current position: ' .. px .. ', ' .. py .. ', ' .. pz)
+    local pos = Player:Position()
+    LogDebug('Current position: ' .. pos.x .. ', ' .. pos.y .. ', ' .. pos.z)
     LogDebug('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
     wow.MoveTo(x, y, z)
 end

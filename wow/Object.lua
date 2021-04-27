@@ -20,6 +20,7 @@ function Object:Level()
     return wow.GetUnitLevel(self.ObjectTag)
 end
 
+-- 返回Object的地址 
 function Object:Position()
     local x, y, z = wow.GetObjectPosition(self.ObjectTag)
     return {x = x, y = y, z = z}
@@ -49,7 +50,8 @@ end
 
 -- 获取目标和玩家的距离
 function Object:Distance()
-    return wow.GetDiatance3D(self.ObjectTag, 'player')
+    print(self.ObjectTag)
+    return wow.GetDistanceBetweenObjects(self.ObjectTag, 'player')
 end
 
 -- 已作废, 请见使用Object:Distance()
@@ -60,8 +62,8 @@ function Object:DistanceTo(...)
         if endObject.x == nil then
             return wow.GetDistanceBetweenObjects(self.ObjectTag, endObject)    -- target
         else
-            local x, y, z = self:Position()
-            return wow.CalculateDistance(x, y, z, endObject.x, endObject.y, endObject.z)    -- {x, y, z}
+            local p = self:Position()
+            return wow.CalculateDistance(p.x, p.y, p.z, endObject.x, endObject.y, endObject.z)    -- {x, y, z}
         end
     elseif argNumber == 3 then -- x, y, z
         local x, y, z = self:Position()

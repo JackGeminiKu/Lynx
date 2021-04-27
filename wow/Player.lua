@@ -76,28 +76,12 @@ do
 
     function Player.FaceDirection(angle)
         Log.Debug("Face direction: %d °", math.deg(angle))
-        if wmbapi ~= nil then
-            wmbapi.FaceDirection(angle)
-        elseif lb ~= nil then
-            lb.SetPlayerAngles(angle)
-        end
+        wow.FaceDirection(angle) 
     end
 
     function Player.FaceTarget()
-        if wow.UnitExists('target') then
-            local px, py, pz = Player:Position()
-            local tx, ty, tz = Target:Position()
-            local angle = wow.rad(wow.atan2(ty - py, tx - px))
-            if angle < 0 then
-                return wow.FaceDirection(wow.rad(wow.atan2(ty - py, tx - px) + 360))
-            else
-                return wow.FaceDirection(angle)
-            end
-        end
-    end
-
-    Player.SetAngle = function(angle)
-        lb.SetPlayerAngles(angle)
+        local facing = Player.CalTargetFacing()
+        Player.FaceDirection(facing)
     end
 
     function Player.Skin(object)
@@ -127,6 +111,27 @@ end
 do
     Player.CorpseRecoveryDelay = function()
         return wow.GetCorpseRecoveryDelay()
+    end
+
+    -- 计算Facing值, 使玩家正对目标
+    Player.CalTargetFacing= function()
+        local p = Player:Position()
+        local t = Target:Position()
+        local dx = t.x - p.x
+        local dy = t.y - p.y
+        local angle0 = math.atan(dy / dx)
+        local angle = 0
+
+        if dy > 0 and dx > 0 then
+            angle = angle0
+        elseif dy < 0 and dx > 0 then
+            angle = angle0
+        elseif dy > 0 and dx < 0 then
+            angle = angle0 + math.pi
+        elseif dy < 0 and dx < 0 then
+            angle = math.pi + angle0
+        end
+        return angle
     end
 end
 

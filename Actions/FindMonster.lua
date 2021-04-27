@@ -31,6 +31,7 @@ function BT.FindMonster:OnUpdate()
 
     if monsterGuid ~= nil then
         self.monsterGuid.Value = monsterGuid
+        Player.Target(monsterGuid)
         return BT.ETaskStatus.Success
     else
         return BT.ETaskStatus.Failure

@@ -1,9 +1,9 @@
 BT.MageAttackMonster = {
-    Base = BT.Action
+    base = BT.Action
 }
 local this = BT.MageAttackMonster
 this.__index = this
-setmetatable(this, this.Base)
+setmetatable(this, this.base)
 
 function BT.MageAttackMonster:New(name)
     local o = this.base:New(name)
@@ -35,7 +35,7 @@ function BT.MageAttackMonster:OnUpdate()
 
     -- 调整方向?
     local facing = Player:Facing()
-    local facing2 = CalculateDirection()
+    local facing2 = Player.CalTargetFacing()
     Log.Debug("%.1f, %.1f, %.1f / %.1f", math.deg(facing), math.deg(facing2), math.deg(facing - facing2), facing - facing2)
     if math.abs(facing - facing2) > math.pi / 180 * 60 then
         if not self.isTurning then
@@ -71,52 +71,6 @@ end
 
 function AutoShoot()
     wow.RunMacroText("/cast 射击")
-end
-
-function CalculateDirection()
-    local p = Player:Position()
-    local t = Target:Position()
-    local dx = t.x - p.x
-    local dy = t.y - p.y
-    local angle0 = math.atan(dy / dx)
-    local angle = 0
-
-    if dy > 0 and dx > 0 then
-        angle = angle0
-    elseif dy < 0 and dx > 0 then
-        angle = angle0
-    elseif dy > 0 and dx < 0 then
-        angle = angle0 + math.pi
-    elseif dy < 0 and dx < 0 then
-        angle = math.pi + angle0
-    end
-    return angle
-end
-
-function FaceDirection(angle)
-    Player.FaceDirection(angle)
-end
-
-function FaceTarget()
-    local p = Player:Position()
-    local t = Target:Position()
-    local dx = t.x - p.x
-    local dy = t.y - p.y
-    local angle0 = math.atan(dy / dx)
-    local angle = 0
-
-    if dy > 0 and dx > 0 then
-        angle = angle0
-    elseif dy < 0 and dx > 0 then
-        angle = angle0
-    elseif dy > 0 and dx < 0 then
-        angle = angle0 + math.pi
-    elseif dy < 0 and dx < 0 then
-        angle = math.pi + angle0
-    end
-    angle = angle + math.random(-100, 100) / 10
-
-    Player.FaceDirection(angle)
 end
 
 function BT.MageAttackMonster:GetNextSpell()

@@ -93,13 +93,13 @@ wow.CalculateDistance = function(...)
     if select("#", ...) == 6 then
         x1, y1, z1, x2, y2, z2 = ...    -- x1, y1, z1, x2, y2, z2
     else
-        local point1, point2 = ...    -- {x1, y1, z1}, {x2, y2, z2}
-        x1 = point1[1]
-        y1 = point1[2]
-        z1 = point1[3]
-        x2 = point2[1]
-        y2 = point2[2]
-        z2 = point2[3]
+        local p1, p2 = ...    -- {x1, y1, z1}, {x2, y2, z2}
+        x1 = p1.x
+        y1 = p1.y
+        z1 = p1.z
+        x2 = p2.x
+        y2 = p2.y
+        z2 = p2.z
     end
     return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
 end
@@ -599,10 +599,10 @@ end
 wow.GetWaypoints = function(x, y, z, TargetId)
     if wmbapi then
         local mapId = wmbapi.GetCurrentMapInfo()
-        local px, py, pz = Player:Position()
+        local p = Player:Position()
         -- Log.Debug("Get waypoints: %d (%f,%f,%f) --> (%f,%f,%f)", mapId, px, py, pz, x, y, z)
-        print(px, py, pz, x, y, z)
-        local points, polygons = wmbapi.FindPath(mapId, px, py, pz, x, y, z)
+        print(p.x, p.y, p.z, x, y, z)
+        local points, polygons = wmbapi.FindPath(mapId, p.x, p.y, p.z, x, y, z)
         local waypoints = {}
         for k, v in ipairs(points) do
             waypoints[#waypoints + 1] = {

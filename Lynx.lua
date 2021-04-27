@@ -26,7 +26,7 @@ local function CreateBtAttactMonster()
 
     -- tree
     local btree = BT.BTree:New(nil, "monster bt")
-    btree:AddRoot(root)
+    btree:AddRoot(attackNode)
     return btree
 end
 
