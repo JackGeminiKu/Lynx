@@ -34,7 +34,7 @@ function Navigator.SavePosition()
 end
 
 function Navigator.GetWaypoints(x, y, z)
-    local waypoints =  wow.GetWaypoints(x, y, z)
+    local waypoints = wow.GetWaypoints(x, y, z)
     local i, j = 1, #waypoints
     while i < j do
         waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
@@ -55,8 +55,6 @@ function Navigator.ComparePoint(point1, point2)
 end
 -- endregion
 
-
-
 function Navigator.Stop()
     _waypoints = {}
     wow.StopMove()
@@ -65,7 +63,7 @@ function Navigator.Stop()
 end
 
 -- 地图导航
-local _waypoints = {} 
+local _waypoints = {}
 
 local function MoveToLocation(location)
     LogDebug("Initialize waypoints")
@@ -94,7 +92,7 @@ local function NextWaypoint()
     return _waypoints[#_waypoints]
 end
 
-local _lastUpdateTime = wow.GetTime() 
+local _lastUpdateTime = wow.GetTime()
 local _lastMoveTime = 0
 local _lastDistance = 0
 local _navInitialized = false

@@ -50,7 +50,6 @@ end
 
 -- 获取目标和玩家的距离
 function Object:Distance()
-    print(self.ObjectTag)
     return wow.GetDistanceBetweenObjects(self.ObjectTag, 'player')
 end
 

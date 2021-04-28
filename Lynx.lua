@@ -18,7 +18,7 @@ end
 
 local function CreateBtAttactMonster()
     local attackNode = BT.Sequence:New("attack node")
-    attackNode:AddChildList({BT.FindMonster:New("find monster"), BT.MageAttackMonster:New("attack")})
+    attackNode:AddChildList({BT.FindMonster:New("find monster"), BT.RougeAttackMonster:New("attack")})
 
     -- root
     local root = BT.Selector:New("root")
