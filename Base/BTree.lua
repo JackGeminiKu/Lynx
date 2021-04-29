@@ -80,7 +80,7 @@ end
 
 function BT.BTree:EnabledBT()
     if self.root == nil then
-        LogMgr.Error("Error,root is nil")
+        LogMgr.Error("Error, root is nil")
         return
     end
     if self.eStatus == BT.EBTreeStatus.None then

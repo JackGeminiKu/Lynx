@@ -1,8 +1,8 @@
 BT.Sequence = {
     base = BT.Composite
 }
-local this = BT.Sequence
 
+local this = BT.Sequence
 this.__index = this
 setmetatable(this, this.base)
 

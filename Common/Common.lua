@@ -55,5 +55,5 @@ BT.EAbortType = {
 
 BT.ErrorRet = {
     ChildCountMin = "儿子个数过少",
-    ChildCountMax = "儿子已满"
+    ChildCountMax = "儿子数量已满"
 }
