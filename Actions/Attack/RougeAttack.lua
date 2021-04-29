@@ -1,11 +1,11 @@
-BT.MageAttackMonster = {
+BT.RougeAttack = {
     base = BT.Action
 }
-local this = BT.MageAttackMonster
+local this = BT.RougeAttack
 this.__index = this
 setmetatable(this, this.base)
 
-function BT.MageAttackMonster:New(name)
+function BT.RougeAttack:New(name)
     local o = this.base:New(name)
     o.nextSpellTime = wow.GetTime()
     o.spellList = {}
@@ -14,18 +14,11 @@ function BT.MageAttackMonster:New(name)
     return o
 end
 
-function BT.MageAttackMonster:OnUpdate()
+function BT.RougeAttack:OnUpdate()
     if not Player:HasTarget() or Target:IsDead() then
         self.spellList = {}
         return BT.ETaskStatus.Success
     end
-
-    -- -- 面向目标
-    -- local angle = wow.GetAngle('player', 'target')
-    -- self:LogDebug('angle = ' .. angle)
-    -- if angle > math.pi / 2 then
-    --     Player.SetAngle(angle)
-    -- end
 
     -- 停下来
     if Player:IsMoving() then
@@ -43,8 +36,6 @@ function BT.MageAttackMonster:OnUpdate()
             Log.Debug("start turning")
             wow.TurnStart()
         end
-        -- FaceDirection(facing2 + math.random(-200, 200) / 1000)
-        -- self.nextSpellTime = self.nextSpellTime + 0.1
         return BT.ETaskStatus.Running
     else
         if self.isTurning then
@@ -64,7 +55,7 @@ function BT.MageAttackMonster:OnUpdate()
     return BT.ETaskStatus.Running
 end
 
-function BT.MageAttackMonster:CastSpell(spellName)
+function BT.RougeAttack:CastSpell(spellName)
     self.spellList[#self.spellList + 1] = spellName
     Player.CastSpell(spellName, false)
 end
@@ -73,19 +64,6 @@ function AutoShoot()
     wow.RunMacroText("/cast 射击")
 end
 
-function BT.MageAttackMonster:GetNextSpell()
-    local spell, time
-    if #self.spellList == 0 then
-        spell = '火球术'
-        time = 2.5
-    else
-        if Target:Health() < 20 then
-            spell = '火焰冲击'
-            time = 1.5
-        else
-            spell = '寒冰箭'
-            time = 1.7 
-        end
-    end
-    return spell, time
+function BT.RougeAttack:GetNextSpell()
+    return '邪恶攻击', 1.5
 end

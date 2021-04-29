@@ -9,29 +9,29 @@ setmetatable(this, this.base)
 function BT.FindMonster:New(name)
     local o = self.base:New(name)
     setmetatable(o, this)
-    o.monster = nil
+    o.target = nil
     return o
 end
 
 function BT.FindMonster:OnStart()
-    self.monster = self.bTree.sharedData:GetData("monster")
+    self.target = self.bTree.sharedData:GetData("target")
 end
 
 function BT.FindMonster:OnUpdate()
     local minDist = 10000
-    local monster= nil
+    local target= nil
     for _, object in ipairs(Object:GetObjects(100)) do
         if object:Health() == 100 and object:CanAttack() and not object:IsPlayer() then
             if object:Distance() < minDist then
                 minDist = object:Distance()
-                monster = object
+                target = object
             end
         end
     end
 
-    if monster ~= nil then
-        self.monster.Value = monster
-        Player.Target(monster)
+    if target ~= nil then
+        self.target.Value = target
+        Player.Target(target)
         return BT.ETaskStatus.Success
     else
         return BT.ETaskStatus.Failure

@@ -211,7 +211,7 @@ end
 --     -- end
 
 --     -- -- lb.Navigator.MoveTo(dx, dy, dz, 1, 2)
---     -- local waypoints = Navigator.GetWaypoints(dx, dy, dz)
+--     -- local waypoints = Navigator.GetWaypoints({x = dx, y = dy, z = dz})
 --     -- print(wow.GetTime() .. ': ' .. lb.NavMgr_GetPathIndex() .. ' / ' .. #waypoints)
 --     -- -- print(wow.GetTime(), lb.NavMgr_GetPathIndex() .. ' / ' .. #waypoints)
 

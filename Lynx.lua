@@ -5,7 +5,7 @@ local function CreateBtBuy()
     btree:AddRoot(seqBuy)
 
     local selectMerchant = BT.SelectMerchant:New("select merchant")
-    local move = BT.Move:New("move")
+    local move = BT.MoveToPosition:New("move")
     local target = BT.Target:New("target")
     local wait1 = BT.Wait:New("wait_after_target", 1)
     local interact = BT.Interact:New("interact")
@@ -18,15 +18,14 @@ end
 
 local function CreateBtAttactMonster()
     local attackNode = BT.Sequence:New("attack node")
-    attackNode:AddChildList({BT.FindMonster:New("find monster"), BT.RougeAttackMonster:New("attack")})
+    attackNode:AddChildList({BT.FindMonster:New("find monster"), BT.MoveToTarget:New("move to target"), BT.RougeAttack:New("attack")})
 
-    -- root
     local root = BT.Selector:New("root")
-    root:AddChildList({attackNode})
+    root:AddChild(attackNode)
 
     -- tree
     local btree = BT.BTree:New(nil, "monster bt")
-    btree:AddRoot(attackNode)
+    btree:AddRoot(root)
     return btree
 end
 
@@ -34,11 +33,11 @@ local function CreateBtHerb()
     -- 攻击
     local attackNode = BT.Sequence:New("attack node")
     attackNode:SetAbortType(BT.EAbortType.LowerPriority)
-    attackNode:AddChildList({BT.IsAttacked:New("attacked", true), BT.MageAttackMonster:New("attack")})
+    attackNode:AddChildList({BT.IsAttacked:New("attacked", true), BT.MageAttack:New("attack")})
 
     -- 采集
     local herbNode = BT.Sequence:New("herb node")
-    herbNode:AddChildList({BT.FindHerb:New("find herb"), BT.Move:New("move to herb"),
+    herbNode:AddChildList({BT.FindHerb:New("find herb"), BT.MoveToPosition:New("move to herb"),
                            BT.Wait:New("wait after move", 0.1), BT.GatherHerb:New("gather herb")})
 
     -- root
@@ -53,7 +52,7 @@ end
 
 local function CreateAttackTree()
     local root = BT.Sequence:New("attack root")
-    root:AddChildList({BT.MageAttackMonster:New("attack mob")})
+    root:AddChildList({BT.MageAttack:New("attack mob")})
     local btree = BT.BTree:New(nil, "herb bt")
     btree:AddRoot(root)
     return btree

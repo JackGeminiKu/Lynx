@@ -306,7 +306,7 @@ function Test:CreateLynx()
     local seq1001 = BT.Sequence:New("seq1001")
     btree:AddRoot(seq1001)
 
-    local move = BT.Move:New("move")
+    local move = BT.MoveToPosition:New("move")
     local wait1 = BT.Wait:New("wait1.5", 1.5)
     local buy = BT.Buy:New("buy")
     local wait2 = BT.Wait:New("wait2.5", 2.5)

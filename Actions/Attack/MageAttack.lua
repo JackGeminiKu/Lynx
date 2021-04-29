@@ -1,11 +1,11 @@
-BT.RougeAttackMonster = {
+BT.MageAttack = {
     base = BT.Action
 }
-local this = BT.RougeAttackMonster
+local this = BT.MageAttack
 this.__index = this
 setmetatable(this, this.base)
 
-function BT.RougeAttackMonster:New(name)
+function BT.MageAttack:New(name)
     local o = this.base:New(name)
     o.nextSpellTime = wow.GetTime()
     o.spellList = {}
@@ -14,7 +14,7 @@ function BT.RougeAttackMonster:New(name)
     return o
 end
 
-function BT.RougeAttackMonster:OnUpdate()
+function BT.MageAttack:OnUpdate()
     if not Player:HasTarget() or Target:IsDead() then
         self.spellList = {}
         return BT.ETaskStatus.Success
@@ -64,7 +64,7 @@ function BT.RougeAttackMonster:OnUpdate()
     return BT.ETaskStatus.Running
 end
 
-function BT.RougeAttackMonster:CastSpell(spellName)
+function BT.MageAttack:CastSpell(spellName)
     self.spellList[#self.spellList + 1] = spellName
     Player.CastSpell(spellName, false)
 end
@@ -73,6 +73,19 @@ function AutoShoot()
     wow.RunMacroText("/cast 射击")
 end
 
-function BT.RougeAttackMonster:GetNextSpell()
-    return '邪恶攻击', 1.5
+function BT.MageAttack:GetNextSpell()
+    local spell, time
+    if #self.spellList == 0 then
+        spell = '火球术'
+        time = 2.5
+    else
+        if Target:Health() < 20 then
+            spell = '火焰冲击'
+            time = 1.5
+        else
+            spell = '寒冰箭'
+            time = 1.7 
+        end
+    end
+    return spell, time
 end

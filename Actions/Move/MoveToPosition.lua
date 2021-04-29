@@ -1,26 +1,27 @@
 local PROXIMITY_TOLERANCE = 2
 local STUCK_TOLERANCE = 0.1
 
-BT.Move = {
+BT.MoveToPosition = {
     Base = BT.Action
 }
-local this = BT.Move
+local this = BT.MoveToPosition
 this.__index = this
 setmetatable(this, this.Base)
 
-function BT.Move:New(name)
+function BT.MoveToPosition:New(name)
     local o = this.base:New(name)
     setmetatable(o, this)
-    o.waypoints = nil 
+    o.waypoints = nil
     o.lastLocation = nil
     return o
 end
 
-function BT.Move:OnStart()
+function BT.MoveToPosition:OnStart()
     local dest = self.bTree.sharedData:GetData('destination').value
     self:LogDebug("目的地: %.3f, %.3f, %.3f", dest.x, dest.y, dest.z)
-    self.waypoints = Navigator.GetWaypoints(dest.x, dest.y, dest.z)
+
     self:LogDebug("Mesh waypoints")
+    self.waypoints = Navigator.GetWaypoints(dest)
     for k, w in pairs(self.waypoints) do
         self:LogDebug(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
     end
@@ -35,7 +36,7 @@ function BT.Move:OnStart()
     end
 end
 
-function BT.Move:OnUpdate()
+function BT.MoveToPosition:OnUpdate()
     -- if not IsNavigationReady() then
     --     return
     -- end
@@ -48,20 +49,20 @@ function BT.Move:OnUpdate()
     if dist < PROXIMITY_TOLERANCE then
         self:DeleteLastWaypoint()
         if self:NextWaypoint() ~= nil then
-            Navigator.MoveTo(self:NextWaypoint())
+            Navigator.MoveTo(self:NextWaypoint())   -- 移动到下一点
         end
     else
-        if self:IsStucked() then
+        if self:Stucked() then
             self:LogDebug('Stuck!!!')
             Player:Jump()
 
-            local waypoints = Navigator.GetWaypoints(self:NextWaypoint().x, self:NextWaypoint().y, self:NextWaypoint().z)
+            local waypoints = Navigator.GetWaypoints(self:NextWaypoint())
             for i = 1, #waypoints do
                 self:LogDebug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
                 self.waypoints[#self.waypoints + 1] = waypoints[i]
             end
 
-            Navigator.MoveTo(self:NextWaypoint())
+            Navigator.MoveTo(self:NextWaypoint())    -- 移动到下一点
         end
 
         self.lastLocation = Player:Position()
@@ -70,24 +71,24 @@ function BT.Move:OnUpdate()
     return BT.ETaskStatus.Running
 end
 
-function BT.Move:IsFinished()
+function BT.MoveToPosition:IsFinished()
     return #self.waypoints == 0
 end
 
-function BT.Move:NextWaypoint()
+function BT.MoveToPosition:NextWaypoint()
     if #self.waypoints == 0 then
         return nil
     end
     return self.waypoints[#self.waypoints]
 end
 
-function BT.Move:DeleteLastWaypoint()
+function BT.MoveToPosition:DeleteLastWaypoint()
     if #self.waypoints ~= 0 then
         self.waypoints[#self.waypoints] = nil
     end
 end
 
-function BT.Move:IsStucked()
+function BT.MoveToPosition:Stucked()
     if self.lastLocation == nil then
         return false
     else

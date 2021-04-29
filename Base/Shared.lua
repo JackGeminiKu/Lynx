@@ -8,24 +8,14 @@ function BT.Shared:New()
     return o
 end
 
-function BT.Shared:GetData(name)
-    if self.data[name] == nil then
-        self.data[name] = {
-            name = name,
-            value = nil
-        }
-    end
-    return self.data[name]
-end
-
-function BT.Shared:GetValue(name, defaultValue)
+function BT.Shared:GetData(name, defaultValue)
     if self.data[name] == nil then
         self.data[name] = {
             name = name,
             value = defaultValue
         }
     end
-    return self.data[name].value
+    return self.data[name]
 end
 
 function BT.Shared:GetNullData(name)

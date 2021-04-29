@@ -33,8 +33,8 @@ function Navigator.SavePosition()
     LogDebug("Current Position: %f, %f, %f", x, y, z)
 end
 
-function Navigator.GetWaypoints(x, y, z)
-    local waypoints = wow.GetWaypoints(x, y, z)
+function Navigator.GetWaypoints(position)
+    local waypoints = wow.GetWaypoints(position.x, position.y, position.z)
     local i, j = 1, #waypoints
     while i < j do
         waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
@@ -65,11 +65,11 @@ end
 -- 地图导航
 local _waypoints = {}
 
-local function MoveToLocation(location)
+local function MoveToLocation(position)
     LogDebug("Initialize waypoints")
-    LogDebug('Target position: ' .. location.x .. ', ' .. location.y .. ', ' .. location.z)
+    LogDebug('Target position: ' .. position.x .. ', ' .. position.y .. ', ' .. position.z)
 
-    _waypoints = Navigator.GetWaypoints(location.x, location.y, location.z)
+    _waypoints = Navigator.GetWaypoints(position)
     LogDebug("Mesh waypoints")
     for k, v in pairs(_waypoints) do
         LogDebug(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
@@ -146,7 +146,7 @@ Frame:SetScript("OnUpdate", function()
             LogDebug('Stuck!!!')
             Player:Jump()
 
-            -- local waypoints = Navigator.GetWaypoints(NextWaypoint().x, NextWaypoint().y, NextWaypoint().z)
+            -- local waypoints = Navigator.GetWaypoints(NextWaypoint())
             -- for i = 1, #waypoints do
             --     LogDebug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
             --     _waypoints[#_waypoints + 1] = waypoints[i]

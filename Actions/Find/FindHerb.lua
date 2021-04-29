@@ -18,8 +18,8 @@ end
 function BT.FindHerb:OnStart()
     self.herbGuid = self.bTree.sharedData:GetData("herb guid")
     self.herbName = self.bTree.sharedData:GetData("herb name")
-    self.herbLocation = self.bTree.sharedData:GetValue("destination", {})
-    self.herbHistory = self.bTree.sharedData:GetValue("herb history", {})
+    self.herbLocation = self.bTree.sharedData:GetData("destination", {})
+    self.herbHistory = self.bTree.sharedData:GetData("herb history", {})
 end
 
 local _herbList = {
