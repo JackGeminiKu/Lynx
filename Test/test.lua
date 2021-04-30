@@ -304,12 +304,11 @@ end
 function Test:CreateLynx()
     local btree = BT.BTree:New(nil, "Lynx")
     local seq1001 = BT.Sequence:New("seq1001")
-    btree:AddRoot(seq1001)
-
     local move = BT.MoveToPosition:New("move")
     local wait1 = BT.Wait:New("wait1.5", 1.5)
     local buy = BT.Buy:New("buy")
     local wait2 = BT.Wait:New("wait2.5", 2.5)
+    btree:AddRoot(seq1001)
     seq1001:AddChildList{move, wait1, buy, wait2}
 
     return btree

@@ -14,21 +14,21 @@ function BT.MoveToTarget:New(name)
     setmetatable(o, this)
     o.target = nil
     o.lastLocation = nil
-    return 0
+    return o
 end
 
 function BT.MoveToTarget:OnStart()
-    self.target = self.bTree.sharedData:GetData("target")
+    self.target = self.bTree.sharedData:GetData('target')
 end
 
 function BT.MoveToTarget:OnUpdate()
     -- 跑到目标附近了?
-    if Player:DistantceTo(self.target:Position()) < PROXIMITY_TOLERANCE then
+    if CloseToTarget(self.target) then
         return BT.ETaskStatus.Success
     end
 
     local dist = Player:DistanceTo(self:GetNextWaypoint())
-    if dist < PROXIMITY_TOLERANCE then   -- 移动到下一点
+    if dist < PROXIMITY_TOLERANCE then -- 移动到下一点
         Navigator.MoveTo(self:GetNextWaypoint())
     else
         if self:Stucked() then
@@ -47,21 +47,23 @@ function BT.MoveToTarget:GetNextWaypoint()
     return waypoints[#waypoints]
 end
 
-function BT.MoveToPosition:IsFinished()
-    return #self.waypoints == 0
-end
-
 function BT.MoveToPosition:Stucked()
     if self.lastLocation == nil then
         return false
     else
         local currentLocation = Player:Position()
-        if math.abs(currentLocation.x - self.lastLocation.x) < STUCK_TOLERANCE and
-            math.abs(currentLocation.y - self.lastLocation.y) < STUCK_TOLERANCE and
-            math.abs(currentLocation.z - self.lastLocation.z) < STUCK_TOLERANCE then
+        if
+            math.abs(currentLocation.x - self.lastLocation.x) < STUCK_TOLERANCE and
+                math.abs(currentLocation.y - self.lastLocation.y) < STUCK_TOLERANCE and
+                math.abs(currentLocation.z - self.lastLocation.z) < STUCK_TOLERANCE
+         then
             return true
         else
             return false
         end
     end
+end
+
+function CloseToTarget(target)
+    return Player:DistantceTo(target:Position()) < PROXIMITY_TOLERANCE
 end

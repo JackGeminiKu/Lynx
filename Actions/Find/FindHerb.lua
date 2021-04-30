@@ -6,7 +6,7 @@ this.__index = this
 setmetatable(this, this.base)
 
 function BT.FindHerb:New(name)
-    local o = self.base:New(name)
+    local o = this.base:New(name)
     setmetatable(o, this)
     o.herbGuid = nil
     o.herbName = nil
@@ -16,18 +16,18 @@ function BT.FindHerb:New(name)
 end
 
 function BT.FindHerb:OnStart()
-    self.herbGuid = self.bTree.sharedData:GetData("herb guid")
-    self.herbName = self.bTree.sharedData:GetData("herb name")
-    self.herbLocation = self.bTree.sharedData:GetData("destination", {})
-    self.herbHistory = self.bTree.sharedData:GetData("herb history", {})
+    self.herbGuid = self.bTree.sharedData:GetData('herb guid')
+    self.herbName = self.bTree.sharedData:GetData('herb name')
+    self.herbLocation = self.bTree.sharedData:GetData('destination', {})
+    self.herbHistory = self.bTree.sharedData:GetData('herb history', {})
 end
 
 local _herbList = {
-    ["宁神花"] = 0,
-    ["银叶草"] = 0,
-    ["石南草"] = 0,
-    ["魔皇草"] = 75,
-    ["地根草"] = 75
+    ['宁神花'] = 0,
+    ['银叶草'] = 0,
+    ['石南草'] = 0,
+    ['魔皇草'] = 75,
+    ['地根草'] = 75
 }
 
 local CanGather = function(guid)
@@ -54,7 +54,7 @@ function BT.FindHerb:OnUpdate()
                 self.herbGuid.value = guid
                 self.herbName.value = herbName
                 local x, y, z = wow.GetObjectPosition(guid)
-                self:LogDebug("找到草药: %s (%f,%f,%f)", herbName, x, y, z)
+                self:LogDebug('找到草药: %s (%f,%f,%f)', herbName, x, y, z)
                 self.herbLocation.x = x
                 self.herbLocation.y = y
                 self.herbLocation.z = z
