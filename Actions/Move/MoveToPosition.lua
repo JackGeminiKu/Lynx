@@ -8,31 +8,32 @@ local this = BT.MoveToPosition
 this.__index = this
 setmetatable(this, this.Base)
 
-function BT.MoveToPosition:New(name)
+function BT.MoveToPosition:New(name, position)
     local o = this.base:New(name)
     setmetatable(o, this)
+    o.Position = position
     o.waypoints = nil
     o.lastLocation = nil
     return o
 end
 
 function BT.MoveToPosition:OnStart()
-    local dest = self.bTree.sharedData:GetData('destination').value
-    self:LogDebug("目的地: %.3f, %.3f, %.3f", dest.x, dest.y, dest.z)
+    local dest = self.Position-- self.bTree.sharedData:GetData('destination').value
+    self:LogDebug("目的地: %.3f, %.3f, %.3f", dest.X, dest.Y, dest.Z)
 
     self:LogDebug("Mesh waypoints")
     self.waypoints = Navigator.GetWaypoints(dest)
     for k, w in pairs(self.waypoints) do
-        self:LogDebug(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
+        self:LogDebug(k .. ': ' .. w.X .. ', ' .. w.Y .. ', ' .. w.Z)
     end
 
     self:LogDebug("New waypoints")
     for k, w in pairs(self.waypoints) do
         local rnd = math.random(-100, 100) / 100
-        w.x = w.x + rnd
-        w.y = w.y + rnd
-        w.z = w.z + rnd
-        self:LogDebug(k .. ': ' .. w.x .. ', ' .. w.y .. ', ' .. w.z)
+        w.X = w.X + rnd
+        w.Y = w.Y + rnd
+        w.Z = w.Z + rnd
+        self:LogDebug(k .. ': ' .. w.X .. ', ' .. w.Y .. ', ' .. w.Z)
     end
 end
 
@@ -58,7 +59,7 @@ function BT.MoveToPosition:OnUpdate()
 
             local waypoints = Navigator.GetWaypoints(self:NextWaypoint())
             for i = 1, #waypoints do
-                self:LogDebug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
+                self:LogDebug('Insert points: ', waypoints[i].X, waypoints[i].Y, waypoints[i].Z)
                 self.waypoints[#self.waypoints + 1] = waypoints[i]
             end
 
@@ -93,9 +94,9 @@ function BT.MoveToPosition:Stucked()
         return false
     else
         local currentLocation = Player:Position()
-        if math.abs(currentLocation.x - self.lastLocation.x) < STUCK_TOLERANCE and
-            math.abs(currentLocation.y - self.lastLocation.y) < STUCK_TOLERANCE and
-            math.abs(currentLocation.z - self.lastLocation.z) < STUCK_TOLERANCE then
+        if math.abs(currentLocation.X - self.lastLocation.X) < STUCK_TOLERANCE and
+            math.abs(currentLocation.Y - self.lastLocation.Y) < STUCK_TOLERANCE and
+            math.abs(currentLocation.Z - self.lastLocation.Z) < STUCK_TOLERANCE then
             return true
         else
             return false

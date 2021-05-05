@@ -2,26 +2,16 @@ Player = Unit:New('player')
 
 -- 各种动作
 do
-    function Player.Attack()
-        wow.RunMacroText("/startattack")
+    function Player.StartAttack()
+        wow.RunMacroText('/startattack')
     end
 
-    -- 返回true, false, 代表施放成功还是失败
-    function Player.CastSpell(spellName, onSelf)
-        if not Player.IsCastable(spellName) then
-            return false
-        end
-        if onSelf then
-            wow.CastSpell(spellName, onSelf)
-            return true
-        else
-            if Player.IsSpellInRange(spellName, 'target') then
-                wow.CastSpell(spellName, onSelf)
-                return true
-            else
-                return false
-            end
-        end
+    function Player.CastSpell(spellName)
+        wow.CastSpell(spellName, false)
+    end
+
+    function Player.CastSpellOnSelf(spellName)
+        wow.CastSpell(spellName, true)
     end
 
     function Player.Use(itemName)
@@ -33,6 +23,7 @@ do
     end
 
     function Player.Jump()
+        Log.Debug('Jump')
         if wmbapi ~= nil then
             JumpOrAscendStart()
         end
@@ -45,7 +36,15 @@ do
         wow.StopMove()
     end
 
-    function Player.TurnLeftStart()
+    Player.MoveForwardStart = function()
+        wow.MoveForwardStart()
+    end
+
+    Player.MoveForwardStop = function()
+        wow.MoveForwardStop()
+    end
+
+    function Player.TurnStart()
         wow.TurnStart()
     end
 
@@ -58,7 +57,7 @@ do
     end
 
     function Player.Interact()
-        return wow.InteractUnit("target")
+        return wow.InteractUnit('target')
     end
 
     function Player.RetrieveCorpse()
@@ -67,7 +66,7 @@ do
 
     -- 选中object作为当前目标
     function Player.Target(object)
-        if type(object) == "table" then
+        if type(object) == 'table' then
             wow.TargetUnit(object.ObjectTag)
         else
             wow.TargetUnit(object)
@@ -75,8 +74,8 @@ do
     end
 
     function Player.FaceDirection(angle)
-        Log.Debug("Face direction: %d °", math.deg(angle))
-        wow.FaceDirection(angle) 
+        Log.Debug('Face direction: %d °', math.deg(angle))
+        wow.FaceDirection(angle)
     end
 
     function Player.FaceTarget()
@@ -93,7 +92,7 @@ do
     end
 
     function Player.Buy(index)
-        Log.Debug("Buy index " .. index)
+        Log.Debug('Buy index ' .. index)
         wow.BuyMerchantItem(index)
     end
 
@@ -114,11 +113,11 @@ do
     end
 
     -- 计算Facing值, 使玩家正对目标
-    Player.CalTargetFacing= function()
+    Player.CalTargetFacing = function()
         local p = Player:Position()
         local t = Target:Position()
-        local dx = t.x - p.x
-        local dy = t.y - p.y
+        local dx = t.X - p.X
+        local dy = t.Y - p.Y
         local angle0 = math.atan(dy / dx)
         local angle = 0
 
@@ -131,6 +130,9 @@ do
         elseif dy < 0 and dx < 0 then
             angle = math.pi + angle0
         end
+        if angle < 0 then
+            angle = angle + math.pi * 2 -- 统一转成正值！（ObjectFacing也是正值）
+        end
         return angle
     end
 end
@@ -138,7 +140,7 @@ end
 -- 各种判断
 do
     Player.IsOnCD = function(spellName)
-        local start, duration, enabled = wow.GetSpellCooldown(spellName);
+        local start, duration, enabled = wow.GetSpellCooldown(spellName)
         if enabled == 0 then
             return true
         elseif (start > 0 and duration > 0) then
@@ -148,16 +150,19 @@ do
         end
     end
 
-    Player.IsCastable = function(spellName)
+    Player.IsCastable = function(spellName, unit)
         local usable, nomana = wow.IsUsableSpell(spellName)
         if not usable or nomana then
             return false
         end
-        return not Player.IsOnCD(spellName)
-    end
-
-    function Player.IsSpellInRange(spellName, target)
-        return wow.IsSpellInRange(spellName, target)
+        if Player.IsOnCD(spellName) then
+            return false
+        end
+        if wow.IsSpellInRange(spellName, unit) ~= 1 then
+            return false
+        else
+            return true
+        end
     end
 
     Player.IsSwimming = function()
@@ -178,25 +183,25 @@ do
     Player.LastFeedPetTime = 0
 
     function Player.CallPet()
-        return wow.RunMacroText("/cast Call Pet")
+        return wow.RunMacroText('/cast Call Pet')
     end
 
     function Player.RevivePet()
-        return wow.RunMacroText("/cast Revive Pet")
+        return wow.RunMacroText('/cast Revive Pet')
     end
 
     function Player.FeedPet(foodName)
         Player.LastFeedPetTime = wow.GetTime()
-        wow.RunMacroText("/use Feed Pet")
-        wow.RunMacroText("/use " .. foodName)
+        wow.RunMacroText('/use Feed Pet')
+        wow.RunMacroText('/use ' .. foodName)
     end
 
     function Player.MendPet()
-        Player.CastSpell("Mend Pet", false)
+        Player.CastSpell('Mend Pet', 'pet')
     end
 
     function Player.IsMendingPet()
-        local _, castChannelID, _, _ = wow.UnitCastID("player")
+        local _, castChannelID, _, _ = wow.UnitCastID('player')
         return castChannelID == 136
     end
 end
@@ -213,7 +218,7 @@ do
     function Player.GetLowestDurability()
         local lowest = 9999
         for i = 1, 22 do
-            local current, maximum = wow.GetInventoryItemDurability(i);
+            local current, maximum = wow.GetInventoryItemDurability(i)
             if current ~= nil then
                 if current < lowest then
                     lowest = current

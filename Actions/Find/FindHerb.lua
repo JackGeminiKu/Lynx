@@ -55,9 +55,9 @@ function BT.FindHerb:OnUpdate()
                 self.herbName.value = herbName
                 local x, y, z = wow.GetObjectPosition(guid)
                 self:LogDebug('找到草药: %s (%f,%f,%f)', herbName, x, y, z)
-                self.herbLocation.x = x
-                self.herbLocation.y = y
-                self.herbLocation.z = z
+                self.herbLocation.X = x
+                self.herbLocation.Y = y
+                self.herbLocation.Z = z
                 return BT.ETaskStatus.Success
             end
         end

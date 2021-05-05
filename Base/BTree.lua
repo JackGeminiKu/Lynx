@@ -56,7 +56,7 @@ function BT.BTree:Init(task, parentIndex, compositeIndex)
 
     if task:CheckType(BT.ParentTask) then
         if task:CheckChildCount() == false then
-            LogMgr.Error(BT.ErrorRet.ChildCountMin .. " index = " .. curIndex .. " count = " .. #task.tChildTaskList)
+            LogMgr.Error(BT.ErrorRet.ChildCountMin .. ' index = ' .. curIndex .. ' count = ' .. #task.tChildTaskList)
             return
         end
         self.tChildrenIndex[curIndex] = {}
@@ -80,7 +80,7 @@ end
 
 function BT.BTree:EnabledBT()
     if self.root == nil then
-        LogMgr.Error("Error, root is nil")
+        LogMgr.Error('Error, root is nil')
         return
     end
     if self.eStatus == BT.EBTreeStatus.None then
@@ -117,7 +117,7 @@ function BT.BTree:DisabledBT()
     self.tConditionalReevaluate = {}
     self.tConditionalReevaluateDic = {}
 
-    LogMgr.Normal("bt is disabled")
+    LogMgr.Normal('bt is disabled')
 end
 
 function BT.BTree:PauseBT()
@@ -220,11 +220,17 @@ function BT.BTree:ConditionalReevaluate()
                         break
                     end
                     -- 如果运行节点和reevaluate的conditional处于同一个并行节点的不同分支上，不能被打断
-                    if stackIndex ~= reevalute.stackIndex and self.tTaskList[self:LCA(reevalute.index, runIndex)]:CanExcuteParallel() then
+                    if
+                        stackIndex ~= reevalute.stackIndex and
+                            self.tTaskList[self:LCA(reevalute.index, runIndex)]:CanExcuteParallel()
+                     then
                         break
                     end
 
-                    if reevalute.abortType == BT.EAbortType.LowerPriority and self.tParentCompositeIndex[reevalute.index] == self.tParentCompositeIndex[runIndex] then
+                    if
+                        reevalute.abortType == BT.EAbortType.LowerPriority and
+                            self.tParentCompositeIndex[reevalute.index] == self.tParentCompositeIndex[runIndex]
+                     then
                         break
                     end
 
@@ -306,7 +312,14 @@ function BT.BTree:PopTask(stackIndex, status)
     if task:CheckType(BT.Conditional) then
         if parentComposite ~= nil and parentComposite.abortType ~= BT.EAbortType.None then
             if self.tConditionalReevaluateDic[taskIndex] == nil then
-                local reevaluate = BT.Reevaluate:New(taskIndex, status, stackIndex, parentComposite.abortType == BT.EAbortType.LowerPriority and 0 or parentCompositeIndex, parentComposite.abortType)
+                local reevaluate =
+                    BT.Reevaluate:New(
+                    taskIndex,
+                    status,
+                    stackIndex,
+                    parentComposite.abortType == BT.EAbortType.LowerPriority and 0 or parentCompositeIndex,
+                    parentComposite.abortType
+                )
                 table.insert(self.tConditionalReevaluate, reevaluate)
                 self.tConditionalReevaluateDic[taskIndex] = reevaluate
             end
@@ -342,13 +355,21 @@ function BT.BTree:PopTask(stackIndex, status)
             for i = 1, #self.tConditionalReevaluate do
                 local reevalute = self.tConditionalReevaluate[i]
                 if reevalute.compositeIndex == taskIndex then
-                    if lam_BothOrOther(task, BT.EAbortType.Self) and lam_BothOrOther(parentComposite, BT.EAbortType.Self) and lam_BothOrOther(reevalute, BT.EAbortType.Self) or
-                        lam_BothOrOther(task, BT.EAbortType.LowerPriority) and lam_BothOrOther(reevalute, BT.EAbortType.LowerPriority) then
+                    if
+                        lam_BothOrOther(task, BT.EAbortType.Self) and
+                            lam_BothOrOther(parentComposite, BT.EAbortType.Self) and
+                            lam_BothOrOther(reevalute, BT.EAbortType.Self) or
+                            lam_BothOrOther(task, BT.EAbortType.LowerPriority) and
+                                lam_BothOrOther(reevalute, BT.EAbortType.LowerPriority)
+                     then
                         reevalute.compositeIndex = parentCompositeIndex
                         if reevalute.abortType == BT.EAbortType.Both then
                             if task.abortType == BT.EAbortType.Self or parentComposite.abortType == BT.EAbortType.Self then
                                 reevalute.abortType = BT.EAbortType.Self
-                            elseif task.abortType == BT.EAbortType.LowerPriority or parentComposite.abortType == BT.EAbortType.LowerPriority then
+                            elseif
+                                task.abortType == BT.EAbortType.LowerPriority or
+                                    parentComposite.abortType == BT.EAbortType.LowerPriority
+                             then
                                 reevalute.abortType = BT.EAbortType.LowerPriority
                             end
                         end
@@ -385,8 +406,10 @@ function BT.BTree:RunTask(taskIndex, stackIndex)
     else
         status = task:OnUpdate()
     end
-    local taskName = string.gsub(task.sName, " ", "_")
-    Log.Debug('[%s] %s', taskName, status)
+    local taskName = string.gsub(task.sName, ' ', '_')
+    if status ~= BT.ETaskStatus.Running then
+        Log.Debug('[%s] %s', taskName, status)
+    end
 
     if status ~= BT.ETaskStatus.Running then
         self:PopTask(stackIndex, status)

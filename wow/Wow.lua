@@ -1,5 +1,14 @@
 wow = {}
 
+LogDebug = function(formatstring, ...)
+    Log.Debug('[wow_api] ' .. formatstring, ...)
+end
+
+LogError = function(formatstring, ...)
+    local message = string.format(formatstring, ...)
+    error('[wow_api] ' .. message)
+end
+
 -- **************
 -- * 魔兽世界API *
 -- **************
@@ -49,12 +58,14 @@ wow.CastSpell = function(spellName, onSelf)
     if onSelf then
         target = 'player'
     end
-    Log.Debug("释放法术: %s", spellName)
     if wmbapi then
         CastSpellByName(spellName, target)
     elseif lb then
         lb.Unlock(CastSpellByName, spellName, target)
+    else
+        LogError('CastSpell()没有实现')
     end
+    LogDebug("CastSpell('%s', '%s')", spellName, target)
 end
 
 -- 获取物品数量
@@ -77,29 +88,33 @@ wow.GetObjectName = function(object)
     end
 end
 
--- 返回物体的坐标: x, y, z
+-- 返回物体的坐标: X, Y, Z
 wow.GetObjectPosition = function(object)
+    local position
     if wmbapi then
-        return wmbapi.ObjectPosition(object)
+        position = wmbapi.ObjectPosition(object)
+    elseif lb then
+        position = lb.ObjectPosition(object)
+    else
+        LogError('GetObjectPosition()没有实现!')
     end
-    if lb then
-        return lb.ObjectPosition(object)
-    end
+    LogDebug('GetObjectPosition(%s) = {X = %f, Y = %f, Z = %f)', tostring(object), position.X, position.Y, position.Z)
+    return position
 end
 
 -- 计算两点或两者间距离
 wow.CalculateDistance = function(...)
     local x1, y1, z1, x2, y2, z2
-    if select("#", ...) == 6 then
-        x1, y1, z1, x2, y2, z2 = ...    -- x1, y1, z1, x2, y2, z2
+    if select('#', ...) == 6 then
+        x1, y1, z1, x2, y2, z2 = ... -- x1, y1, z1, x2, y2, z2
     else
-        local p1, p2 = ...    -- {x1, y1, z1}, {x2, y2, z2}
-        x1 = p1.x
-        y1 = p1.y
-        z1 = p1.z
-        x2 = p2.x
-        y2 = p2.y
-        z2 = p2.z
+        local p1, p2 = ... -- {x1, y1, z1}, {x2, y2, z2}
+        x1 = p1.X
+        y1 = p1.Y
+        z1 = p1.Z
+        x2 = p2.X
+        y2 = p2.Y
+        z2 = p2.Z
     end
     return math.sqrt(((x1 - x2) ^ 2) + ((y1 - y2) ^ 2) + ((z1 - z2) ^ 2))
 end
@@ -143,7 +158,7 @@ end
 
 -- 检查是否是盗贼
 wow.IsRouge = function()
-    return wow.UnitClass("player") == "Rogue"
+    return wow.UnitClass('player') == 'Rogue'
 end
 
 -- Releases your ghost to the graveyard
@@ -172,7 +187,7 @@ wow.PickupContainerItem = function(bagId, slot)
 end
 
 wow.TargetUnit = function(unit)
-    Log.Debug("Set target: " .. unit)
+    LogDebug('Set target: ' .. unit)
     if wmbapi ~= nil then
         TargetUnit(unit)
     end
@@ -185,8 +200,18 @@ wow.UnitCreatureType = function(unit)
     return UnitCreatureType(unit)
 end
 
-wow.IsSpellInRange = function(spellName)
-    return IsSpellInRange(spellName)
+-- '0' if out of range, '1' if in range, or 'nil' if the unit is invalid.
+wow.IsSpellInRange = function(spellName, unit)
+    local inRange = nil
+    if wmbapi then
+        inRange = IsSpellInRange(spellName, unit)
+    elseif lb then
+        inRange = lb.Unlock(IsSpellInRange, spellName, unit)
+    else
+        LogError('IsSpellInRage()没有实现!')
+    end
+    LogDebug("IsSpellInRange('%s', '%s') = %s", spellName, unit, tostring(inRange))
+    return inRange
 end
 
 wow.rad = function(x)
@@ -347,8 +372,8 @@ wow.RetrieveCorpse = function()
     RetrieveCorpse()
 end
 
-wow.BuyMerchantItem = function(index)
-    BuyMerchantItem(index)
+wow.BuyMerchantItem = function(index, quantity)
+    BuyMerchantItem(index, quantity)
 end
 
 wow.CreateFrame = function(frameType)
@@ -387,7 +412,26 @@ wow.GetContainerItemLink = function(bagId, slot)
     return GetContainerItemLink(bagId, slot)
 end
 
+-- texture, itemCount, locked, quality, readable, lootable, itemLink = GetContainerItemInfo(0, 3);
+wow.GetContainerItemInfo = function(bag, slot)
+    local texture, itemCount, locked, quality, readable, lootable, itemLink = GetContainerItemInfo(bag, slot)
+    LogDebug(
+        'GetContainerItemInfo(%i, %i) = %i, %i, %s, %i, %s, %s, %s',
+        bag,
+        slot,
+        texture,
+        itemCount,
+        tostring(locked),
+        quality,
+        tostring(readable),
+        tostring(lootable),
+        itemLink
+    )
+    return texture, itemCount, locked, quality, readable, lootable, itemLink
+end
+
 wow.GetItemInfo = function(item)
+    print('item: ', item)
     return GetItemInfo(item)
 end
 
@@ -396,7 +440,7 @@ wow.GetMerchantItemInfo = function(index)
 end
 
 wow.UnitIsEnemy = function(unit)
-    return UnitIsEnemy("player", unit)
+    return UnitIsEnemy('player', unit)
 end
 
 -- Unit是否已经死亡
@@ -409,7 +453,7 @@ wow.GetUnitSpeed = function(unit)
 end
 
 wow.IsInCombat = function(unit)
-    unit = unit or "player"
+    unit = unit or 'player'
     return wow.UnitAffectingCombat(unit)
 end
 
@@ -501,13 +545,15 @@ wow.UnitCastID = function(unit)
     end
 end
 
-wow.UseContainerItem = function(bagId, slot)
+wow.UseContainerItem = function(bag, slot)
     if wmbapi then
-        return UseContainerItem(bagId, slot)
+        UseContainerItem(bag, slot)
+    elseif lb then
+        lb.Unlock(UseContainerItem, bag, slot)
+    else
+        error('wow.UseContainerItem()没有实现!')
     end
-    if lb then
-        return lb.Unlock(UseContainerItem, bagId, slot)
-    end
+    LogDebug('UserContainerItem(%i, %i)', bag, slot)
 end
 
 wow.GetObjectName = function(object)
@@ -520,12 +566,12 @@ wow.GetObjectName = function(object)
 end
 
 wow.ApplyBuff = function(buff, unit)
-    local onSelf = wow.UnitGUID(unit) == wow.UnitGUID("player")
+    local onSelf = wow.UnitGUID(unit) == wow.UnitGUID('player')
     for i = 1, 15 do
         local name = wow.UnitAura(unit, i)
-        if name == nil then -- when name is nil we looped thru all auras 
-            Log.Debug('Applying Buff: ' .. buff)
-            Player.CastSpell(buff, onSelf)
+        if name == nil then -- when name is nil we looped thru all auras
+            LogDebug('Applying Buff: ' .. buff)
+            wow.CastSpell(buff, onSelf)
             return
         elseif name == buff then
             return
@@ -542,6 +588,24 @@ end
 -- wow.Unlock = function(method, arg1, arg2, ...)
 --     return lb.Unlock(method, arg1, arg2, ...)
 -- end
+
+wow.MoveForwardStart = function()
+    if wmbapi then
+        MoveForwardStart(GetTime() * 1000)
+    else
+        LogError('没有实现wow.MoveForwardStart()')
+    end
+    LogDebug('Move forward start')
+end
+
+wow.MoveForwardStop = function()
+    if wmbapi then
+        MoveForwardStop(GetTime() * 1000)
+    else
+        LogError('没有实现wow.MoveForwardStop()')
+    end
+    LogDebug('Move forward stop')
+end
 
 wow.MoveTo = function(x, y, z)
     if wmbapi then
@@ -566,7 +630,7 @@ wow.StopMove = function()
         TurnLeftStop()
         TurnOrActionStop()
         TurnRightStop()
-        if GetUnitSpeed("player") > 0 then
+        if GetUnitSpeed('player') > 0 then
             MoveForwardStart()
             MoveForwardStop()
         end
@@ -603,16 +667,16 @@ wow.GetWaypoints = function(x, y, z, TargetId)
     if wmbapi then
         local mapId = wmbapi.GetCurrentMapInfo()
         local p = Player:Position()
-        -- Log.Debug("Get waypoints: %d (%f,%f,%f) --> (%f,%f,%f)", mapId, px, py, pz, x, y, z)
-        print(p.x, p.y, p.z, x, y, z)
-        local points, polygons = wmbapi.FindPath(mapId, p.x, p.y, p.z, x, y, z)
+        LogDebug('Get waypoints: (%f, %f, %f) --> (%f, %f, %f)', p.X, p.Y, p.Z, x, y, z)
+        local points, polygons = wmbapi.FindPath(mapId, p.X, p.Y, p.Z, x, y, z)
         local waypoints = {}
         for k, v in ipairs(points) do
             waypoints[#waypoints + 1] = {
-                x = v[1],
-                y = v[2],
-                z = v[3]
+                X = v[1],
+                Y = v[2],
+                Z = v[3]
             }
+            LogDebug('  Waypoint-%i: %f, %f, %f', k, v[1], v[2], v[3])
         end
         return waypoints
     end
@@ -639,12 +703,12 @@ end
 wow.GetAngle = function(Object1, Object2)
     local X1, Y1, Z1
     local X2, Y2, Z2
-    if type(Object1) == "string" then
+    if type(Object1) == 'string' then
         X1, Y1, Z1 = wow.ObjectPosition(Object1)
     else
         X1, Y1, Z1 = Object1[1], Object1[2], Object1[3]
     end
-    if type(Object2) == "string" then
+    if type(Object2) == 'string' then
         X2, Y2, Z2 = wow.ObjectPosition(Object2)
     else
         X2, Y2, Z2 = Object2[1], Object2[2], Object2[3]
@@ -683,15 +747,23 @@ wow.GatherMine = function(guid)
 end
 
 wow.TurnStart = function()
-    Log.Debug("Turn start")
+    LogDebug('Turn start')
     if wmbapi ~= nil then
         TurnLeftStart()
     end
 end
 
 wow.TurnStop = function()
-    Log.Debug("Turn stop")
+    LogDebug('Turn stop')
     if wmbapi ~= nil then
         TurnLeftStop()
     end
+end
+
+wow.GetZoneName = function()
+    return GetRealZoneText()
+end
+
+wow.GetSubZoneName = function()
+    return GetSubZoneText()
 end

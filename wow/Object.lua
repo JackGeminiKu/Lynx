@@ -23,7 +23,7 @@ end
 -- 返回Object的地址 
 function Object:Position()
     local x, y, z = wow.GetObjectPosition(self.ObjectTag)
-    return {x = x, y = y, z = z}
+    return {X = x, Y = y, Z = z}
 end
 
 function Object:Type()
@@ -56,17 +56,17 @@ end
 -- 已作废, 请见使用Object:Distance()
 function Object:DistanceTo(...)
     local argNumber = select('#', ...)
-    if argNumber == 1 then -- Player, Target ...
+    if argNumber == 1 then
         local endObject = ...
-        if endObject.x == nil then
-            return wow.GetDistanceBetweenObjects(self.ObjectTag, endObject)    -- target
+        if endObject.X == nil then
+            return wow.GetDistanceBetweenObjects(self.ObjectTag, endObject)    -- "target"
         else
             local p = self:Position()
-            return wow.CalculateDistance(p.x, p.y, p.z, endObject.x, endObject.y, endObject.z)    -- {x, y, z}
+            return wow.CalculateDistance(p.X, p.Y, p.Z, endObject.X, endObject.Y, endObject.Z)    -- {x, y, z}
         end
-    elseif argNumber == 3 then -- x, y, z
+    elseif argNumber == 3 then
         local x, y, z = self:Position()
-        return wow.CalculateDistance(x, y, z, ...)
+        return wow.CalculateDistance(x, y, z, ...)    -- x, y, z
     end
 end
 
@@ -198,7 +198,7 @@ end
 --     end
 
 --     -- for k, v in pairs(_points) do
---     --     LibDraw.Circle(v.x, v.y, v.z, 0.3)
+--     --     LibDraw.Circle(v.X, v.Y, v.Z, 0.3)
 --     -- end
 
 
@@ -218,10 +218,10 @@ end
 --     -- for i = 1, #waypoints - 1 do
 --     --     local point = waypoints[i]
 --     --     nextPoint = waypoints[i + 1]
---     --     LibDraw.Circle(point.x, point.y, point.z, 0.3)
---     --     LibDraw.Line(point.x, point.y, point.z, nextPoint.x, nextPoint.y, nextPoint.z)
+--     --     LibDraw.Circle(point.X, point.Y, point.Z, 0.3)
+--     --     LibDraw.Line(point.X, point.Y, point.Z, nextPoint.X, nextPoint.Y, nextPoint.Z)
 --     -- end
---     -- LibDraw.Circle(nextPoint.x, nextPoint.y, nextPoint.z, 0.3)
+--     -- LibDraw.Circle(nextPoint.X, nextPoint.Y, nextPoint.Z, 0.3)
 -- end)
 
 -- LibDraw.Enable(0)

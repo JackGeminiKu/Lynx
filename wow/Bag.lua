@@ -1,5 +1,9 @@
 Bag = {}
 
+-- Bag序号: 从左到右, 4, 3, 2, 1, 0
+-- Slot序号: 从左到右, 从上到下, 1, 2, 3, ...
+
+-- 获取某个背包格数
 function Bag.GetNumSlots(bag)
     return wow.GetContainerNumSlots(bag)
 end
@@ -17,6 +21,10 @@ end
 
 function Bag.GetItemLink(bag, slot)
     return wow.GetContainerItemLink(bag, slot)
+end
+
+function Bag.GetItemInfo(bag, slot)
+
 end
 
 function Bag.GetItemName(bag, slot)
@@ -88,6 +96,10 @@ end
 
 function Bag.SellItem(bag, slot)
     wow.UseContainerItem(bag, slot)
+end
+
+Bag.BuyItem = function(index, quantity)
+    wow.BuyMerchantItem(index, quantity)
 end
 
 function Bag.IsOnCD(bag, slot)

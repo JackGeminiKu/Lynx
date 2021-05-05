@@ -21,7 +21,7 @@ function BT.FindMonster:OnUpdate()
     local monster = nil
     for _, object in ipairs(Object:GetObjects(100)) do
         if object:Health() == 100 and object:CanAttack() and not object:IsPlayer() then
-            if object:Distance() < minDist then
+            if object:Distance() < minDist and object:Level() ~= 1 then
                 minDist = object:Distance()
                 monster = object
             end
@@ -29,7 +29,7 @@ function BT.FindMonster:OnUpdate()
     end
 
     if monster ~= nil then
-        self.target.Value = monster
+        self.target.value = monster
         Player.Target(monster)
         return BT.ETaskStatus.Success
     else

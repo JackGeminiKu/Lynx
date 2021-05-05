@@ -12,7 +12,7 @@ Wow\Unit.lua
 Wow\Player.lua
 Wow\Target.lua
 Wow\Pet.lua
-Wow\Merchant.lua
+Wow\Camp.lua
 Wow\Navigator.lua
 Wow\Bag.lua
 
@@ -37,20 +37,23 @@ Actions\TestShared2.lua
 
 Actions\Wait.lua
 
-Actions\SelectMerchant.lua
 Actions\Target.lua
 Actions\Interact.lua
 Actions\Buy.lua
 Actions\GatherHerb.lua
+Actions\Sell.lua
+
+Actions\Select\SelectCamp.lua
 
 Actions\Find\FindHerb.lua
 Actions\Find\FindMonster.lua
+Actions\Find\FindSeller.lua
 
 Actions\Attack\MageAttack.lua
 Actions\Attack\RougeAttack.lua
 
 Actions\Move\MoveToPosition.lua
-Actions\Move\MoveToTarget.lua
+Actions\Move\MoveToObject.lua
 
 Composites\Parallel.lua
 Composites\Selector.lua

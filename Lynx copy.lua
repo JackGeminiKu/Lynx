@@ -1796,7 +1796,7 @@ local function HunterRotation()
 
             if AGGRO_WITH_PET then
                 Pet.Attack()
-                Player.Attack()
+                Player.StartAttack()
             end
 
             Sleep(1)
@@ -1843,7 +1843,7 @@ local function HunterRotation()
         -- 自动攻击
         if AGGRO_WITH_PET then
             Pet.Attack()
-            Player.Attack()
+            Player.StartAttack()
         end
     end
 
@@ -1876,7 +1876,7 @@ local function HunterRotation()
         -- Melee attack
         Spell = "MELEE RANGE"
         Pet.Attack()
-        Player.Attack()
+        Player.StartAttack()
 
         -- Raptor strike
         if Player.CastSpell("Raptor Strike", false) then

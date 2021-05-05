@@ -12,10 +12,10 @@ function Navigator.MoveTo(...)
         x, y, z = ...
     else
         local point = ...
-        if point.x ~= nil then
-            x = point.x
-            y = point.y
-            z = point.z
+        if point.X ~= nil then
+            x = point.X
+            y = point.Y
+            z = point.Z
         else
             x = point[1]
             y = point[2]
@@ -23,7 +23,7 @@ function Navigator.MoveTo(...)
         end
     end
     local pos = Player:Position()
-    LogDebug('Current position: ' .. pos.x .. ', ' .. pos.y .. ', ' .. pos.z)
+    LogDebug('Current position: ' .. pos.X .. ', ' .. pos.Y .. ', ' .. pos.Z)
     LogDebug('Move to: ' .. x .. ', ' .. y .. ', ' .. z)
     wow.MoveTo(x, y, z)
 end
@@ -34,7 +34,7 @@ function Navigator.SavePosition()
 end
 
 function Navigator.GetWaypoints(position)
-    local waypoints = wow.GetWaypoints(position.x, position.y, position.z)
+    local waypoints = wow.GetWaypoints(position.X, position.Y, position.Z)
     local i, j = 1, #waypoints
     while i < j do
         waypoints[i], waypoints[j] = waypoints[j], waypoints[i]
@@ -44,14 +44,14 @@ function Navigator.GetWaypoints(position)
     return waypoints
 end
 
-function Navigator.HasBarrier(location1, location2)
-    local x1, y1, z1 = location1.x, location1.y, location1.z
-    local x2, y2, z2 = location2.x, location2.y, location2.z
+function Navigator.HasBarrier(position1, position2)
+    local x1, y1, z1 = position1.X, position1.Y, position1.Z
+    local x2, y2, z2 = position2.X, position2.Y, position2.Z
     return wow.Raycast(x1, y1, z1 + 2.5, x2, y2, z2 + 2.5, wow.bit.bor(0x10, 0x100)) ~= nil
 end
 
 function Navigator.ComparePoint(point1, point2)
-    return point1.x == point2.x and point1.y == point2.y and point1.z == point2.z
+    return point1.X == point2.X and point1.Y == point2.Y and point1.Z == point2.Z
 end
 -- endregion
 
@@ -67,21 +67,21 @@ local _waypoints = {}
 
 local function MoveToLocation(position)
     LogDebug("Initialize waypoints")
-    LogDebug('Target position: ' .. position.x .. ', ' .. position.y .. ', ' .. position.z)
+    LogDebug('Target position: ' .. position.X .. ', ' .. position.Y .. ', ' .. position.Z)
 
     _waypoints = Navigator.GetWaypoints(position)
     LogDebug("Mesh waypoints")
     for k, v in pairs(_waypoints) do
-        LogDebug(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
+        LogDebug(k .. ': ' .. v.X .. ', ' .. v.Y .. ', ' .. v.Z)
     end
 
     LogDebug("New waypoints")
     for k, v in pairs(_waypoints) do
         local rnd = math.random(-100, 100) / 100
-        v.x = v.x + rnd
-        v.y = v.y + rnd
-        v.z = v.z + rnd
-        LogDebug(k .. ': ' .. v.x .. ', ' .. v.y .. ', ' .. v.z)
+        v.X = v.X + rnd
+        v.Y = v.Y + rnd
+        v.Z = v.Z + rnd
+        LogDebug(k .. ': ' .. v.X .. ', ' .. v.Y .. ', ' .. v.Z)
     end
 end
 
@@ -148,7 +148,7 @@ Frame:SetScript("OnUpdate", function()
 
             -- local waypoints = Navigator.GetWaypoints(NextWaypoint())
             -- for i = 1, #waypoints do
-            --     LogDebug('Insert points: ', waypoints[i].x, waypoints[i].y, waypoints[i].z)
+            --     LogDebug('Insert points: ', waypoints[i].X, waypoints[i].Y, waypoints[i].Z)
             --     _waypoints[#_waypoints + 1] = waypoints[i]
             -- end
 

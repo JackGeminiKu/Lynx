@@ -1,12 +1,12 @@
 BT.Buy = {
-    Base = BT.Action
+    base = BT.Action
 }
 local this = BT.Buy
 this.__index = this
-setmetatable(this, this.Base)
+setmetatable(this, this.base)
 
 function BT.Buy:New(name)
-    local o = this.Base:New(name)
+    local o = this.base:New(name)
     o.nextTime = wow.GetTime()
     o.supplyList = {}
     setmetatable(o, this)

@@ -36,11 +36,17 @@ function BT.MageAttack:OnUpdate()
     -- 调整方向?
     local facing = Player:Facing()
     local facing2 = Player.CalTargetFacing()
-    Log.Debug("%.1f, %.1f, %.1f / %.1f", math.deg(facing), math.deg(facing2), math.deg(facing - facing2), facing - facing2)
+    Log.Debug(
+        '%.1f, %.1f, %.1f / %.1f',
+        math.deg(facing),
+        math.deg(facing2),
+        math.deg(facing - facing2),
+        facing - facing2
+    )
     if math.abs(facing - facing2) > math.pi / 180 * 60 then
         if not self.isTurning then
             self.isTurning = true
-            Log.Debug("start turning")
+            Log.Debug('start turning')
             wow.TurnStart()
         end
         -- FaceDirection(facing2 + math.random(-200, 200) / 1000)
@@ -49,7 +55,7 @@ function BT.MageAttack:OnUpdate()
     else
         if self.isTurning then
             self.isTurning = false
-            Log.Debug("stop turning")
+            Log.Debug('stop turning')
             wow.TurnStop()
             return BT.ETaskStatus.Running
         end
@@ -65,12 +71,10 @@ function BT.MageAttack:OnUpdate()
 end
 
 function BT.MageAttack:CastSpell(spellName)
-    self.spellList[#self.spellList + 1] = spellName
-    Player.CastSpell(spellName, false)
-end
-
-function AutoShoot()
-    wow.RunMacroText("/cast 射击")
+    if Player.IsCastable(spellName, 'target') then
+        self.spellList[#self.spellList + 1] = spellName
+        Player.CastSpell(spellName)
+    end
 end
 
 function BT.MageAttack:GetNextSpell()
@@ -84,7 +88,7 @@ function BT.MageAttack:GetNextSpell()
             time = 1.5
         else
             spell = '寒冰箭'
-            time = 1.7 
+            time = 1.7
         end
     end
     return spell, time

@@ -1,4 +1,16 @@
 -- region btree
+local function CreateBt_Sell()
+    local btree = BT.BTree:New(nil, 'Sell')
+    local seqSell = BT.Sequence:New('sequence to sell')
+    local sell = BT.Sell:New('sell')
+    local selectCamp = BT.SelectCamp:New('select camp')
+    local moveToCamp = BT.MoveToPosition:New('move to camp', selectCamp.CampPosition)
+    local findSeller = BT.FindSeller:New('find seller')
+    btree:AddRoot(seqSell)
+    seqSell:AddChildList({selectCamp, moveToCamp, findSeller})
+    return btree
+end
+
 local function CreateBt_Buy()
     local btree = BT.BTree:New(nil, 'Lynx')
     local seqBuy = BT.Sequence:New('sequence buy')
@@ -16,12 +28,14 @@ end
 
 local function CreateBt_AttactMonster()
     local btree = BT.BTree:New(nil, 'monster bt')
-    local root = BT.Selector:New('root')
     local attackNode = BT.Sequence:New('attack node')
-    btree:AddRoot(root)
-    root:AddChild(attackNode)
+    btree:AddRoot(attackNode)
     attackNode:AddChildList(
-        {BT.FindMonster:New('find monster'), BT.MoveToTarget:New('move to target'), BT.RougeAttack:New('attack')}
+        {
+            BT.FindMonster:New('find monster'),
+            BT.MoveToObject:New('move to monster'),
+            BT.RougeAttack:New('attack monster')
+        }
     )
     return btree
 end
@@ -61,7 +75,7 @@ local function CreateBt_Attack()
     return btree
 end
 
-local _bt = CreateBt_AttactMonster() -- create behavior tree
+local _bt = CreateBt_Sell() -- create behavior tree
 -- endregion btree
 
 -- region onUpdate
