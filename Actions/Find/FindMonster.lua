@@ -8,12 +8,8 @@ setmetatable(this, this.base)
 function BT.FindMonster:New(name)
     local o = this.base:New(name)
     setmetatable(o, this)
-    o.target = nil
+    o.Monster = nil
     return o
-end
-
-function BT.FindMonster:OnStart()
-    self.target = self.bTree.sharedData:GetData('target')
 end
 
 function BT.FindMonster:OnUpdate()
@@ -29,7 +25,7 @@ function BT.FindMonster:OnUpdate()
     end
 
     if monster ~= nil then
-        self.target.value = monster
+        self.Monster = monster
         Player.Target(monster)
         return BT.ETaskStatus.Success
     else

@@ -5,25 +5,24 @@ local this = BT.RougeAttack
 this.__index = this
 setmetatable(this, this.base)
 
-function BT.RougeAttack:New(name)
+function BT.RougeAttack:New(name, target)
     local o = this.base:New(name)
     o.nextSpellTime = wow.GetTime()
     o.spellList = {}
     o.isTurning = false
-    o.target = nil
+    o.Target = nil
     setmetatable(o, this)
     return o
 end
 
 function BT.RougeAttack:OnStart()
     self.spellList = {}
-    self.target = self.bTree.sharedData:GetData('target').value
-    Player.Target(self.bTree.sharedData:GetData('target').value)
+    Player.Target(self.Target)
 end
 
 function BT.RougeAttack:OnUpdate()
     -- 战斗结束了?
-    if self.target:IsDead() and not Player:IsInCombat() then
+    if self.Target:IsDead() and not Player:IsInCombat() then
         self.spellList = {}
         return BT.ETaskStatus.Success
     end

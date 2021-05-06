@@ -6,9 +6,9 @@ local this = BT.Wait
 this.__index = this
 setmetatable(this, this.base)
 
-function BT.Wait:New(name, time)
+function BT.Wait:New(name, seconds)
     local o = this.base:New(name)
-    o.fTime = time or 1
+    o.fTime = seconds or 1
     o.fStartTime = wow.GetTime()
     setmetatable(o, this)
     return o

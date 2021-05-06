@@ -24,7 +24,6 @@ function BT.SelectCamp:OnUpdate()
     local campName = ''
     local campPosition = nil
     for name, camp in pairs(Camp) do
-        LogDebug(name)
         if string.sub(name, 1, #zoneName + 1) == zoneName .. '_' then
             campDist = wow.CalculateDistance(Player:Position(), camp.Position)
             if campDist < minDist then
@@ -33,6 +32,10 @@ function BT.SelectCamp:OnUpdate()
                 campPosition = camp.Position
             end
         end
+    end
+    if campName =='' then
+        self:LogDebug("当前地区(%s)没有找到营地!", zoneName)
+        return BT.ETaskStatus.Failure
     end
     self.CampName = campName
     self.CampPosition.X = campPosition.X

@@ -44,7 +44,7 @@ end
 -- 哪些东西不卖?
 -- 绿色以上品质的
 -- 采集的物品: 草药, 矿石, 皮
-local _whitelist = {'初级治疗药水', '亚麻布', '亚麻绷带'}
+local _whitelist = {'矿工锄', '初级治疗药水', '亚麻布', '亚麻绷带'}
 
 CanBeSold = function(bag, slot)
     local _, _, _, quality, _, _, itemLink = wow.GetContainerItemInfo(bag, slot)

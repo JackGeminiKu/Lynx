@@ -2,12 +2,16 @@
 local function CreateBt_Sell()
     local btree = BT.BTree:New(nil, 'Sell')
     local seqSell = BT.Sequence:New('sequence to sell')
-    local sell = BT.Sell:New('sell')
     local selectCamp = BT.SelectCamp:New('select camp')
     local moveToCamp = BT.MoveToPosition:New('move to camp', selectCamp.CampPosition)
     local findSeller = BT.FindSeller:New('find seller')
+    local moveToSeller = BT.MoveToObject:New('move to seller', Target)
+    local interact = BT.Interact:New('interact with seller')
+    local sell = BT.Sell:New('sell')
     btree:AddRoot(seqSell)
-    seqSell:AddChildList({selectCamp, moveToCamp, findSeller})
+    seqSell:AddChildList(
+        {selectCamp, moveToCamp, findSeller, moveToSeller, interact, BT.Wait:New('wait after interact', 1), sell}
+    )
     return btree
 end
 
@@ -22,19 +26,32 @@ local function CreateBt_Buy()
     local wait2 = BT.Wait:New('wait_after_interact', 1)
     local buy = BT.Buy:New('buy')
     btree:AddRoot(seqBuy)
-    seqBuy:AddChildList({selectMerchant, move, target, wait1, interact, wait2, buy})
+    seqBuy:AddChildList(
+        {
+            selectMerchant,
+            move,
+            target,
+            wait1,
+            interact,
+            wait2,
+            buy
+        }
+    )
     return btree
 end
 
 local function CreateBt_AttactMonster()
     local btree = BT.BTree:New(nil, 'monster bt')
     local attackNode = BT.Sequence:New('attack node')
+    local findMonster = BT.FindMonster:New('find monster')
+    local moveToMonster = BT.MoveToObject:New('move to monster', findMonster.Monster)
+    local attackMonster = BT.RougeAttack:New('attack monster', findMonster.Monster)
     btree:AddRoot(attackNode)
     attackNode:AddChildList(
         {
-            BT.FindMonster:New('find monster'),
-            BT.MoveToObject:New('move to monster'),
-            BT.RougeAttack:New('attack monster')
+            findMonster,
+            moveToMonster,
+            attackMonster
         }
     )
     return btree
@@ -75,7 +92,6 @@ local function CreateBt_Attack()
     return btree
 end
 
-local _bt = CreateBt_Sell() -- create behavior tree
 -- endregion btree
 
 -- region onUpdate
@@ -113,15 +129,33 @@ end
 -- region 插件命令
 SLASH_LYNX_START1 = '/lynx-start'
 SLASH_LYNX_STOP1 = '/lynx-stop'
+SLASH_LYNX_SELL_START1 = '/lynx-sell-start'
+SLASH_LYNX_SELL_STOP1 = '/lynx-sell-stop'
+SLASH_LYNX_ATTACK_START1 = '/lynx-attack-start'
+SLASH_LYNX_ATTACK_STOP1 = '/lynx-attack-stop'
 
-SlashCmdList['LYNX_START'] = function()
-    Log.Debug('Lynx start!')
+SlashCmdList['LYNX_SELL_START'] = function()
+    Log.Debug('Lynx sell start!')
+    _bt = CreateBt_Sell()
     _bt:EnabledBT()
     _frame:SetScript('OnUpdate', onUpdate)
 end
 
-SlashCmdList['LYNX_STOP'] = function()
-    Log.Debug('Lynx stop!')
+SlashCmdList['LYNX_SELL_STOP'] = function()
+    Log.Debug('Lynx sell stop!')
+    _bt:DisabledBT()
+    _frame:SetScript('OnUpdate', nil)
+end
+
+SlashCmdList['LYNX_ATTACK_START'] = function()
+    Log.Debug('Lynx attack start!')
+    _bt = CreateBt_AttactMonster()
+    _bt:EnabledBT()
+    _frame:SetScript('OnUpdate', onUpdate)
+end
+
+SlashCmdList['LYNX_ATTACK_STOP'] = function()
+    Log.Debug('Lynx attack stop!')
     _bt:DisabledBT()
     _frame:SetScript('OnUpdate', nil)
 end

@@ -9,10 +9,10 @@ local this = BT.MoveToObject
 this.__index = this
 setmetatable(this, this.base)
 
-function BT.MoveToObject:New(name)
+function BT.MoveToObject:New(name, object)
     local o = this.base:New(name)
     setmetatable(o, this)
-    o.target = nil
+    o.Target = object
     o.lastTime = nil
     o.lastPosition = nil
     o.nextWaypoint = nil
@@ -20,7 +20,6 @@ function BT.MoveToObject:New(name)
 end
 
 function BT.MoveToObject:OnStart()
-    self.target = self.bTree.sharedData:GetData('target').value
     self.lastTime = wow.GetTime()
     self.lastPosition = Player:Position()
     self.nextWaypoint = nil
@@ -28,7 +27,7 @@ end
 
 function BT.MoveToObject:OnUpdate()
     -- 跑到目标附近了?
-    if self:CloseToTarget(self.target) then
+    if self:CloseToTarget(self.Target) then
         Player.StopMove()
         return BT.ETaskStatus.Success
     end
@@ -70,7 +69,7 @@ function BT.MoveToObject:OnUpdate()
 end
 
 function BT.MoveToObject:GetNextWaypoint()
-    local waypoints = Navigator.GetWaypoints(self.target:Position())
+    local waypoints = Navigator.GetWaypoints(self.Target:Position())
     return waypoints[#waypoints - 1]
 end
 

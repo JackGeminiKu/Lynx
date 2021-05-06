@@ -469,10 +469,12 @@ end
 wow.InteractUnit = function(unit)
     if wmbapi then
         return InteractUnit(unit)
-    end
-    if lb then
+    elseif lb then
         return lb.ObjectInteract(unit)
+    else
+        LogError('没有实现InteractUnit()')
     end
+    LogDebug("InteractUnit('%s')", unit)
 end
 
 wow.ReadFile = function(path)
