@@ -27,7 +27,7 @@ end
 
 function BT.MoveToObject:OnUpdate()
     -- 跑到目标附近了?
-    if self:CloseToTarget(self.Target) then
+    if self:CloseToTarget(self.Target:Position()) then
         Player.StopMove()
         return BT.ETaskStatus.Success
     end
@@ -53,7 +53,7 @@ function BT.MoveToObject:OnUpdate()
 
     -- 移动到下一个点
     if self.nextWaypoint == nil then
-        self.nextWaypoint = self:GetNextWaypoint()
+        self.nextWaypoint = self:GetNextWaypoint(self.Target:Position())
         Navigator.MoveTo(self.nextWaypoint)
         return BT.ETaskStatus.Running
     end
@@ -68,8 +68,8 @@ function BT.MoveToObject:OnUpdate()
     return BT.ETaskStatus.Running
 end
 
-function BT.MoveToObject:GetNextWaypoint()
-    local waypoints = Navigator.GetWaypoints(self.Target:Position())
+function BT.MoveToObject:GetNextWaypoint(targetPosition)
+    local waypoints = Navigator.GetWaypoints(targetPosition)
     return waypoints[#waypoints - 1]
 end
 
@@ -85,8 +85,8 @@ function BT.MoveToObject:Stucked(currentPosition, lastPosition)
     end
 end
 
-function BT.MoveToObject:CloseToTarget(target)
-    local dist = Player:DistanceTo(target:Position())
+function BT.MoveToObject:CloseToTarget(targetPosition)
+    local dist = Player:DistanceTo(targetPosition)
     self:LogDebug('dist to target = ' .. dist)
     return dist < PROXIMITY_TOLERANCE
 end
