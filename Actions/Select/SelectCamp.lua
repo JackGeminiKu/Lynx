@@ -8,7 +8,7 @@ setmetatable(this, this.base)
 function BT.SelectCamp:New(name)
     local o = this.base:New(name)
     o.CampName = nil
-    o.CampPosition = {X = 1, Y = 1, Z = 1}
+    o.CampPosition = {X = nil, Y = nil, Z = nil}
     setmetatable(o, this)
     return o
 end
@@ -33,8 +33,8 @@ function BT.SelectCamp:OnUpdate()
             end
         end
     end
-    if campName =='' then
-        self:LogDebug("当前地区(%s)没有找到营地!", zoneName)
+    if campName == '' then
+        self:LogDebug('当前地区(%s)没有找到营地!', zoneName)
         return BT.ETaskStatus.Failure
     end
     self.CampName = campName

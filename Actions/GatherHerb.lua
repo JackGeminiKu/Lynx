@@ -36,7 +36,7 @@ function BT.GatherHerb:OnUpdate()
     local herbHistory = self.herbHistory
 
     if herbGuid == nil then
-        Log.Error("没有设置草药GUID!")
+        Log.Error("没有设置草药Guid!")
         return BT.ETaskStatus.Success
     end
     if herbHistory[herbGuid] ~= nil and herbHistory[herbGuid] - wow.GetTime() < 60 then

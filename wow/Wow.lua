@@ -188,10 +188,10 @@ end
 
 wow.TargetUnit = function(unit)
     LogDebug('Set target: ' .. unit)
-    if wmbapi ~= nil then
+    if wmbapi then
         TargetUnit(unit)
     end
-    if lb ~= nil then
+    if lb then
         lb.UnitTagHandler(TargetUnit, unit)
     end
 end
@@ -306,8 +306,8 @@ wow.UnitHealthMax = function(unit)
     return UnitHealthMax(unit)
 end
 
-wow.UnitGUID = function(unit)
-    return UnitGUID(unit)
+wow.UnitGuid = function(unit)
+    return UnitGuid(unit)
 end
 
 wow.GetTarget = function(unit)
@@ -520,7 +520,7 @@ wow.FaceDirection = function(facing)
     end
 end
 
-wow.GetObjectWithGUID = function(guid)
+wow.GetObjectWithGuid = function(guid)
     -- TBD
 end
 
@@ -568,7 +568,7 @@ wow.GetObjectName = function(object)
 end
 
 wow.ApplyBuff = function(buff, unit)
-    local onSelf = wow.UnitGUID(unit) == wow.UnitGUID('player')
+    local onSelf = wow.UnitGuid(unit) == wow.UnitGuid('player')
     for i = 1, 15 do
         local name = wow.UnitAura(unit, i)
         if name == nil then -- when name is nil we looped thru all auras
@@ -687,9 +687,9 @@ wow.GetWaypoints = function(x, y, z, TargetId)
     end
 end
 
-wow.GameObjectHasLockType = function(GUID, lockType)
+wow.GameObjectHasLockType = function(Guid, lockType)
     -- TBD
-    return lb.GameObjectHasLockType(GUID, lockType)
+    return lb.GameObjectHasLockType(Guid, lockType)
 end
 
 -- Bit opeartions
@@ -700,7 +700,7 @@ do
     end
 end
 
--- Get Angle from Object to another, you can pass this either an array of positions (Not an object) or a GUID.
+-- Get Angle from Object to another, you can pass this either an array of positions (Not an object) or a Guid.
 -- @returns [number, number] X/Y Axis angle, Z angle.
 wow.GetAngle = function(Object1, Object2)
     local X1, Y1, Z1

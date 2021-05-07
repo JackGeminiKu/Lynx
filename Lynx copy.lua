@@ -1165,7 +1165,7 @@ function IsTargeting(obj, tar)
         return false
     end
 
-    return wow.UnitGUID(unitTarget) == wow.UnitGUID(tar)
+    return wow.UnitGuid(unitTarget) == wow.UnitGuid(tar)
 end
 
 EnemyNpcs = {}
@@ -1722,7 +1722,7 @@ local function FindAttackableUnit()
     return found
 end
 
-InterruptTargetGUID = nil
+InterruptTargetGuid = nil
 StopMovingBeforeAttack = true
 
 local function HunterRotation()
@@ -1894,7 +1894,7 @@ ForceCSAtTime = 0
 
 local function CounterSpell()
     if ForceCS then
-        local object = Obect:New(InterruptTargetGUID)
+        local object = Obect:New(InterruptTargetGuid)
         if object == nil or object:IsDead() then
             ForceCSAtTime = 0
             ForceCS = false
@@ -3004,12 +3004,12 @@ Frame:SetScript("OnEvent", function(self, event)
         Log.Debug("Vendor Window Open!!!")
         -- 战斗信息
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and Player:IsInCombat() then
-        local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = wow.CombatLogGetCurrentEventInfo()
+        local timestamp, subevent, _, sourceGuid, sourceName, sourceFlags, sourceRaidFlags, destGuid, destName, destFlags, destRaidFlags = wow.CombatLogGetCurrentEventInfo()
         -- 开始施法
         if subevent == "SPELL_CAST_START" then
-            local object = wow.GetObjectWithGUID(sourceGUID)
+            local object = wow.GetObjectWithGuid(sourceGuid)
             if not AggrodToAnotherPlayer(object) then
-                InterruptTargetGUID = sourceGUID
+                InterruptTargetGuid = sourceGuid
                 if Player:IsMage() then
                     ForceCS = true
                     ForceCSAtTime = wow.GetTime() + CS_DELAY

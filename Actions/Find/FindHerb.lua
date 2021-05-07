@@ -47,7 +47,7 @@ end
 
 function BT.FindHerb:OnUpdate()
     for _, guid in ipairs(wow.GetObjects(100)) do
-        -- TBD: 草药被采集后, 一定时间能lb.GetObjects还是能返回它的GUID. 如果被别人采了, 怎么办?
+        -- TBD: 草药被采集后, 一定时间能lb.GetObjects还是能返回它的Guid. 如果被别人采了, 怎么办?
         if self.herbHistory[guid] == nil or self.herbHistory[guid] - wow.GetTime() > 60 then
             if CanGather(guid) then
                 local herbName = wow.GetObjectName(guid)

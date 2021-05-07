@@ -12,8 +12,8 @@ function Object:Name()
     return wow.GetObjectName(self.ObjectTag)
 end
 
-function Object:GUID()
-    return wow.UnitGUID(self.ObjectTag)
+function Object:Guid()
+    return wow.UnitGuid(self.ObjectTag)
 end
 
 function Object:Level()
@@ -102,7 +102,7 @@ function Object:IsTargeting(target)
     if objectTarget == nil then
         return false
     end
-    return wow.UnitGUID(objectTarget) == wow.UnitGUID(target)
+    return wow.UnitGuid(objectTarget) == wow.UnitGuid(target)
 end
 
 function Object:IsInAggroRange(tol)
@@ -115,7 +115,7 @@ function Object:IsInAggroRange(tol)
 end
 
 function Object:IsPet()
-    local guid = wow.UnitGUID(self.ObjectTag)
+    local guid = wow.UnitGuid(self.ObjectTag)
     return string.find(guid, 'pet')
 end
 

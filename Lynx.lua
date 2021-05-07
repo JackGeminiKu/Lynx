@@ -44,13 +44,15 @@ local function CreateBt_AttactMonster()
     local btree = BT.BTree:New(nil, 'monster bt')
     local attackNode = BT.Sequence:New('attack node')
     local findMonster = BT.FindMonster:New('find monster')
-    local moveToMonster = BT.MoveToObject:New('move to monster', findMonster.Monster)
-    local attackMonster = BT.RougeAttack:New('attack monster', findMonster.Monster)
+    local moveToMonster = BT.MoveToObject:New('move to monster', findMonster.Monster)   -- object
+    local targetMonster = BT.Target:New('target monster', findMonster.Monster)  -- object or guid?
+    local attackMonster = BT.RougeAttack:New('attack monster', findMonster.Monster) -- object or guid?
     btree:AddRoot(attackNode)
     attackNode:AddChildList(
         {
             findMonster,
             moveToMonster,
+            targetMonster,
             attackMonster
         }
     )
